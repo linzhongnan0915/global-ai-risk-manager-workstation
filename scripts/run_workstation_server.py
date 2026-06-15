@@ -83,6 +83,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     deployment_artifact: dict | None = None
     bootstrap_artifact_bytes: bytes | None = None
     research_extension_bytes: bytes | None = None
+    operational_snapshot_bytes: bytes | None = None
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
 
@@ -91,6 +92,13 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         cls.deployment_artifact = artifact
         cls.bootstrap_artifact_bytes = _json_bytes(build_bootstrap_artifact(artifact))
         cls.research_extension_bytes = _json_bytes(build_research_extension(artifact))
+
+    @classmethod
+    def warm_operational_snapshot_cache(cls, root: Path) -> None:
+        snapshot_path = root / "output" / "operational_snapshot.json"
+        if not snapshot_path.exists():
+            load_or_build_operational_snapshot(root)
+        cls.operational_snapshot_bytes = snapshot_path.read_bytes()
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -251,7 +259,11 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
-                self._send_json(load_or_build_operational_snapshot(self.server_root))
+                body = self.operational_snapshot_bytes
+                if body is None:
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    body = self.operational_snapshot_bytes
+                self._send_precomputed_json(body or b"{}")
             except Exception as exc:
                 self._send_safe_error(exc, context="operational-snapshot")
             return
@@ -345,6 +357,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         if parsed.path in {"/api/refresh", "/api/refresh/"}:
             try:
                 result = refresh_operational_snapshot(self.server_root)
+                if result.get("ok"):
+                    self.warm_operational_snapshot_cache(self.server_root)
                 status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 503
                 self._send_json(result, status=status)
             except Exception as exc:
@@ -356,6 +370,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 raw = self.rfile.read(length) if length else b"{}"
                 body = json.loads(raw.decode("utf-8") or "{}")
                 decision = persist_decision(self.server_root, body)
+                self.warm_operational_snapshot_cache(self.server_root)
                 self._send_json(
                     {
                         "ok": True,
@@ -530,6 +545,7 @@ def main(
     set_background_scheduler_enabled(False)
     if refresh_on_start or intraday_scheduler:
         print("External refresh and scheduler are disabled for the Phase 1 local foundation.")
+    WorkstationHandler.warm_operational_snapshot_cache(PROJECT_ROOT)
     server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
     print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
     print("Default page load: /api/operational-snapshot (official ledger plus separate intraday estimate)")

@@ -3,7 +3,7 @@ services:
     name: risk-manager-platform
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python scripts/build_operational_snapshot.py
     startCommand: python scripts/run_workstation_server.py --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:

@@ -1,0 +1,48 @@
+# Prototype intraday research-market-proxy refresh settings.
+# This is NOT live portfolio or exchange data.
+
+intraday_refresh:
+  enabled: true
+  # Render deployments require ENABLE_INTRADAY_SCHEDULER=1 to run the background loop.
+  default_interval_minutes: 5
+  allowed_intervals_minutes:
+    - 5
+    - 10
+    - 30
+  provider: yfinance
+  bar_interval_by_refresh:
+    5: 5m
+    10: 5m
+    30: 15m
+  timezone: America/New_York
+  regular_session_only: true
+  stale_after_minutes:
+    5: 10
+    10: 20
+    30: 45
+  request_timeout_seconds: 20
+  retry_attempts: 3
+  backoff_seconds:
+    - 5
+    - 15
+    - 30
+  min_success_ticker_ratio: 0.6
+  incomplete_bar_label: incomplete_current_bar
+  snapshot_dir: output/intraday_snapshots
+  latest_pointer_path: output/intraday_latest.json
+  status_path: output/intraday_refresh_status.json
+  lock_path: output/intraday_refresh.lock
+  shadow_database_path: output/shadow/strategy_shadow.db
+
+  # NYSE full-day closures (extend annually for prototype).
+  market_holidays:
+    - "2026-01-01"
+    - "2026-01-19"
+    - "2026-02-16"
+    - "2026-04-03"
+    - "2026-05-25"
+    - "2026-06-19"
+    - "2026-07-03"
+    - "2026-09-07"
+    - "2026-11-26"
+    - "2026-12-25"

@@ -1,0 +1,8 @@
+{
+  "strategy_id": "WQ_ALPHA_018",
+  "source_provenance": "D:\\Global_Ai\\risk_manager_platform\\output\\research\\worldquant_alpha2\\validation_v1\\current_listed_survivorship_biased\\next_open_to_close",
+  "canonical_summary": "data/research/canonical/WQ_ALPHA_018/summary.json",
+  "canonical_return_series": "data/research/canonical/WQ_ALPHA_018/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

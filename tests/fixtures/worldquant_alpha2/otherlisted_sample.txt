@@ -1,0 +1,13 @@
+ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|Test Issue|NASDAQ Symbol
+A|Agilent Technologies, Inc. Common Stock|N|A|N|100|N|A
+AAA|Alternative Access First Priority CLO Bond ETF|P|AAA|Y|100|N|AAA
+AAP|Advance Auto Parts Inc.|N|AAP|N|100|N|AAP
+QETA|Quetta Acquisition Corporation - Common Stock|N|QETA|N|100|N|QETA
+BIII|Black Spade Acquisition III Co Class A Ordinary Shares|N|BIII|N|100|N|BIII
+ABR-D|Arbor Realty Trust 6.375% Series D Cumulative Redeemable Preferred Stock|N|ABR-D|N|100|N|ABR-D
+ACHR-W|Archer Aviation Inc. Warrants|N|ACHR-W|N|100|N|ACHR-W
+ACR-PC|ACRES Commercial Realty Corp. 8.625% Fixed-to-Floating Series C Cumulative Redeemable Preferred Stock|N|ACR-PC|N|100|N|ACR-PC
+DUP|Duplicate Symbol Test Common Stock|N|DUP|N|100|N|DUP
+ZTO|ZTO Express (Cayman) Inc. American Depositary Shares, each representing one Class A ordinary share.|N|ZTO|N|100|N|ZTO
+ZTEST|BATS BZX Exchange Common Stock (test issue)|Z|ZTEST|N|100|Y|ZTEST
+File Creation Time: 0609202614:02|||||||

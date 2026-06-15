@@ -1,0 +1,26 @@
+# Provisional research thresholds for operating-period metric availability.
+# These are NOT universal institutional standards. They gate when annualized
+# or tail metrics may be shown as valid current portfolio risk estimates.
+
+policy_metadata:
+  policy_status: provisional_research_thresholds
+  owner: risk_manager_human_review
+  note: >
+    Operating-period metrics require minimum observations before display or
+    limit evaluation. Historical research metrics use separate full-backtest context.
+
+metric_availability:
+  annualized_volatility:
+    minimum_observations: 21
+  sharpe:
+    minimum_observations: 63
+  historical_var_99:
+    minimum_observations: 500
+  historical_es_95:
+    minimum_observations: 250
+  max_drawdown:
+    minimum_observations: 2
+  cumulative_return:
+    minimum_observations: 1
+  daily_return:
+    minimum_observations: 1

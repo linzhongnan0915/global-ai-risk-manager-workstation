@@ -1,0 +1,161 @@
+{
+  "version": "0.1.0",
+  "as_of_date": "2026-06-05",
+  "description": "Boss literature translated into deployable Risk Manager Platform modules.",
+  "modules": [
+    {
+      "module_id": "LIT_001",
+      "name": "WorldQuant Alpha Signal Lab",
+      "source_files": ["Paper - 101 Alphas - WorldQuant World Quant.pdf"],
+      "theme": "hedge_fund_alpha_signals",
+      "platform_area": "Backtesting & Research Lab",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "Formulaic alphas are explicit code-like signals, mostly built from price, volume, VWAP, ranks, delays, correlations, rolling statistics, and industry neutralization.",
+        "The paper distinguishes delay-0 and delay-1 signals, which is critical for no-look-ahead backtesting and execution timing.",
+        "The alphas have short holding periods, low average pairwise correlation, and require alpha portfolio construction rather than one-signal trading.",
+        "Turnover alone has weak explanatory power for alpha correlations, but turnover and volatility still matter for costs, capacity, and specific risk."
+      ],
+      "implementation_requirements": [
+        "Build a formulaic alpha operator library: rank, delay, delta, correlation, covariance, ts_rank, ts_min, ts_max, decay_linear, scale, signedpower, industry neutralization.",
+        "Create an alpha registry that records source, delay, input fields, holding horizon, turnover expectation, neutralization requirement, and data availability.",
+        "Backtest selected alphas with strict signal timestamping, transaction costs, turnover, capacity, and alpha correlation diagnostics.",
+        "Combine validated alphas into diversified alpha baskets rather than trading a single alpha."
+      ],
+      "dashboard_requirements": [
+        "Alpha Signal Lab table with alpha family, delay, required data, validation status, IC, turnover, net Sharpe, and correlation to active strategies.",
+        "Alpha correlation heatmap and turnover/cost panel.",
+        "No-look-ahead checklist for every formulaic signal."
+      ]
+    },
+    {
+      "module_id": "LIT_002",
+      "name": "Hedge Fund Replication Clone Strategy",
+      "source_files": ["Hedge Fund Replication - Can Hedge Fund Returns be Replicated.pdf"],
+      "theme": "hedge_fund_replication",
+      "platform_area": "Strategy Library & Workflow",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "Hedge fund returns can be decomposed into common risk factor premia and manager-specific alpha.",
+        "The paper uses six broad factors: USD, bonds, credit spread, S&P 500, commodities, and change in VIX.",
+        "Clone portfolios can be built with liquid instruments using fixed-weight or rolling-window regressions.",
+        "Rolling-window clones reduce look-ahead bias but introduce estimation error and higher rebalancing needs.",
+        "Replication works better for some styles such as Global Macro, Managed Futures, Long/Short Equity, and Fund of Funds than for illiquidity-heavy styles such as Event Driven and Emerging Markets."
+      ],
+      "implementation_requirements": [
+        "Create a hedge fund replication strategy that regresses target strategy or hedge fund style returns on liquid factor proxies.",
+        "Use ETF/futures proxies for SPY, bonds, USD, credit, commodities, and volatility change.",
+        "Support fixed-weight clone research for explanation only and rolling-window clone for deployable no-look-ahead testing.",
+        "Track beta premia contribution, residual alpha, R-squared, autocorrelation, and liquidity gap."
+      ],
+      "dashboard_requirements": [
+        "Replication panel showing factor betas, replicated return, residual return, R-squared, and rolling clone weights.",
+        "Clone vs target return distribution and drawdown comparison.",
+        "Warning flag when target strategy likely earns illiquidity premium that liquid clones cannot replicate."
+      ]
+    },
+    {
+      "module_id": "LIT_003",
+      "name": "JPM Regime-Aware Asset Allocation",
+      "source_files": ["Markov Regimes - JPM Regime-based investing.pdf"],
+      "theme": "macro_regime_allocation",
+      "platform_area": "Market & Macro Monitor",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "No single asset class dominates across all economic regimes.",
+        "Regime-based allocation should be aware of growth, inflation, monetary policy, and labor market slack.",
+        "Asset responses are state-dependent and non-linear, so simple linear relationships can miss regime effects.",
+        "Regime investing requires economic foresight, but the paper argues even imperfect directional foresight can add value.",
+        "The framework should adjust around strategic benchmarks rather than abandon benchmark discipline."
+      ],
+      "implementation_requirements": [
+        "Add a macro regime classifier using growth, inflation, policy, labor, volatility, credit, and liquidity proxies.",
+        "Create regime-specific asset class expected-return and risk assumptions.",
+        "Add allocation tilts around strategic weights, with constraints and human approval.",
+        "Model regime confidence and require a confidence threshold before changing allocations."
+      ],
+      "dashboard_requirements": [
+        "Current regime label, regime confidence, key supporting indicators, and previous regime.",
+        "Regime-specific preferred and avoided exposures.",
+        "Current vs regime-aware proposed allocation with risk and cost impact."
+      ]
+    },
+    {
+      "module_id": "LIT_004",
+      "name": "Markov Regime Switching Risk Engine",
+      "source_files": ["Markov Regimes - How Regimes Affect Asset Allocation - By Ang and Bekaert.pdf"],
+      "theme": "markov_regime_switching",
+      "platform_area": "Risk Factors & Exposure",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "International equity returns exhibit normal and high-volatility bear regimes.",
+        "High-volatility bear regimes tend to have lower expected returns and higher cross-asset correlations.",
+        "Markov transition probabilities allow regimes to be persistent but uncertain.",
+        "Regime-dependent asset allocation can shift portfolios toward lower-volatility assets or cash when bear/high-vol regimes are likely.",
+        "Practical implementation must account for transaction costs, constraints, tracking error, and higher-order moments."
+      ],
+      "implementation_requirements": [
+        "Prototype a two-state Markov regime model using equity returns, volatility, correlation, short rates, and drawdown proxies.",
+        "Output regime probabilities rather than hard labels only.",
+        "Use regime probabilities to adjust covariance, correlation, and risk-budget assumptions.",
+        "Add transaction costs and turnover controls to any regime-switching allocation."
+      ],
+      "dashboard_requirements": [
+        "Regime probability chart, transition probability summary, and high-vol correlation warning.",
+        "Normal-regime vs stress-regime covariance and correlation views.",
+        "Defensive allocation proposal when high-vol probability crosses review threshold."
+      ]
+    },
+    {
+      "module_id": "LIT_005",
+      "name": "Business Cycle Dynamic Allocation",
+      "source_files": ["Macro Regimes -Dynamic_Asset_Allocation_Through_the_Business_Cycle.pdf"],
+      "theme": "business_cycle_macro_allocation",
+      "platform_area": "Allocation & Rebalance",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "Valuation is more useful over long horizons, while macro cycle indicators are more useful over short and medium horizons.",
+        "The paper defines four macro regimes using level of growth versus trend and change in growth: recovery, expansion, slowdown, and contraction.",
+        "Leading indicators are preferred over lagged GDP or unemployment because they are more timely and less revised.",
+        "Risk assets tend to perform best when growth accelerates; government bonds tend to perform best in contraction.",
+        "Slowdown regimes often have unattractive risk-adjusted returns and call for neutral or cautious allocation."
+      ],
+      "implementation_requirements": [
+        "Build a business-cycle regime classifier based on leading indicators, market proxies, and growth acceleration/deceleration.",
+        "Map regimes to risk premia: equity, high yield, investment grade credit, duration, and cash.",
+        "Separate long-term valuation signals from medium-term macro regime signals.",
+        "Create regime fit scores for each strategy and allocation sleeve."
+      ],
+      "dashboard_requirements": [
+        "Business cycle clock: recovery, expansion, slowdown, contraction.",
+        "Strategy regime fit table with favorable, neutral, and unfavorable states.",
+        "Allocation recommendation reason code: macro regime tilt, risk reduction, or neutral stance."
+      ]
+    },
+    {
+      "module_id": "LIT_006",
+      "name": "QuantFin Implementation Stack",
+      "source_files": ["GlobalAi26- DOC- QuantFin_RiskManagement (1).docx"],
+      "theme": "implementation_resources",
+      "platform_area": "Platform Architecture",
+      "status": "intake_complete_design_pending",
+      "key_takeaways": [
+        "Boss document points to Qlib, NautilusTrader, TradingAgents, Kronos, volatility surface modeling, crypto arbitrage, and prediction-market tooling.",
+        "For this platform, Qlib is the best near-term research/backtest engine candidate; NautilusTrader is more relevant later for event-driven execution architecture.",
+        "AI agents and LLM tools should support research, monitoring, and explanation, not authorize trades.",
+        "Volatility surface and crypto/Polymarket arbitrage ideas should remain research modules until data, execution, and risk controls are clearly specified."
+      ],
+      "implementation_requirements": [
+        "Keep the current platform as a risk-manager workstation, not an execution system.",
+        "Use Qlib-style experiment management for alpha and backtest research where appropriate.",
+        "Define future adapters for NautilusTrader only after strategy specs and execution assumptions exist.",
+        "Treat AI agent outputs as human-review research notes with source, timestamp, and confidence."
+      ],
+      "dashboard_requirements": [
+        "Research source tracker for boss-provided tools and papers.",
+        "Implementation status by module: intake, prototype, backtest, WFO, live monitor, approved.",
+        "Human-review and data-lineage flags for AI-generated research outputs."
+      ]
+    }
+  ]
+}

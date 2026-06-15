@@ -1,0 +1,175 @@
+{
+  "version": "0.1.0",
+  "purpose": "Machine-readable UI contract for the institutional multi-strategy risk workstation.",
+  "visual_language": {
+    "product_type": "hedge_fund_asset_manager_risk_workstation",
+    "theme": "dark_professional_institutional",
+    "inspired_by": ["Bloomberg", "BlackRock", "Bridgewater"],
+    "density": "high_information_density_with_clear_grouping",
+    "typography": "compact_terminal_financial_workstation",
+    "component_style": "sharp_compact_low_radius_dense_tables_thin_borders",
+    "risk_colors": {
+      "ok": "green",
+      "watch": "yellow",
+      "warning": "orange",
+      "breach": "red"
+    },
+    "forbidden_patterns": [
+      "marketing_page",
+      "retail_investing_app",
+      "single_strategy_dashboard",
+      "landing_page_hero",
+      "large_empty_cards",
+      "large_rounded_marketing_panels",
+      "decorative_gradients",
+      "fake_risk_score_without_limit_explanation",
+      "static_table_without_strategy_drilldown"
+    ]
+  },
+  "shell": {
+    "top_header": ["platform_name", "as_of_date", "initial_capital", "strategy_count", "regime", "data_status"],
+    "primary_tabs": [
+      "Portfolio Command Center",
+      "Strategy Monitor",
+      "Allocation & Rebalance",
+      "Risk Factors & Exposure",
+      "Correlation & Diversification",
+      "Market & Macro Monitor",
+      "Backtesting & Research Lab",
+      "Strategy Library & Workflow",
+      "Daily Risk Report / Decision Log"
+    ],
+    "secondary_navigation": "module_specific_only",
+    "detail_drawer": "strategy_selection_updates_right_panel"
+  },
+  "modules": {
+    "Portfolio Command Center": {
+      "required_components": [
+        "compact_kpi_strip",
+        "kpi_sparklines",
+        "allocation_table",
+        "allocation_visual",
+        "top_contributors_detractors",
+        "portfolio_pnl_drawdown_chart",
+        "strategy_performance_table",
+        "rebalance_recommendation",
+        "factor_exposure_heatmap",
+        "human_review_alerts",
+        "transaction_cost_net_benefit_approval_status"
+      ],
+      "required_data": ["risk_summary", "portfolio_series", "allocation", "strategies", "risk_limits", "recommendations"]
+    },
+    "Strategy Monitor": {
+      "required_components": ["dense_strategy_table", "strategy_filter_bar", "risk_badges", "strategy_detail_drawer"],
+      "required_row_fields": [
+        "strategy_id",
+        "name",
+        "strategy_type",
+        "current_weight",
+        "proposed_weight",
+        "daily_pnl",
+        "mtd_pnl",
+        "ytd_pnl",
+        "daily_return",
+        "sharpe",
+        "rolling_sharpe",
+        "volatility",
+        "max_drawdown",
+        "current_drawdown",
+        "win_rate",
+        "turnover",
+        "transaction_cost_drag",
+        "signal_status",
+        "regime_fit",
+        "factor_exposure_summary",
+        "correlation_warning",
+        "risk_status",
+        "recommended_action"
+      ],
+      "required_detail_sections": [
+        "performance_chart",
+        "drawdown_chart",
+        "signal_history",
+        "position_history",
+        "backtest_summary",
+        "walk_forward_results",
+        "factor_exposure",
+        "current_risk_explanation",
+        "failure_modes",
+        "human_review_note"
+      ]
+    },
+    "Allocation & Rebalance": {
+      "required_components": ["allocation_decision_table", "risk_before_after_panel", "rebalance_trade_list", "optimizer_constraints", "approval_decision_center"],
+      "required_data": [
+        "current_weights",
+        "proposed_weights",
+        "weight_changes",
+        "buy_sell_direction",
+        "dollar_amount",
+        "estimated_transaction_cost",
+        "risk_before_after",
+        "factor_concentration_before_after",
+        "correlation_before_after",
+        "human_approval_status"
+      ]
+    },
+    "Risk Factors & Exposure": {
+      "required_components": ["portfolio_factor_exposure", "strategy_factor_heatmap", "factor_risk_contribution", "factor_return_contribution", "scenario_shock_table", "risk_limit_breaches"],
+      "required_data": ["factor_exposure", "risk_limits", "strategies", "market_monitor"]
+    },
+    "Correlation & Diversification": {
+      "required_components": ["strategy_correlation_matrix", "duplicate_exposure_alerts", "effective_strategy_count", "diversification_summary"],
+      "required_data": ["correlation", "strategies", "allocation"]
+    },
+    "Market & Macro Monitor": {
+      "required_components": ["market_snapshot", "macro_regime_panel", "cross_asset_risk_indicators", "news_event_risk"],
+      "required_data": ["market_monitor", "news_risk"]
+    },
+    "Backtesting & Research Lab": {
+      "required_components": ["selected_strategy_picker", "gross_vs_net_chart", "equity_curve", "drawdown_chart", "rolling_sharpe", "return_distribution", "walk_forward_table", "bias_checklist", "data_quality_panel", "regime_performance_matrix", "approval_workflow"],
+      "required_data": ["literature_strategy_backtests", "strategies", "data_quality"]
+    },
+    "Strategy Library & Workflow": {
+      "required_components": ["strategy_registry", "research_pipeline_status", "evidence_status", "approval_status", "future_strategy_slots"],
+      "required_data": ["strategies", "literature_modules"]
+    },
+    "Daily Risk Report / Decision Log": {
+      "required_components": ["daily_risk_memo", "open_alerts", "limit_breach_table", "data_quality_warning_table", "strategy_alerts", "rebalance_recommendation", "decision_timeline", "export_controls"],
+      "required_data": ["daily_decision_log", "risk_limits", "data_quality", "recommendations"]
+    }
+  },
+  "interaction_requirements": [
+    "tab_switching",
+    "strategy_row_selection",
+    "selected_strategy_detail_drawer_update",
+    "sortable_filterable_dense_tables",
+    "risk_badge_threshold_display",
+    "recommendation_display",
+    "approve_reject_modify_buttons",
+    "dashboard_artifact_json_driven_rendering",
+    "rebalance_simulation_api_for_custom_weights",
+    "future_api_refresh"
+  ],
+  "data_alignment_policy": {
+    "method": "inner_join_on_calendar_dates",
+    "applies_to": [
+      "portfolio_series",
+      "portfolio_risk_summary",
+      "correlation_matrix",
+      "rebalance_simulation"
+    ],
+    "note": "Portfolio analytics share one common dated window. Strategy drilldown pages may retain full history."
+  },
+  "cash_policy": {
+    "mode": "residual_cash_explicit",
+    "underinvestment": "allowed_with_cash_sleeve_review",
+    "overinvestment": "blocked_without_crash",
+    "crash_on_underinvestment": false
+  },
+  "simulation_policy": {
+    "official_optimizer_source": "python_rebalance_simulation_embedded_in_artifact",
+    "custom_weights_source": "POST /api/simulate on run_workstation_server.py",
+    "approval_requires_valid_simulation": true
+  }
+}

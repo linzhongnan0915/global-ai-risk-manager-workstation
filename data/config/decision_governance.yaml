@@ -1,0 +1,40 @@
+governance_model:
+  name: institutional_independent_risk_review
+  status: prototype_governance_workflow
+  auto_execution_allowed: false
+
+segregation_of_duties:
+  proposal_owner: Portfolio Manager / Portfolio Construction
+  independent_reviewer: Independent Risk Manager
+  decision_authority: Authorized Human Approver
+  execution_owner: Trading / Operations
+  post_trade_monitor: Risk Manager / Operations
+
+decision_outcomes:
+  - Approve
+  - Approve with Conditions
+  - Reject
+  - Escalate
+
+mandatory_review_questions:
+  - Does the proposal solve the original risk problem?
+  - Does the proposal introduce a new concentration or tail risk?
+  - Are assumptions, data quality, and evidence credible?
+  - Is expected risk improvement material relative to uncertainty and cost?
+  - Are liquidity, capacity, turnover, and transaction cost acceptable?
+  - Are any warning or breached strategies receiving additional capital?
+
+override_policy:
+  permitted: true
+  requires_reason: true
+  requires_named_approver: true
+  requires_expiry_date: true
+  requires_post_decision_review: true
+
+monitoring:
+  checkpoints:
+    - T+1
+    - 21 trading days
+    - 63 trading days
+  expectation_vs_realized_required: true
+  invalidation_review_required: true

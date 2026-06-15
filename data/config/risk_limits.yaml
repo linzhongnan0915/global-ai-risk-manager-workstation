@@ -1,0 +1,85 @@
+policy_metadata:
+  policy_status: provisional_research_limits
+  owner: risk_manager_human_review
+  effective_date: "2026-06-05"
+  review_frequency: monthly_or_after_material_breach
+  calibration_note: Prototype thresholds for ETF proxy research. Final limits require mandate, liquidity, leverage, and boss approval.
+
+portfolio_limits:
+  max_annualized_volatility: 0.12
+  max_drawdown: -0.12
+  max_var_99_1d: 0.025
+  max_expected_shortfall_95_1d: 0.035
+  max_single_strategy_weight: 0.15
+  max_single_strategy_risk_contribution: 0.18
+  max_pairwise_strategy_correlation: 0.75
+  max_factor_concentration: 0.35
+  max_turnover_per_rebalance: 0.15
+  max_transaction_cost_budget_bps_per_rebalance: 8
+  min_effective_strategy_count: 12
+  max_unallocated_residual_cash_weight: 0.05
+
+strategy_limits:
+  max_weight_default: 0.15
+  min_active_weight_default: 0.005
+  max_current_drawdown: -0.12
+  max_rolling_volatility: 0.20
+  min_current_rolling_sharpe: -0.50
+
+research_quality_limits:
+  max_historical_drawdown: -0.45
+  min_full_history_sharpe: 0.00
+  max_annualized_turnover: 24.0
+  max_turnover_monthly: 0.80
+  max_transaction_cost_drag_annualized: 0.015
+  min_walk_forward_windows: 3
+  min_positive_oos_window_rate: 0.45
+  min_average_oos_sharpe: 0.00
+
+factor_limits:
+  equity_beta: 0.15
+  credit_spread: 0.10
+  rates_duration: 0.12
+  usd_fx: 0.10
+  commodity_beta: 0.10
+  volatility: 0.08
+  short_vol: 0.04
+  emerging_market: 0.08
+  max_factor_herfindahl: 0.35
+  max_factor_change_per_rebalance: 0.05
+  cash_review_threshold: 0.60
+
+scenario_limits:
+  Equity -5%: -0.0125
+  Rates +50 bps: -0.0075
+  Credit spread widening: -0.0100
+  USD +3%: -0.0075
+  Volatility spike: -0.0125
+  Oil / commodity +10%: -0.0075
+
+correlation_limits:
+  watch_pairwise_abs_correlation: 0.45
+  warning_pairwise_abs_correlation: 0.60
+  breach_pairwise_abs_correlation: 0.75
+  max_duplicate_exposure_pairs: 0
+
+rebalance_limits:
+  max_turnover: 0.15
+  max_transaction_cost_dollars: 800
+  max_transaction_cost_bps: 8
+  max_single_weight_change: 0.03
+  require_human_approval: true
+
+evidence_limits:
+  require_backtest_evidence: true
+  require_walk_forward_complete: true
+  require_transaction_cost_included: true
+  require_lookahead_bias_check: true
+  require_failure_modes: true
+
+actions:
+  normal: Keep
+  watch: Watch
+  warning: Reduce or Hedge
+  breach: Pause or Rebalance
+  missing_evidence: Research Hold

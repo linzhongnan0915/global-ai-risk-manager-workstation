@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "as_of_date": "2026-06-05",
+  "description": "Data requirements collected from boss literature before strategy implementation.",
+  "requirements": [
+    {
+      "module": "WorldQuant Alpha Signal Lab",
+      "required_fields": ["open", "high", "low", "close", "volume", "vwap", "returns", "adv20", "market_cap", "industry_classification"],
+      "minimum_history": "3-5 years for prototype; longer preferred",
+      "frequency": "daily first; intraday only after timing/execution controls are specified",
+      "current_fallback": "yfinance can supply OHLCV and adjusted close; VWAP, market cap history, and point-in-time industry classification remain pending",
+      "blocking_gaps": ["point-in-time industry classification", "VWAP or reliable approximation", "survivorship-bias-free equity universe"]
+    },
+    {
+      "module": "Hedge Fund Replication Clone Strategy",
+      "required_fields": ["target_strategy_returns", "SPY", "bond_proxy", "USD_proxy", "credit_proxy", "commodity_proxy", "VIX_change"],
+      "minimum_history": "24-month rolling windows minimum; 10+ years preferred",
+      "frequency": "monthly for paper replication; daily can be used for ETF proxy prototype with disclosure",
+      "current_fallback": "SPY, IEF/TLT, UUP, LQD/HYG, DBC/GLD/USO, and VIX from yfinance",
+      "blocking_gaps": ["actual hedge fund or target strategy return series", "formal factor proxy selection", "borrowing/leverage assumptions"]
+    },
+    {
+      "module": "Business Cycle / Macro Regime Allocation",
+      "required_fields": ["growth_leading_indicators", "inflation_proxy", "policy_rate_proxy", "yield_curve", "credit_spreads", "labor_slack_proxy", "equity_returns", "duration_returns"],
+      "minimum_history": "10+ years preferred; 1970s history for research if macro data is available",
+      "frequency": "monthly regime classification, daily market monitoring",
+      "current_fallback": "ETF market proxies from yfinance plus simple market-regime heuristics",
+      "blocking_gaps": ["real-time leading indicators", "release-date macro data", "revision-aware macro history"]
+    },
+    {
+      "module": "Markov Regime Switching Risk Engine",
+      "required_fields": ["equity_returns", "volatility_index", "short_rate_or_cash_proxy", "bond_returns", "rolling_correlations"],
+      "minimum_history": "10+ years preferred",
+      "frequency": "daily prototype, monthly academic-style model later",
+      "current_fallback": "SPY, VIX, BIL, IEF/TLT from yfinance",
+      "blocking_gaps": ["estimated transition model", "regime probability calibration", "transaction-cost-aware regime switching backtest"]
+    }
+  ]
+}

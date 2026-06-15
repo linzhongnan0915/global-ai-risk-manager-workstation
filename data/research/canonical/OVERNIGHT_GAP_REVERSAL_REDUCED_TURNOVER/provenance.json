@@ -1,0 +1,8 @@
+{
+  "strategy_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+  "source_provenance": "D:\\Global_Ai\\Risk_Manager_Platform_Workspace\\30_ui_phase1\\output\\research\\final_expanded_selection_v1",
+  "canonical_summary": "data/research/canonical/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER/summary.json",
+  "canonical_return_series": "data/research/canonical/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

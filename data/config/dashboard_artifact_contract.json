@@ -1,0 +1,160 @@
+{
+  "version": "0.2.0",
+  "purpose": "Canonical JSON contract consumed by the Risk Manager Platform dashboard.",
+  "top_level_sections": [
+    "metadata",
+    "data_quality",
+    "portfolio",
+    "risk_limits",
+    "strategies",
+    "factors",
+    "correlation",
+    "allocation",
+    "market_macro",
+    "news_event_risk",
+    "backtesting_research",
+    "decision_log",
+    "decision_review",
+    "decision_workflow",
+    "rebalance_simulation"
+  ],
+  "metadata": {
+    "as_of_date": "YYYY-MM-DD",
+    "start_date": "2026-06-04",
+    "initial_capital": 1000000,
+    "strategy_count": "number",
+    "data_mode": "yfinance | openbb | boss_api | mixed | sample",
+    "refresh_timestamp": "ISO-8601"
+  },
+  "portfolio": {
+    "required_metrics": [
+      "aum",
+      "daily_pnl",
+      "cumulative_pnl",
+      "daily_return",
+      "cumulative_return",
+      "sharpe",
+      "volatility",
+      "var_99",
+      "expected_shortfall_95",
+      "max_drawdown",
+      "current_drawdown",
+      "gross_exposure",
+      "net_exposure",
+      "turnover",
+      "transaction_cost"
+    ],
+    "required_series": [
+      "dates",
+      "returns",
+      "cumulative_return",
+      "drawdown"
+    ]
+  },
+  "risk_limits": {
+    "status_levels": ["ok", "watch", "warning", "breach"],
+    "required_fields": [
+      "limit_id",
+      "scope",
+      "metric",
+      "current_value",
+      "watch_threshold",
+      "warning_threshold",
+      "breach_threshold",
+      "utilization",
+      "status",
+      "action",
+      "explanation"
+    ]
+  },
+  "strategy": {
+    "required_fields": [
+      "strategy_id",
+      "name",
+      "strategy_type",
+      "status",
+      "current_weight",
+      "proposed_weight",
+      "daily_pnl",
+      "cumulative_pnl",
+      "daily_return",
+      "sharpe",
+      "volatility",
+      "max_drawdown",
+      "current_drawdown",
+      "signal_state",
+      "risk_status",
+      "recommended_action",
+      "human_approval_required",
+      "evidence_status",
+      "data_quality_status"
+    ],
+    "drilldown_sections": [
+      "summary_statistics",
+      "distribution_shape",
+      "tail_risk",
+      "drawdown_behavior",
+      "time_stability",
+      "regime_breakdown",
+      "benchmark_comparison",
+      "factor_exposure",
+      "position_history",
+      "signal_history",
+      "transaction_cost",
+      "failure_modes",
+      "decision_packet"
+    ]
+  },
+  "backtest_evidence": {
+    "required_fields": [
+      "start_date",
+      "end_date",
+      "years",
+      "in_sample_start",
+      "in_sample_end",
+      "out_of_sample_start",
+      "out_of_sample_end",
+      "walk_forward_window_train_days",
+      "walk_forward_window_test_days",
+      "number_of_windows",
+      "positive_oos_window_rate",
+      "average_oos_sharpe",
+      "lookahead_bias_check",
+      "survivorship_bias_note",
+      "transaction_cost_included",
+      "data_source"
+    ]
+  },
+  "allocation": {
+    "required_fields": [
+      "current_weights",
+      "proposed_weights",
+      "weight_changes",
+      "estimated_transaction_cost",
+      "risk_before",
+      "risk_after",
+      "turnover",
+      "optimizer_constraints",
+      "recommendation",
+      "human_approval_required"
+    ]
+  },
+  "rebalance_simulation": {
+    "required_fields": [
+      "strategy_return_keys",
+      "return_observations",
+      "annualization_days",
+      "transaction_cost_bps",
+      "official_optimizer",
+      "current_baseline"
+    ],
+    "official_optimizer_fields": [
+      "metrics_before",
+      "metrics_after",
+      "turnover",
+      "estimated_transaction_cost",
+      "checks",
+      "limitations"
+    ]
+  }
+}

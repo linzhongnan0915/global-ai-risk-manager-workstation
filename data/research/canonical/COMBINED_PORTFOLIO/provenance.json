@@ -1,0 +1,27 @@
+{
+  "strategy_id": "COMBINED_PORTFOLIO",
+  "source_provenance": "D:\\Global_Ai\\Risk_Manager_Platform_Workspace\\30_ui_phase1\\data\\research\\canonical\\COMBINED_PORTFOLIO\\member_equal_weight_research_composite",
+  "canonical_summary": "data/research/canonical/COMBINED_PORTFOLIO/summary.json",
+  "canonical_return_series": "data/research/canonical/COMBINED_PORTFOLIO/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false,
+  "member_internal_ids": [
+    "C3A1_002",
+    "C3A1_003",
+    "C3A1_013",
+    "C3A2_008",
+    "C3A1_001",
+    "C3A1_015",
+    "FUNDAMENTAL_MOMENTUM",
+    "EARNINGS_QUALITY",
+    "MARGIN_IMPROVEMENT",
+    "OVERNIGHT_INTRADAY_ENSEMBLE",
+    "FILING_SHOCK_CONTINUATION",
+    "FUNDAMENTAL_SHOCK_RECOVERY",
+    "CASH_FLOW_GROWTH_QUALITY",
+    "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+    "LIQUIDITY_ADJUSTED_MOMENTUM",
+    "POST_FILING_CASH_FLOW_SURPRISE"
+  ],
+  "aligned_observations": 2119
+}

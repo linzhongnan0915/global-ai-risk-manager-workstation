@@ -1,0 +1,36 @@
+name: Refresh market data
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Render refresh API
+        env:
+          REFRESH_API_URL: ${{ secrets.REFRESH_API_URL }}
+          REFRESH_API_TOKEN: ${{ secrets.REFRESH_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${REFRESH_API_URL}" ] || [ -z "${REFRESH_API_TOKEN}" ]; then
+            echo "REFRESH_API_URL and REFRESH_API_TOKEN secrets are required." >&2
+            exit 1
+          fi
+          http_code=$(curl -sS -o /tmp/refresh_response.json -w "%{http_code}" \
+            -X POST "${REFRESH_API_URL}" \
+            -H "Authorization: Bearer ${REFRESH_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"interval_minutes":10}')
+          echo "HTTP ${http_code}"
+          cat /tmp/refresh_response.json
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            exit 1
+          fi

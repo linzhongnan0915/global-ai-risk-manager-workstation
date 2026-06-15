@@ -1,0 +1,8 @@
+{
+  "strategy_id": "LIQUIDITY_ADJUSTED_MOMENTUM",
+  "source_provenance": "D:\\Global_Ai\\Risk_Manager_Platform_Workspace\\30_ui_phase1\\output\\research\\final_ohlcv_alpha_expansion_v1",
+  "canonical_summary": "data/research/canonical/LIQUIDITY_ADJUSTED_MOMENTUM/summary.json",
+  "canonical_return_series": "data/research/canonical/LIQUIDITY_ADJUSTED_MOMENTUM/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

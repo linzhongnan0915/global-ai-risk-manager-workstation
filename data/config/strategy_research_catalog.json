@@ -1,0 +1,283 @@
+{
+  "version": "0.1.0",
+  "as_of_date": "2026-06-05",
+  "purpose": "Strategy universe derived from boss literature before final dashboard UI polish.",
+  "strategy_families": [
+    {
+      "family_id": "FAM_001",
+      "name": "Formulaic Alpha Baskets",
+      "source": "WorldQuant 101 Alphas",
+      "institutional_role": "Alpha research sleeve",
+      "candidate_strategies": [
+        {
+          "strategy_id": "PROTO_WQ_ALPHA_ETF",
+          "name": "WorldQuant-Inspired ETF Alpha Basket",
+          "current_status": "prototype_running",
+          "etf_universe": ["SPY", "QQQ", "IWM", "QUAL", "VLUE", "MTUM", "USMV"],
+          "signal": "Ranked blend of short-horizon momentum and reversal proxies",
+          "rebalance": "weekly prototype; paper-style alphas can be daily or faster",
+          "data_readiness": "partial",
+          "missing_data": ["point-in-time equity universe", "VWAP", "industry classification", "survivorship-bias controls"],
+          "risk_manager_use": "Research only until operator library and point-in-time data are complete"
+        },
+        {
+          "strategy_id": "CAND_WQ_STYLE_ROTATION",
+          "name": "Quality Value Momentum Rotation",
+          "current_status": "candidate",
+          "etf_universe": ["QUAL", "VLUE", "MTUM", "USMV", "SPY"],
+          "signal": "Style factor ranking, trend, reversal, and volatility filter",
+          "rebalance": "weekly or monthly",
+          "data_readiness": "high",
+          "missing_data": ["formal alpha selection and WFO"],
+          "risk_manager_use": "ETF-coverable strategy candidate"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_002",
+      "name": "Hedge Fund Replication",
+      "source": "Hasanhodzic and Lo hedge fund replication",
+      "institutional_role": "Transparent liquid alternative beta",
+      "candidate_strategies": [
+        {
+          "strategy_id": "PROTO_HF_REPLICATION",
+          "name": "Liquid Alternative Factor Premia Clone",
+          "current_status": "prototype_running",
+          "etf_universe": ["SPY", "IEF", "HYG", "UUP", "DBC", "GLD", "VIX"],
+          "signal": "Liquid factor premia basket with volatility stress tilt",
+          "rebalance": "monthly",
+          "data_readiness": "high",
+          "missing_data": ["target hedge fund return series for true clone validation"],
+          "risk_manager_use": "Runnable ETF-coverable clone proxy"
+        },
+        {
+          "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+          "name": "Credit Carry With Stress Gate",
+          "current_status": "candidate",
+          "etf_universe": ["HYG", "LQD", "IEF", "BIL"],
+          "signal": "Carry exposure only when credit and volatility regimes are supportive",
+          "rebalance": "weekly or monthly",
+          "data_readiness": "high",
+          "missing_data": ["credit spread proxy calibration"],
+          "risk_manager_use": "Useful for hedge fund carry/credit beta sleeve"
+        },
+        {
+          "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+          "name": "Convertible Arbitrage Proxy",
+          "current_status": "candidate",
+          "etf_universe": ["CWB", "HYG", "IEF", "SPY"],
+          "signal": "Convertible return decomposition into equity, credit, and rates proxies",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["convertible-specific optionality and liquidity proxies"],
+          "risk_manager_use": "ETF proxy for a hedge fund style that may be partially replicable"
+        },
+        {
+          "strategy_id": "CAND_MERGER_ARB_PROXY",
+          "name": "Merger Arbitrage Proxy",
+          "current_status": "candidate",
+          "etf_universe": ["MNA", "BIL", "SPY"],
+          "signal": "Merger arbitrage ETF spread proxy with beta and event-risk monitor",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["deal-level data", "event calendar", "deal break flags"],
+          "risk_manager_use": "Replication candidate with explicit warning that event alpha may not replicate"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_003",
+      "name": "Macro And Business-Cycle Regime Allocation",
+      "source": "JPM regime investing and business-cycle dynamic allocation",
+      "institutional_role": "Regime-aware allocation and risk explanation",
+      "candidate_strategies": [
+        {
+          "strategy_id": "PROTO_BUSINESS_CYCLE",
+          "name": "Business-Cycle Regime Allocation",
+          "current_status": "prototype_running",
+          "etf_universe": ["SPY", "HYG", "IEF", "BIL", "DBC", "UUP"],
+          "signal": "Growth and inflation proxy phase map",
+          "rebalance": "monthly",
+          "data_readiness": "medium",
+          "missing_data": ["release-date macro data", "leading indicators", "revision-aware history"],
+          "risk_manager_use": "Regime explanation and allocation tilt candidate"
+        },
+        {
+          "strategy_id": "CAND_RATES_DURATION_REGIME",
+          "name": "Rates Duration Regime",
+          "current_status": "candidate",
+          "etf_universe": ["SHY", "IEF", "TLT", "TIP", "BIL"],
+          "signal": "Duration tilt based on growth, inflation, and risk-off regime",
+          "rebalance": "weekly or monthly",
+          "data_readiness": "high",
+          "missing_data": ["yield curve and inflation proxy calibration"],
+          "risk_manager_use": "Rates sleeve for contraction and slowdown risk management"
+        },
+        {
+          "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+          "name": "Commodity Inflation Shock Sleeve",
+          "current_status": "candidate",
+          "etf_universe": ["DBC", "USO", "GLD", "UUP", "BIL"],
+          "signal": "Commodity and USD inflation shock proxy",
+          "rebalance": "weekly",
+          "data_readiness": "high",
+          "missing_data": ["roll yield and futures curve data"],
+          "risk_manager_use": "Inflation and supply-shock risk sleeve"
+        },
+        {
+          "strategy_id": "CAND_USD_MACRO_PRESSURE",
+          "name": "USD Macro Pressure Sleeve",
+          "current_status": "candidate",
+          "etf_universe": ["UUP", "GLD", "BIL"],
+          "signal": "USD trend and risk-off pressure",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["broader FX ETF coverage or futures data"],
+          "risk_manager_use": "Macro stress and liquidity pressure monitor"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_004",
+      "name": "Markov / High-Volatility Defensive Regimes",
+      "source": "Ang and Bekaert Markov regimes",
+      "institutional_role": "Defensive switching and stress covariance logic",
+      "candidate_strategies": [
+        {
+          "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+          "name": "High-Volatility Regime Defensive Switch",
+          "current_status": "prototype_running",
+          "etf_universe": ["SPY", "USMV", "IEF", "BIL", "HYG"],
+          "signal": "High-volatility stress probability from realized vol, VIX, and drawdown",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["formal transition probability calibration"],
+          "risk_manager_use": "Defensive allocation and correlation stress candidate"
+        },
+        {
+          "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+          "name": "Tail Hedge Crisis Sleeve",
+          "current_status": "candidate",
+          "etf_universe": ["VIX", "TLT", "GLD", "BIL"],
+          "signal": "Activate when high-vol regime probability and drawdown stress rise",
+          "rebalance": "event-driven",
+          "data_readiness": "medium",
+          "missing_data": ["options or vol product assumptions"],
+          "risk_manager_use": "Hedge candidate, not return-seeking allocation"
+        },
+        {
+          "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+          "name": "Risk Parity ETF Overlay",
+          "current_status": "candidate",
+          "etf_universe": ["SPY", "TLT", "GLD", "DBC", "BIL"],
+          "signal": "Volatility-scaled cross-asset allocation with stress de-risking",
+          "rebalance": "monthly",
+          "data_readiness": "high",
+          "missing_data": ["formal risk budget and leverage assumptions"],
+          "risk_manager_use": "Portfolio stabilizer and benchmark comparison sleeve"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_005",
+      "name": "Managed Futures And Trend Replication",
+      "source": "Hedge fund replication and managed futures category",
+      "institutional_role": "Diversifying trend-following sleeve",
+      "candidate_strategies": [
+        {
+          "strategy_id": "PROTO_MANAGED_FUTURES",
+          "name": "Managed Futures Trend Proxy",
+          "current_status": "prototype_running",
+          "etf_universe": ["SPY", "TLT", "DBC", "UUP", "GLD", "DBMF"],
+          "signal": "Cross-asset medium-term trend with cash fallback",
+          "rebalance": "weekly",
+          "data_readiness": "high",
+          "missing_data": ["futures-level trend universe and roll assumptions"],
+          "risk_manager_use": "ETF-coverable trend sleeve, currently requires drawdown review"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_006",
+      "name": "Relative Value, Arbitrage, And Event-Risk Proxies",
+      "source": "Hedge fund replication limitations and ETF-coverable hedge fund styles",
+      "institutional_role": "Diversifying sleeves that require strict cost, liquidity, and event-risk controls",
+      "candidate_strategies": [
+        {
+          "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+          "name": "Index Arbitrage Proxy",
+          "current_status": "candidate",
+          "etf_universe": ["SPY", "IVV", "VOO", "BIL"],
+          "signal": "ETF basis, liquidity, and tracking-difference proxy",
+          "rebalance": "daily research only",
+          "data_readiness": "medium",
+          "missing_data": ["intraday prices", "bid-ask spreads", "creation-redemption data"],
+          "risk_manager_use": "Low-edge strategy candidate, useful mainly for cost discipline and execution-risk demonstration"
+        },
+        {
+          "strategy_id": "CAND_TREASURY_BASIS_PROXY",
+          "name": "Treasury Basis / Curve Relative Value Proxy",
+          "current_status": "candidate",
+          "etf_universe": ["SHY", "IEF", "TLT", "BIL"],
+          "signal": "Treasury curve relative value using short, intermediate, and long duration ETFs",
+          "rebalance": "weekly",
+          "data_readiness": "high",
+          "missing_data": ["futures basis", "repo/funding stress", "curve carry and roll-down"],
+          "risk_manager_use": "Rates RV proxy with explicit funding-stress limitation"
+        },
+        {
+          "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+          "name": "Event-Driven Sector Risk Proxy",
+          "current_status": "candidate",
+          "etf_universe": ["XLF", "XLI", "MNA", "BIL"],
+          "signal": "Sector/event risk sleeve with merger-arb and cash buffer",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["event calendar", "deal-level data", "news classification"],
+          "risk_manager_use": "Event-driven placeholder until news/event API is available"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_007",
+      "name": "Global, Style, And Volatility Overlay Sleeves",
+      "source": "Business-cycle allocation, regime investing, and hedge fund style replication",
+      "institutional_role": "Additional sleeves for scaling from 20 strategies toward 30-40 strategies",
+      "candidate_strategies": [
+        {
+          "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+          "name": "Global Value Rotation",
+          "current_status": "candidate",
+          "etf_universe": ["IVE", "IVW", "EFA", "EEM", "BIL"],
+          "signal": "Regional and style rotation using value/growth, developed, and emerging market proxies",
+          "rebalance": "monthly",
+          "data_readiness": "medium",
+          "missing_data": ["valuation data", "regional macro indicators", "FX hedging assumptions"],
+          "risk_manager_use": "Global equity style sleeve with macro and FX risk controls"
+        },
+        {
+          "strategy_id": "CAND_EM_MACRO_RISK",
+          "name": "Emerging Markets Macro Risk Sleeve",
+          "current_status": "candidate",
+          "etf_universe": ["EEM", "EMB", "UUP", "GLD", "BIL"],
+          "signal": "EM risk appetite filtered by USD strength, credit stress, and commodity/risk-off proxies",
+          "rebalance": "weekly",
+          "data_readiness": "medium",
+          "missing_data": ["EM country data", "local rates", "country-specific political risk"],
+          "risk_manager_use": "Higher-risk macro sleeve, useful only with strict drawdown and USD stress limits"
+        },
+        {
+          "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+          "name": "Volatility Carry With Crash Filter",
+          "current_status": "candidate",
+          "etf_universe": ["VIX", "BIL", "SPY", "USMV"],
+          "signal": "Volatility carry proxy active only when VIX and realized-volatility stress filters are supportive",
+          "rebalance": "daily or weekly research",
+          "data_readiness": "low",
+          "missing_data": ["vol futures curve", "options surface", "borrow and product decay assumptions"],
+          "risk_manager_use": "Tail-sensitive candidate, likely small allocation or research-only until vol data is robust"
+        }
+      ]
+    }
+  ]
+}

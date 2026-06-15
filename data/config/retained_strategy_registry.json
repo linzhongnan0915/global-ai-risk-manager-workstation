@@ -1,0 +1,49 @@
+{
+  "strategies": [
+    {
+      "strategy_id": "C2A2_020",
+      "name": "Cross-Sectional Liquidity Resilience",
+      "status": "RESEARCH_COMPOSITE_MEMBER",
+      "allocation_eligible": false,
+      "strategy_21_allocation": 0.5,
+      "net_return": 0.8294391871692128,
+      "sharpe": 0.6801621545572085,
+      "max_drawdown": -0.1376483048492374,
+      "turnover": 0.061966511511801436,
+      "ic": 0.01865825315962457,
+      "decile_spread": 0.0012514355605691223,
+      "status_reason": "Retained research-composite member; not allocation approved.",
+      "latest_data_date": "2026-06-09"
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "name": "Realized-Skewness Cross-Section",
+      "status": "RESEARCH_COMPOSITE_MEMBER",
+      "allocation_eligible": false,
+      "strategy_21_allocation": 0.5,
+      "net_return": 0.4493311287682322,
+      "sharpe": 0.7177885595455975,
+      "max_drawdown": -0.1351057749997444,
+      "turnover": 0.042227033178526795,
+      "ic": 0.0027262978259030915,
+      "decile_spread": 0.0010081104019798376,
+      "status_reason": "Retained research-composite member; not allocation approved.",
+      "latest_data_date": "2026-06-09"
+    },
+    {
+      "strategy_id": "STRATEGY_21_RESEARCH_COMPOSITE_V1",
+      "name": "Strategy 21 Research Composite v1",
+      "status": "RESEARCH_COMPOSITE",
+      "allocation_eligible": false,
+      "strategy_21_allocation": 0.0,
+      "net_return": 0.6464245625456484,
+      "sharpe": 0.7978310167188681,
+      "max_drawdown": -0.10533888341846775,
+      "turnover": null,
+      "ic": null,
+      "decile_spread": null,
+      "status_reason": "Research/shadow composite only; not live or allocation approved.",
+      "latest_data_date": "2026-06-09"
+    }
+  ]
+}

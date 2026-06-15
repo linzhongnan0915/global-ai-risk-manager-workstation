@@ -1,0 +1,32 @@
+objective:
+  name: conservative_risk_adjusted_allocation
+  description: >
+    Balance Sharpe, diversification, drawdown, turnover, transaction cost,
+    factor concentration, regime fit, and explicit risk limits.
+
+constraints:
+  allow_short_strategy_weights: false
+  weights_must_sum_to_one: true
+  max_turnover_per_rebalance: 0.15
+  approval_required_before_live_change: true
+  transaction_cost_buy_bps: 5
+  transaction_cost_sell_bps: 5
+
+scoring_weights:
+  expected_return_score: 0.18
+  sharpe_score: 0.20
+  diversification_score: 0.18
+  drawdown_score: 0.14
+  volatility_score: 0.10
+  factor_concentration_penalty: 0.08
+  turnover_penalty: 0.06
+  transaction_cost_penalty: 0.06
+
+rebalance_output:
+  include_current_weight: true
+  include_proposed_weight: true
+  include_weight_change: true
+  include_estimated_transaction_cost: true
+  include_risk_improvement_summary: true
+  include_human_approval_status: true
+

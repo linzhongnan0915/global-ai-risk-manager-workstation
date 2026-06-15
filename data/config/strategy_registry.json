@@ -1,0 +1,650 @@
+{
+  "version": "0.1.0",
+  "description": "Placeholder strategy registry for Risk Manager Platform. Replace hypotheses, ETF universe, signals, and evidence when boss documents arrive.",
+  "strategies": [
+    {
+      "strategy_id": "STRAT_001",
+      "name": "Equity Long Short Quality",
+      "strategy_type": "Equity Long/Short",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "QUAL",
+        "VLUE",
+        "USMV"
+      ],
+      "signal_definition": "Quality/value/low-vol composite placeholder.",
+      "position_construction": "Long preferred ETF basket, reduce under risk-off.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "standard",
+      "risk_status": "watch",
+      "backtest_status": "pending_boss_strategy_doc",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Crowded factor unwind",
+        "Equity beta selloff",
+        "Quality underperformance"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_002",
+      "name": "Statistical Arbitrage ETF Basket",
+      "strategy_type": "Stat Arb",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.1,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "QQQ",
+        "IWM",
+        "MDY"
+      ],
+      "signal_definition": "Mean reversion spread placeholder with no-look-ahead constraints.",
+      "position_construction": "Market-neutral ETF spread basket.",
+      "rebalance_frequency": "daily",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "high_turnover",
+      "risk_status": "watch",
+      "backtest_status": "pending_signal_validation",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Spread regime break",
+        "High turnover cost drag",
+        "Correlation spike"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_003",
+      "name": "Global Macro Regime",
+      "strategy_type": "Global Macro",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.14,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "TLT",
+        "GLD",
+        "UUP",
+        "DBC"
+      ],
+      "signal_definition": "Growth, inflation, liquidity, and USD regime classifier placeholder.",
+      "position_construction": "Cross-asset regime-aware sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "macro",
+      "risk_status": "watch",
+      "backtest_status": "pending_long_history",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Macro data revision",
+        "Regime whipsaw",
+        "Policy surprise"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_004",
+      "name": "Merger Arbitrage Proxy",
+      "strategy_type": "Event Driven",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "MNA",
+        "BIL"
+      ],
+      "signal_definition": "Deal-spread proxy and event risk placeholder.",
+      "position_construction": "MNA-centered sleeve with cash buffer.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "event_driven",
+      "risk_status": "watch",
+      "backtest_status": "pending_event_data",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Deal break risk",
+        "Liquidity gap",
+        "Market stress beta"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_005",
+      "name": "Convertible Arbitrage Proxy",
+      "strategy_type": "Convertible Arbitrage",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "CWB",
+        "HYG",
+        "IEF"
+      ],
+      "signal_definition": "Convertible credit/equity/rates proxy placeholder.",
+      "position_construction": "Convertible ETF sleeve with credit and duration monitors.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "credit",
+      "risk_status": "watch",
+      "backtest_status": "pending_long_history",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Credit spread widening",
+        "Equity volatility shock",
+        "Liquidity stress"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_006",
+      "name": "Credit Relative Value",
+      "strategy_type": "Credit RV",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "placeholder",
+      "universe": [
+        "LQD",
+        "HYG",
+        "JNK",
+        "BIL"
+      ],
+      "signal_definition": "IG/HY spread and liquidity proxy placeholder.",
+      "position_construction": "Credit spread allocation with defensive cash leg.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "credit",
+      "risk_status": "watch",
+      "backtest_status": "pending_spread_data",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Credit selloff",
+        "Liquidity freeze",
+        "Default cycle shock"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_007",
+      "name": "Rates Relative Value",
+      "strategy_type": "Rates RV",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "placeholder",
+      "universe": [
+        "SHY",
+        "IEF",
+        "TLT",
+        "TIP"
+      ],
+      "signal_definition": "Duration, curve, real yield, and inflation proxy placeholder.",
+      "position_construction": "Treasury curve and inflation-sensitive sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "rates",
+      "risk_status": "watch",
+      "backtest_status": "pending_curve_data",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Curve bear steepening",
+        "Inflation surprise",
+        "Duration convexity shock"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_008",
+      "name": "Volatility Carry",
+      "strategy_type": "Volatility",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.06,
+      "source": "placeholder",
+      "universe": [
+        "VIX",
+        "VXX",
+        "SVXY",
+        "BIL"
+      ],
+      "signal_definition": "Volatility term structure and stress filter placeholder.",
+      "position_construction": "Small risk-budget sleeve with strict stop and review flags.",
+      "rebalance_frequency": "daily",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "tail_sensitive",
+      "risk_status": "watch",
+      "backtest_status": "pending_vol_data",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Volatility spike",
+        "Vol product decay mismatch",
+        "Tail loss"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_009",
+      "name": "CTA Trend Following",
+      "strategy_type": "CTA",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "TLT",
+        "GLD",
+        "DBC",
+        "UUP"
+      ],
+      "signal_definition": "Cross-asset trend with volatility targeting placeholder.",
+      "position_construction": "Diversified long/flat trend sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "trend",
+      "risk_status": "watch",
+      "backtest_status": "pending_long_history",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Whipsaw",
+        "Crowded trend reversal",
+        "Gap risk"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_010",
+      "name": "Event Driven ETF Sleeve",
+      "strategy_type": "Event Driven",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "XLF",
+        "XLI",
+        "MNA",
+        "BIL"
+      ],
+      "signal_definition": "Corporate event/news intensity placeholder.",
+      "position_construction": "Event-risk ETF proxy with conservative sizing.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "event_driven",
+      "risk_status": "watch",
+      "backtest_status": "pending_news_event_data",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Event data lag",
+        "Deal concentration",
+        "Risk-off beta"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_011",
+      "name": "Options Overlay Hedge",
+      "strategy_type": "Options",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.06,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "VIX",
+        "BIL"
+      ],
+      "signal_definition": "Tail hedge trigger using vol and drawdown proxies.",
+      "position_construction": "Protective overlay placeholder, no execution until approved.",
+      "rebalance_frequency": "event_driven",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "hedge",
+      "risk_status": "watch",
+      "backtest_status": "pending_options_data",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Premium bleed",
+        "Timing mismatch",
+        "Vol surface data gap"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_012",
+      "name": "Emerging Markets Macro",
+      "strategy_type": "Global Macro",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "EEM",
+        "EMB",
+        "UUP",
+        "GLD"
+      ],
+      "signal_definition": "USD, rates, commodity, and EM risk appetite placeholder.",
+      "position_construction": "EM equity/debt macro sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "macro",
+      "risk_status": "watch",
+      "backtest_status": "pending_em_data",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "USD spike",
+        "Liquidity stress",
+        "Geopolitical shock"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_013",
+      "name": "WorldQuant Formulaic Alpha Basket",
+      "strategy_type": "Formulaic Alpha Research",
+      "status": "research_intake",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "Paper - 101 Alphas - WorldQuant World Quant.pdf",
+      "universe": [
+        "US_EQUITY_LIQUID_UNIVERSE",
+        "OHLCV",
+        "VWAP",
+        "ADV",
+        "INDUSTRY_CLASSIFICATION"
+      ],
+      "proxy_universe": [
+        "SPY",
+        "QUAL",
+        "VLUE",
+        "MTUM",
+        "USMV",
+        "IWM"
+      ],
+      "research_data_requirements": [
+        "point-in-time liquid equity universe",
+        "open/high/low/close/volume",
+        "VWAP or reliable approximation",
+        "ADV20",
+        "market cap",
+        "point-in-time industry classification"
+      ],
+      "signal_definition": "Selected formulaic alpha basket using price, volume, VWAP, rolling ranks/correlations, delay rules, and optional industry neutralization. Specific formulas require operator implementation and no-look-ahead validation.",
+      "position_construction": "Dollar-neutral alpha basket after signal validation; combine multiple low-correlation alphas rather than trading a single formula.",
+      "rebalance_frequency": "daily_or_intraday_research",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "alpha_signal_lab",
+      "risk_status": "research_only",
+      "backtest_status": "pending_operator_library_and_point_in_time_data",
+      "walk_forward_status": "pending_alpha_selection",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Alpha decay",
+        "Data snooping",
+        "Turnover cost drag",
+        "Crowding",
+        "Industry neutralization failure",
+        "No-look-ahead timing error"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_014",
+      "name": "Index Arbitrage Proxy",
+      "strategy_type": "Index Arb",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "SPY",
+        "IVV",
+        "VOO",
+        "BIL"
+      ],
+      "signal_definition": "ETF basis/liquidity proxy placeholder.",
+      "position_construction": "Low-risk index proxy comparison, research only.",
+      "rebalance_frequency": "daily",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "low_risk",
+      "risk_status": "watch",
+      "backtest_status": "pending_intraday_proxy_review",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Tiny edge consumed by cost",
+        "Execution timing mismatch",
+        "Data granularity mismatch"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_015",
+      "name": "Tail Hedge Crisis Sleeve",
+      "strategy_type": "Tail Hedge",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.06,
+      "source": "placeholder",
+      "universe": [
+        "TLT",
+        "GLD",
+        "VIX",
+        "BIL"
+      ],
+      "signal_definition": "Crisis hedge activation based on volatility, liquidity, and drawdown proxies.",
+      "position_construction": "Small allocation to defensive crisis assets.",
+      "rebalance_frequency": "event_driven",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "hedge",
+      "risk_status": "watch",
+      "backtest_status": "pending_stress_validation",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "False positive hedge activation",
+        "Rates/equity correlation flip",
+        "Carry drag"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_016",
+      "name": "Treasury Basis Proxy",
+      "strategy_type": "Rates RV",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "SHY",
+        "IEF",
+        "TLT",
+        "BIL"
+      ],
+      "signal_definition": "Rates curve and funding stress proxy placeholder.",
+      "position_construction": "Treasury ETF relative-value proxy.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "rates",
+      "risk_status": "watch",
+      "backtest_status": "pending_basis_proxy_validation",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Funding stress",
+        "Curve shock",
+        "ETF proxy mismatch"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_017",
+      "name": "Commodities Macro",
+      "strategy_type": "Commodity",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.1,
+      "source": "placeholder",
+      "universe": [
+        "DBC",
+        "GLD",
+        "USO",
+        "UUP"
+      ],
+      "signal_definition": "Inflation, USD, oil, and gold macro proxy placeholder.",
+      "position_construction": "Commodity inflation shock sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "commodity",
+      "risk_status": "watch",
+      "backtest_status": "pending_commodity_history",
+      "walk_forward_status": "pending",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "USD squeeze",
+        "Futures roll drag",
+        "Supply shock reversal"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_018",
+      "name": "FX Carry Proxy",
+      "strategy_type": "FX",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.08,
+      "source": "placeholder",
+      "universe": [
+        "UUP",
+        "FXE",
+        "FXY",
+        "BIL"
+      ],
+      "signal_definition": "USD trend, rate differential, and risk appetite placeholder.",
+      "position_construction": "FX ETF proxy sleeve.",
+      "rebalance_frequency": "weekly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "macro",
+      "risk_status": "watch",
+      "backtest_status": "pending_fx_proxy_validation",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Carry unwind",
+        "Central bank surprise",
+        "USD liquidity shock"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_019",
+      "name": "Global Value Rotation",
+      "strategy_type": "Equity",
+      "status": "research_placeholder",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.1,
+      "source": "placeholder",
+      "universe": [
+        "IVE",
+        "IVW",
+        "EFA",
+        "EEM"
+      ],
+      "signal_definition": "Global valuation, rates, and sector tilt placeholder.",
+      "position_construction": "Regional/style rotation sleeve.",
+      "rebalance_frequency": "monthly",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "equity_factor",
+      "risk_status": "watch",
+      "backtest_status": "pending_global_equity_history",
+      "walk_forward_status": "pending",
+      "owner": "Research Team",
+      "failure_modes": [
+        "Value trap",
+        "Regional policy shock",
+        "Currency drag"
+      ]
+    },
+    {
+      "strategy_id": "STRAT_020",
+      "name": "Hedge Fund Replication Clone",
+      "strategy_type": "Hedge Fund Replication",
+      "status": "research_intake",
+      "target_weight": 0.05,
+      "min_weight": 0.0,
+      "max_weight": 0.12,
+      "source": "Hedge Fund Replication - Can Hedge Fund Returns be Replicated.pdf",
+      "universe": [
+        "SPY",
+        "IEF",
+        "LQD",
+        "HYG",
+        "UUP",
+        "DBC",
+        "VIX_PROXY"
+      ],
+      "signal_definition": "Rolling-window linear clone using liquid factor proxies for equity, bonds, USD, credit, commodities, and volatility change. Fixed-weight clone is research-only because of look-ahead bias.",
+      "position_construction": "Regression-estimated factor weights with volatility normalization, turnover controls, and human approval before allocation.",
+      "rebalance_frequency": "monthly_research",
+      "transaction_cost_bps_buy": 5,
+      "transaction_cost_bps_sell": 5,
+      "risk_limit_profile": "replication_clone",
+      "risk_status": "research_only",
+      "backtest_status": "pending_target_return_series_and_factor_proxy_mapping",
+      "walk_forward_status": "pending_rolling_window_clone",
+      "owner": "Risk Manager",
+      "failure_modes": [
+        "Look-ahead bias in fixed-weight clone",
+        "Rolling-window estimation error",
+        "Missing illiquidity premium",
+        "Factor proxy mismatch",
+        "Excessive turnover",
+        "Clone underperforms target in event-driven or emerging-market styles"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "as_of": "2026-06-04T16:05:00-04:00",
+  "source": "sample_mock",
+  "items": [
+    {
+      "headline": "Fed officials signal data-dependent path as inflation cools slowly",
+      "topic": "central_bank",
+      "severity": "medium",
+      "affected_factors": ["Rates Duration", "Equity Beta", "USD"],
+      "risk_interpretation": "Policy path remains a key driver for duration and equity multiple risk."
+    },
+    {
+      "headline": "Credit spreads remain contained despite softer macro survey",
+      "topic": "credit",
+      "severity": "low",
+      "affected_factors": ["Credit Spread", "Liquidity"],
+      "risk_interpretation": "Credit risk is stable, but spread compression reduces margin of safety."
+    },
+    {
+      "headline": "Energy prices rise on geopolitical supply concerns",
+      "topic": "geopolitical",
+      "severity": "medium",
+      "affected_factors": ["Commodity", "Inflation", "Geopolitical Risk"],
+      "risk_interpretation": "Commodity shock scenario should remain on watchlist."
+    }
+  ]
+}
+

@@ -1,0 +1,20 @@
+policy_metadata:
+  status: provisional_research_policy
+  note: >
+    Missing strategy or asset returns are not filled with zero in portfolio gross-return
+    reconstruction. Days with incomplete required inputs are excluded via inner join or
+    marked unavailable.
+
+portfolio_alignment:
+  method: inner_join_on_calendar_dates
+  include_zero_weight_strategies: false
+  current_proposed_comparison: union_of_nonzero_current_and_proposed
+  fill_missing_returns_with_zero: false
+
+backtest_strategy_returns:
+  missing_asset_return: exclude_day_via_min_count
+  weight_shift_lag_days: 1
+
+disclosure: >
+  Static current-weight historical reconstruction uses aligned proxy backtests and is not
+  an investable live track record.

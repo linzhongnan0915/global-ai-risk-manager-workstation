@@ -1,0 +1,13 @@
+{
+  "as_of": "2026-06-04T16:05:00-04:00",
+  "source": "sample_mock",
+  "markets": [
+    {"ticker": "SPY", "name": "S&P 500 ETF", "last": 625.4, "daily_return": 0.0082, "risk_interpretation": "Equity risk appetite supportive"},
+    {"ticker": "QQQ", "name": "Nasdaq 100 ETF", "last": 548.1, "daily_return": 0.0115, "risk_interpretation": "Growth leadership positive but beta elevated"},
+    {"ticker": "TLT", "name": "20+ Year Treasury ETF", "last": 91.2, "daily_return": -0.0041, "risk_interpretation": "Rates pressure from higher yields"},
+    {"ticker": "HYG", "name": "High Yield Credit ETF", "last": 79.6, "daily_return": 0.0024, "risk_interpretation": "Credit calm but monitor spread widening"},
+    {"ticker": "GLD", "name": "Gold ETF", "last": 238.3, "daily_return": 0.0038, "risk_interpretation": "Defensive asset bid stable"},
+    {"ticker": "UUP", "name": "US Dollar ETF", "last": 29.4, "daily_return": -0.0017, "risk_interpretation": "USD pressure easing"}
+  ]
+}
+

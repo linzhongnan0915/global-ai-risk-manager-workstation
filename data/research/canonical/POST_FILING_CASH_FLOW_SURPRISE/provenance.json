@@ -1,0 +1,8 @@
+{
+  "strategy_id": "POST_FILING_CASH_FLOW_SURPRISE",
+  "source_provenance": "D:\\Global_Ai\\Risk_Manager_Platform_Workspace\\30_ui_phase1\\output\\research\\event_panel_final_four_strategy_batch_v1",
+  "canonical_summary": "data/research/canonical/POST_FILING_CASH_FLOW_SURPRISE/summary.json",
+  "canonical_return_series": "data/research/canonical/POST_FILING_CASH_FLOW_SURPRISE/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

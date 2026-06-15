@@ -1,0 +1,55 @@
+platform:
+  name: Risk Manager Platform
+  start_date: "2026-06-04"
+  initial_capital_usd: 1000000
+  base_currency: USD
+  target_strategy_count_initial: 20
+  target_strategy_count_future: 40
+  decision_mode: human_approval_required
+
+dashboard:
+  artifact_path: output/dashboard_artifact.json
+  refresh_mode: static_artifact_first
+  recommended_refresh_seconds: 300
+  tabs:
+    - Portfolio Command Center
+    - Strategy Monitor
+    - Allocation & Rebalance
+    - Risk Factors & Exposure
+    - Correlation & Diversification
+    - Market & Macro Monitor
+    - Backtesting & Research Lab
+    - Strategy Library & Workflow
+    - Daily Risk Report / Decision Log
+
+transaction_cost:
+  buy_bps: 5
+  sell_bps: 5
+  round_trip_bps: 10
+
+api_integration:
+  mode: mock_until_api_provided
+  market_data:
+    enabled: true
+    provider: boss_api_or_openbb
+    endpoint_env: RMP_MARKET_API_URL
+    api_key_env: RMP_MARKET_API_KEY
+    refresh_seconds: 300
+    raw_snapshot_path: data/raw/latest_market_snapshot.json
+  news:
+    enabled: true
+    provider: boss_news_api_or_rss
+    endpoint_env: RMP_NEWS_API_URL
+    api_key_env: RMP_NEWS_API_KEY
+    refresh_seconds: 300
+    raw_snapshot_path: data/raw/latest_news_snapshot.json
+  recommendation:
+    output_path: output/risk_recommendation_snapshot.json
+    require_human_approval: true
+
+governance:
+  no_look_ahead_bias: true
+  no_recommendation_without_backtest_evidence: true
+  no_live_allocation_change_without_human_approval: true
+  require_strategy_failure_modes: true
+  require_walk_forward_evidence: true

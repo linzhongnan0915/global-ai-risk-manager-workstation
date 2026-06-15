@@ -1,0 +1,8 @@
+{
+  "strategy_id": "OVERNIGHT_INTRADAY_ENSEMBLE",
+  "source_provenance": "D:\\Global_Ai\\Risk_Manager_Platform_Workspace\\30_ui_phase1\\output\\research\\final_platform_delivery_v1",
+  "canonical_summary": "data/research/canonical/OVERNIGHT_INTRADAY_ENSEMBLE/summary.json",
+  "canonical_return_series": "data/research/canonical/OVERNIGHT_INTRADAY_ENSEMBLE/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

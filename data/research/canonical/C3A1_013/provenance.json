@@ -1,0 +1,8 @@
+{
+  "strategy_id": "C3A1_013",
+  "source_provenance": "D:\\Global_Ai\\risk_manager_platform\\output\\research\\strategy_factory_v1\\C3A1_013",
+  "canonical_summary": "data/research/canonical/C3A1_013/summary.json",
+  "canonical_return_series": "data/research/canonical/C3A1_013/daily_returns.csv",
+  "operation": "copied_or_split_existing_research_output",
+  "backtest_rerun": false
+}

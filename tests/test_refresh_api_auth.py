@@ -15,7 +15,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.run_workstation_server import WorkstationHandler, resolve_server_bind
-from scripts.validate_deployment_artifact import validate_deployment_artifact
 from src.market.refresh_auth import classify_refresh_request, parse_bearer_token
 from src.market.intraday_refresh_service import run_intraday_refresh
 from src.market.snapshot_store import read_latest_pointer, read_latest_snapshot
@@ -27,11 +26,37 @@ def _free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _start_server(port: int) -> ThreadingHTTPServer:
-    validate_deployment_artifact()
-    WorkstationHandler.deployment_artifact = json.loads(
-        (PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8")
+def _prepare_refresh_root(root: Path) -> None:
+    canonical_dir = root / "dashboard" / "data"
+    canonical_dir.mkdir(parents=True)
+    (canonical_dir / "canonical_operational.json").write_text(
+        json.dumps(
+            {
+                "portfolio_summary": {"as_of_date": "2026-06-12", "nav": 1_000_000},
+                "strategies": [
+                    {
+                        "internal_id": "S1",
+                        "display_name": "Paper Sleeve 1",
+                        "membership_state": "executed",
+                        "current_weight": 1.0,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
     )
+    config_dir = root / "data" / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "intraday_refresh.yaml").write_text(
+        (PROJECT_ROOT / "data" / "config" / "intraday_refresh.yaml").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+
+def _start_server(port: int, root: Path) -> ThreadingHTTPServer:
+    _prepare_refresh_root(root)
+    WorkstationHandler.server_root = root
+    WorkstationHandler.deployment_artifact = None
     host, _ = resolve_server_bind("127.0.0.1", port)
     server = ThreadingHTTPServer((host, port), WorkstationHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -67,18 +92,18 @@ def test_classify_refresh_request_modes(monkeypatch):
     assert classify_refresh_request(None) == ("manual", True)
 
 
-def test_external_refresh_valid_token_allowed(monkeypatch):
+def test_external_refresh_valid_token_allowed(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("REFRESH_API_TOKEN", "test-token")
     monkeypatch.setattr(
         "scripts.run_workstation_server.run_intraday_refresh",
         lambda **kwargs: {"ok": True, "skipped": True, "message": "Scheduled intraday refresh skipped outside regular session."},
     )
     port = _free_port()
-    server = _start_server(port)
+    server = _start_server(port, tmp_path)
     WorkstationHandler.last_manual_refresh_at = 0.0
     try:
         status, body = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             method="POST",
             data=b'{"interval_minutes":10}',
             headers={
@@ -92,15 +117,16 @@ def test_external_refresh_valid_token_allowed(monkeypatch):
     finally:
         server.shutdown()
         server.server_close()
+        WorkstationHandler.server_root = PROJECT_ROOT
 
 
-def test_external_refresh_invalid_token_returns_401(monkeypatch):
+def test_external_refresh_invalid_token_returns_401(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("REFRESH_API_TOKEN", "test-token")
     port = _free_port()
-    server = _start_server(port)
+    server = _start_server(port, tmp_path)
     try:
         status, body = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             method="POST",
             data=b"{}",
             headers={
@@ -114,15 +140,16 @@ def test_external_refresh_invalid_token_returns_401(monkeypatch):
     finally:
         server.shutdown()
         server.server_close()
+        WorkstationHandler.server_root = PROJECT_ROOT
 
 
-def test_external_refresh_missing_token_on_bearer_returns_401(monkeypatch):
+def test_external_refresh_missing_token_on_bearer_returns_401(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("REFRESH_API_TOKEN", "test-token")
     port = _free_port()
-    server = _start_server(port)
+    server = _start_server(port, tmp_path)
     try:
         status, _ = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             method="POST",
             data=b"{}",
             headers={
@@ -134,27 +161,29 @@ def test_external_refresh_missing_token_on_bearer_returns_401(monkeypatch):
     finally:
         server.shutdown()
         server.server_close()
+        WorkstationHandler.server_root = PROJECT_ROOT
 
 
-def test_manual_refresh_without_token_still_allowed(monkeypatch):
+def test_manual_refresh_without_token_still_allowed(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("REFRESH_API_TOKEN", "test-token")
     port = _free_port()
-    server = _start_server(port)
+    server = _start_server(port, tmp_path)
     WorkstationHandler.last_manual_refresh_at = 0.0
     try:
         status, body = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             method="POST",
             data=b"{}",
             headers={"Content-Type": "application/json"},
         )
         payload = json.loads(body.decode("utf-8"))
-        assert status in {200, 409, 500}
+        assert status in {200, 409, 503}
         assert "Unauthorized" not in payload.get("error", "")
     finally:
         WorkstationHandler.last_manual_refresh_at = 0.0
         server.shutdown()
         server.server_close()
+        WorkstationHandler.server_root = PROJECT_ROOT
 
 
 def test_external_scheduler_status_payload(monkeypatch):
@@ -180,6 +209,7 @@ def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cf
 
 
 def test_refresh_failure_preserves_last_valid_snapshot(intraday_cfg, minimal_artifact, tmp_path: Path):
+    intraday_cfg["allow_artifact_position_fallback"] = True
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
 

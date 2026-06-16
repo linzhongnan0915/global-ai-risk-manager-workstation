@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from src.risk.risk_action_display import (
     compute_utilization,
     display_action,
@@ -13,17 +10,49 @@ from src.risk.risk_action_display import (
     include_in_current_model,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+CONTROLLED_RISK_STATUS = {
+    "risk_status_summary": {
+        "scopes": {
+            "factor": {
+                "checks": [
+                    {"metric": "equity_beta", "current_value": 0.154, "breach_threshold": 0.15, "status": "breach"},
+                    {"metric": "credit_spread", "current_value": 0.113, "breach_threshold": 0.1, "status": "breach"},
+                    {"metric": "rates_duration", "current_value": 0.113, "breach_threshold": 0.12, "status": "warning"},
+                    {"metric": "factor_herfindahl", "current_value": 0.2, "breach_threshold": 0.5, "status": "ok"},
+                    {"metric": "cash_exposure", "current_value": 0.39, "breach_threshold": 0.6, "status": "ok"},
+                    {"metric": "volatility", "current_value": None, "breach_threshold": None, "status": "not_modeled"},
+                    {"metric": "short_vol", "current_value": None, "breach_threshold": None, "status": "not_modeled"},
+                ]
+            },
+            "scenario": {
+                "checks": [
+                    {"metric": "Equity -5%", "current_value": -0.0091875, "breach_threshold": -0.0125, "status": "ok"}
+                ]
+            },
+            "allocated_strategy_live": {
+                "checks": [
+                    {
+                        "metric": "latest_63d_rolling_sharpe",
+                        "current_value": 0.15,
+                        "breach_threshold": 0.2,
+                        "status": "warning",
+                    }
+                ]
+            },
+        }
+    }
+}
 
 
 def _factor_check(metric: str) -> dict:
-    artifact = json.loads((PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8"))
+    artifact = CONTROLLED_RISK_STATUS
     checks = artifact["risk_status_summary"]["scopes"]["factor"]["checks"]
     return next(check for check in checks if check["metric"] == metric)
 
 
 def _scenario_check(name: str) -> dict:
-    artifact = json.loads((PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8"))
+    artifact = CONTROLLED_RISK_STATUS
     checks = artifact["risk_status_summary"]["scopes"]["scenario"]["checks"]
     return next(check for check in checks if check["metric"] == name)
 
@@ -76,7 +105,7 @@ def test_not_modeled_rows():
 
 
 def test_rolling_sharpe_uses_gap_not_utilization():
-    artifact = json.loads((PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8"))
+    artifact = CONTROLLED_RISK_STATUS
     checks = artifact["risk_status_summary"]["scopes"]["allocated_strategy_live"]["checks"]
     warning = next(
         check

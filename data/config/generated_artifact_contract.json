@@ -1,0 +1,80 @@
+{
+  "contract_version": 1,
+  "runtime_artifacts": [
+    {
+      "name": "dashboard_artifact",
+      "path": "output/dashboard_artifact.json",
+      "category": "runtime_required",
+      "source_generator": "src.reporting.artifact_generator.generate_dashboard_artifact",
+      "required_fields": [
+        "platform",
+        "artifact_schema_version",
+        "allocation",
+        "strategies",
+        "market_monitor",
+        "news_risk",
+        "recommendations",
+        "risk_limits",
+        "portfolio_series",
+        "data_classification",
+        "refresh_status"
+      ],
+      "safe_bootstrap": true,
+      "validation": "Strict deployment validation requires 20 strategies, non-empty literature results, and chart series; runtime bootstrap only requires safe non-live schema fields."
+    },
+    {
+      "name": "live_overlay",
+      "path": "output/live_overlay.json",
+      "category": "runtime_optional_cache",
+      "source_generator": "src.market.live_refresh.write_live_overlay",
+      "required_fields": ["data_mode", "market_monitor", "news_risk", "recommendations"],
+      "safe_bootstrap": true,
+      "validation": "May be rebuilt from the dashboard artifact; missing cache must not block startup."
+    },
+    {
+      "name": "intraday_refresh_status",
+      "path": "output/intraday_refresh_status.json",
+      "category": "runtime_status",
+      "source_generator": "src.market.intraday_refresh_service.write_refresh_status",
+      "required_fields": ["state", "in_progress", "last_error"],
+      "safe_bootstrap": true,
+      "validation": "Status file is operational telemetry only; missing status means no refresh has run yet."
+    }
+  ],
+  "generated_research_artifacts": [
+    {
+      "name": "strategy_factory_research",
+      "path": "output/research/strategy_factory_v1",
+      "category": "generated_research_fixture",
+      "source_generator": "python scripts/run_rapid_20plus1.py",
+      "required_fields": ["summary.json", "daily_returns.csv"],
+      "safe_bootstrap": false,
+      "validation": "Generated research evidence; tests must skip or run the generator when absent."
+    },
+    {
+      "name": "research_selection_packs",
+      "path": "output/research/*/candidate_summary.csv",
+      "category": "generated_research_fixture",
+      "source_generator": "python scripts/run_final_strategy_research.py and related research scripts",
+      "required_fields": ["candidate_summary.csv", "daily returns CSV", "trade_log.csv", "run_manifest.json"],
+      "safe_bootstrap": false,
+      "validation": "Generated research evidence; never synthesize market/performance rows for tests."
+    },
+    {
+      "name": "shadow_live_outputs",
+      "path": "output/shadow_live",
+      "category": "generated_shadow_fixture",
+      "source_generator": "python scripts/run_shadow_live_daily.py",
+      "required_fields": ["daily_run_manifest.json", "portfolio_daily_ledger.csv", "trade_log.csv"],
+      "safe_bootstrap": false,
+      "validation": "Generated paper/shadow operational evidence; missing output is an explicit fixture prerequisite."
+    }
+  ],
+  "rules": {
+    "fresh_deployment": "Runtime must start without ignored output files.",
+    "bootstrap_data": "Bootstrap artifacts may use committed canonical operational seed only.",
+    "market_data": "Do not fabricate market, performance, brokerage, or live fill data.",
+    "strict_validation": "Generated research/paper artifacts must be produced by their source generators before strict evidence tests run.",
+    "brokerage": "Live brokerage fills remain disabled and are not represented."
+  }
+}

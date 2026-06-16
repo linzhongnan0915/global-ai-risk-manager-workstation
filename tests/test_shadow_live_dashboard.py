@@ -49,7 +49,7 @@ def test_dashboard_foundation_uses_canonical_operational_contract():
         "Derived Combined Strategy Ledger",
         "Derived from ordinary strategy net-return ledgers",
         "post-admission proposal",
-        "Current active capital remains 17 sleeves at 5.88%",
+        "Current allocation remains 17 active top-level sleeves",
         "5.56% is only the post-admission proposal",
         "Intraday Estimated NAV",
         "Intraday Estimated P&L",

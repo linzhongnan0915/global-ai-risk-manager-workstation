@@ -4414,7 +4414,7 @@ function buildOperationalProductionShell() {
   operationalPanel("Strategy Monitor").innerHTML = `
     <section class="operational-page">
       <article class="panel v2-panel"><div class="panel-title">Current Operational Strategy Registry</div>
-        <p class="status-muted">Executed ACTIVE sleeves plus prospectively approved membership. Select a row for operational detail.</p>
+        <p class="status-muted">Active paper sleeves plus prospectively approved membership. Select a row for operational detail.</p>
         <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="operationalStrategies"></table></div></div>
       </article>
     </section>`;

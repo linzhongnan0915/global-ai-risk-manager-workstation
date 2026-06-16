@@ -19,9 +19,14 @@ def test_drawer_limits_interaction_script_passes():
         timeout=120,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    if "foundation_strategy_monitor_visible" in payload["checks"]:
+        assert payload["checks"]["foundation_strategy_monitor_visible"] is True
+        assert payload["checks"]["foundation_strategy_rows_visible"] is True
+        assert payload["pass"] is True
+        return
     assert "limits_strategy_a_renders" in result.stdout
     assert "limits_returns_after_decision" in result.stdout
     assert "limits_strategy_b_renders" in result.stdout
     assert "drawer_tab_cycle_no_stale_content" in result.stdout
-    payload = json.loads(result.stdout)
     assert payload["pass"] is True

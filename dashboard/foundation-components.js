@@ -50,7 +50,7 @@ const UI = (() => {
   const FilterBar = ({ count }) => `
     <div class="filter-bar"><button type="button" class="tool-button">All strategies</button>
       <label class="search-control"><span aria-hidden="true">&#9906;</span><input id="strategyFilter" type="search" placeholder="Search strategy" aria-label="Filter strategies" /></label>
-      <select id="stateFilter" aria-label="Filter membership state"><option value="">All states</option><option value="executed">Executed</option><option value="approved_pending">Approved pending</option></select>
+      <select id="stateFilter" aria-label="Filter membership state"><option value="">All states</option><option value="executed">Active paper</option><option value="approved_pending">Approved pending</option></select>
       <span class="filter-count" id="filterCount">${escapeHtml(count)} strategies</span><button type="button" class="icon-button" aria-label="Table settings">&#9881;</button></div>`;
 
   const DataTable = ({ columns, rows, rowId = "internal_id", selectedId = "" }) => `

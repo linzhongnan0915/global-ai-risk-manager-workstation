@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.market.demo_hosting import demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
+from src.market.artifact_contract import ensure_dashboard_artifact_for_path
 from src.market.refresh_auth import refresh_api_token_configured
 from src.market.intraday_config import (
     bar_interval_for_refresh,
@@ -50,7 +51,11 @@ def set_background_scheduler_enabled(enabled: bool | None) -> None:
 
 
 def load_dashboard_artifact(path: Path | str = DEFAULT_ARTIFACT_PATH) -> dict[str, Any]:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    artifact_path = Path(path)
+    if artifact_path.exists():
+        return json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact, _ = ensure_dashboard_artifact_for_path(artifact_path)
+    return artifact
 
 
 def collect_refresh_tickers(artifact: dict[str, Any]) -> list[str]:

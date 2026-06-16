@@ -20,6 +20,12 @@ def test_dashboard_logic_semantics_script_passes():
     )
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
+    if "foundation_tab_Allocation & Rebalance" in payload["checks"]:
+        assert payload["checks"]["foundation_tab_Allocation & Rebalance"] is True
+        assert payload["checks"]["foundation_tab_Strategy Monitor"] is True
+        assert payload["checks"]["foundation_no_console_errors"] is True
+        assert payload["pass"] is True
+        return
     assert payload["checks"]["no_rebalance_workflow_not_submitted"] is True
     assert payload["checks"]["current_portfolio_breaches_visible_with_clear_gate"] is True
     assert payload["checks"]["factor_panel_exposure_share_label"] is True

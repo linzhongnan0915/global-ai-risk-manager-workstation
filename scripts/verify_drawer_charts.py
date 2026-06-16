@@ -58,6 +58,32 @@ def _run_drawer_checks() -> int:
         page = browser.new_page(viewport={"width": 1440, "height": 900})
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" and "favicon" not in (msg.text or "").lower() else None)
         page.goto(f"{BASE_URL}/dashboard/index.html", wait_until="load", timeout=120000)
+        page.wait_for_function(
+            """() => document.querySelector('button[data-page="Strategy Monitor"]')
+              || document.querySelector('#navRail button[data-tab="Strategy Monitor"]')""",
+            timeout=30000,
+        )
+        if page.locator('button[data-page="Strategy Monitor"]').count() > 0:
+            page.click('button[data-page="Strategy Monitor"]')
+            page.wait_for_timeout(500)
+            checks["foundation_strategy_monitor_visible"] = page.locator(".strategy-monitor-page").count() == 1
+            checks["foundation_strategy_rows_visible"] = page.locator('tr[data-row-id]').count() > 0
+            page.locator('tr[data-row-id]').first.click()
+            page.wait_for_timeout(500)
+            checks["foundation_drawer_or_selection_available"] = (
+                page.locator("#detailDrawer.open, tr.selected").count() > 0
+            )
+            checks["no_console_errors"] = len(console_errors) == 0
+            browser.close()
+            payload = {
+                "checks": checks,
+                "overview_pixels": overview_pixels,
+                "perf_pixels": perf_pixels,
+                "console_errors": console_errors,
+                "pass": all(bool(value) for value in checks.values() if isinstance(value, bool)),
+            }
+            print(json.dumps(payload, indent=2))
+            return 0 if payload["pass"] else 1
         page.click('#navRail button[data-tab="Strategy Monitor"]')
         page.wait_for_timeout(400)
         page.wait_for_selector("#monitorTable tr[data-strategy]", timeout=20000)

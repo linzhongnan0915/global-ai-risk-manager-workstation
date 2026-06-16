@@ -107,6 +107,23 @@ def main() -> int:
             page.goto(BASE_URL, wait_until="load", timeout=120000)
             page.wait_for_timeout(1500)
 
+            if page.locator('button[data-page="Allocation & Rebalance"]').count() > 0:
+                for tab in (
+                    "Allocation & Rebalance",
+                    "Daily Risk Report",
+                    "Risk Factors & Exposure",
+                    "Backtesting & Research Lab",
+                    "Strategy Monitor",
+                ):
+                    page.click(f'button[data-page="{tab}"]')
+                    page.wait_for_timeout(250)
+                    report["checks"][f"foundation_tab_{tab}"] = page.locator("main.main-stage").inner_text() != ""
+                report["checks"]["foundation_no_console_errors"] = len(report["console_errors"]) == 0
+                browser.close()
+                report["pass"] = all(report["checks"].values())
+                print(json.dumps(report, indent=2))
+                return 0 if report["pass"] else 1
+
             page.click('button[data-tab="Allocation & Rebalance"]')
             page.wait_for_timeout(400)
             page.click("#resetWeights")

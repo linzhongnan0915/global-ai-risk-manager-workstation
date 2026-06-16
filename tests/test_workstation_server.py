@@ -11,6 +11,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from scripts.run_workstation_server import WorkstationHandler
+from src.market.artifact_contract import artifact_contract, ensure_dashboard_artifact, validate_runtime_bootstrap_artifact
 
 
 def _free_port() -> int:
@@ -29,6 +30,24 @@ def _start_server(port: int) -> ThreadingHTTPServer:
 
 def _fetch(url: str) -> tuple[int, dict[str, str], bytes]:
     request = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            headers = {key.lower(): value for key, value in response.headers.items()}
+            body = response.read()
+            return response.status, headers, body
+    except urllib.error.HTTPError as exc:
+        headers = {key.lower(): value for key, value in exc.headers.items()}
+        body = exc.read()
+        return exc.code, headers, body
+
+
+def _post_json(url: str, payload: bytes = b"{}") -> tuple[int, dict[str, str], bytes]:
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        method="POST",
+        headers={"Content-Type": "application/json", "Accept-Encoding": "identity"},
+    )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             headers = {key.lower(): value for key, value in response.headers.items()}
@@ -141,6 +160,129 @@ def test_operational_snapshot_endpoint_includes_intraday_runtime_fields():
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_generated_artifact_contract_documents_runtime_and_research_layers():
+    contract = artifact_contract()
+    runtime_names = {row["name"] for row in contract["runtime_artifacts"]}
+    research_names = {row["name"] for row in contract["generated_research_artifacts"]}
+    assert "dashboard_artifact" in runtime_names
+    assert "strategy_factory_research" in research_names
+    assert contract["rules"]["market_data"] == "Do not fabricate market, performance, brokerage, or live fill data."
+
+
+def test_contract_bootstrap_artifact_is_safe_non_live(tmp_path):
+    root = tmp_path
+    canonical_dir = root / "dashboard" / "data"
+    canonical_dir.mkdir(parents=True)
+    (canonical_dir / "canonical_operational.json").write_text(
+        json.dumps(
+            {
+                "portfolio_summary": {"as_of_date": "2026-06-12", "nav": 1_000_000},
+                "strategies": [{"internal_id": "S1", "display_name": "Paper Sleeve 1", "current_weight": 1.0}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    artifact, state = ensure_dashboard_artifact(root)
+    assert state["state"] == "initialized"
+    assert validate_runtime_bootstrap_artifact(artifact) == []
+    assert artifact["data_classification"]["is_live_portfolio_data"] is False
+    assert artifact["data_classification"]["live_brokerage_fills_represented"] is False
+
+
+def test_refresh_data_initializes_missing_dashboard_artifact(tmp_path, monkeypatch):
+    root = tmp_path
+    canonical_dir = root / "dashboard" / "data"
+    canonical_dir.mkdir(parents=True)
+    config_dir = root / "data" / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "intraday_refresh.yaml").write_text(
+        """
+intraday_refresh:
+  enabled: true
+  default_interval_minutes: 5
+  allowed_intervals_minutes: [5, 10, 30]
+  provider: yfinance
+  bar_interval_by_refresh:
+    5: 5m
+    10: 5m
+    30: 15m
+  timezone: America/New_York
+  regular_session_only: true
+  stale_after_minutes:
+    5: 10
+    10: 20
+    30: 45
+  request_timeout_seconds: 20
+  retry_attempts: 1
+  backoff_seconds: [1]
+  min_success_ticker_ratio: 0.6
+  incomplete_bar_label: incomplete_current_bar
+  snapshot_dir: output/intraday_snapshots
+  latest_pointer_path: output/intraday_latest.json
+  status_path: output/intraday_refresh_status.json
+  lock_path: output/intraday_refresh.lock
+  shadow_database_path: output/shadow/strategy_shadow.db
+  market_holidays: []
+""".lstrip(),
+        encoding="utf-8",
+    )
+    (canonical_dir / "canonical_operational.json").write_text(
+        json.dumps(
+            {
+                "portfolio_summary": {"as_of_date": "2026-06-12", "nav": 1_000_000},
+                "strategies": [
+                    {
+                        "internal_id": "S1",
+                        "display_name": "Paper Sleeve 1",
+                        "membership_state": "executed",
+                        "current_weight": 1.0,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    calls = {}
+
+    def _refresh_stub(**kwargs):
+        artifact_path = Path(kwargs["artifact_path"])
+        calls["artifact_exists"] = artifact_path.exists()
+        return {
+            "ok": False,
+            "error": "no current SHADOW positions available; old dashboard proxy allocations are not used",
+            "refresh_status": "failed",
+        }
+
+    monkeypatch.setattr("scripts.run_workstation_server.run_intraday_refresh", _refresh_stub)
+    original_root = WorkstationHandler.server_root
+    original_artifact = WorkstationHandler.deployment_artifact
+    WorkstationHandler.server_root = root
+    WorkstationHandler.deployment_artifact = None
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = _post_json(f"http://127.0.0.1:{port}/api/refresh-data")
+        payload = json.loads(body.decode("utf-8"))
+        artifact_path = root / "output" / "dashboard_artifact.json"
+        assert status == 503
+        assert calls["artifact_exists"] is True
+        assert artifact_path.exists()
+        assert payload["ok"] is False
+        assert payload["refresh_status"] == "failed"
+        assert payload["refresh_artifact"]["state"] == "initialized"
+        assert payload["refresh_artifact"]["reason"] == "missing_dashboard_artifact"
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        assert artifact["data_classification"]["is_live_portfolio_data"] is False
+        assert artifact["data_classification"]["market_data_mode"] == "unavailable_until_refresh"
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.deployment_artifact = original_artifact
 
 
 def test_static_dashboard_written_once():

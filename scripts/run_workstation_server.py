@@ -23,6 +23,7 @@ import pandas as pd
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
 from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
+from src.market.artifact_contract import ensure_dashboard_artifact
 from src.market.demo_hosting import configure_yfinance_cache, demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
 from src.market.intraday_config import load_intraday_config, resolve_refresh_interval_minutes
 from src.market.intraday_refresh_service import (
@@ -78,6 +79,11 @@ def ensure_deployment_artifact(root: Path = PROJECT_ROOT) -> dict:
         return validate_deployment_artifact(artifact_path)
     except DeploymentArtifactError as exc:
         raise SystemExit(f"Startup blocked: {exc}") from exc
+
+
+def ensure_refresh_artifact(root: Path = PROJECT_ROOT) -> tuple[dict, dict]:
+    """Return a legacy refresh artifact, initializing a safe one if Render has no output directory."""
+    return ensure_dashboard_artifact(root)
 
 
 class WorkstationHandler(BaseHTTPRequestHandler):
@@ -164,8 +170,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     def _load_artifact(self) -> dict:
         if self.deployment_artifact is not None:
             return self.deployment_artifact
-        path = self.server_root / "output" / "dashboard_artifact.json"
-        return json.loads(path.read_text(encoding="utf-8"))
+        artifact, _ = ensure_refresh_artifact(self.server_root)
+        return artifact
 
     def _load_live_overlay(self) -> dict | None:
         path = self.server_root / "output" / "live_overlay.json"
@@ -177,7 +183,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         return load_intraday_config(self.server_root / "data/config/intraday_refresh.yaml")
 
     def _live_summary_payload(self, refresh: bool = False) -> dict:
-        artifact = self._load_artifact()
+        artifact, artifact_state = ensure_refresh_artifact(self.server_root)
         if refresh:
             intraday = run_intraday_refresh(
                 force=True,
@@ -198,7 +204,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 overlay = self._load_live_overlay()
                 if overlay is None:
                     overlay = build_live_overlay(artifact)
-        return {"ok": True, **overlay}
+        return {"ok": True, "refresh_artifact": artifact_state, **overlay}
 
     def _overlay_from_intraday_snapshot(self, snapshot_payload: dict, artifact: dict) -> dict:
         marks = snapshot_payload.get("marks") or {}
@@ -409,6 +415,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", "0"))
                 raw = self.rfile.read(length) if length else b"{}"
                 body = json.loads(raw.decode("utf-8") or "{}")
+                _, artifact_state = ensure_refresh_artifact(self.server_root)
                 interval = body.get("interval_minutes")
                 if mode == "external":
                     interval = int(interval) if interval is not None else EXTERNAL_REFRESH_INTERVAL_MINUTES
@@ -426,7 +433,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     snapshot = read_latest_snapshot_payload(self._intraday_config())
                     overlay = self._overlay_from_intraday_snapshot(snapshot, artifact)
                     result = {**result, **overlay, "ok": True}
-                status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 500
+                result = {**result, "refresh_artifact": artifact_state}
+                status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 503
                 self._send_json(result, status=status)
             except Exception as exc:
                 self._send_safe_error(exc, context="refresh")
@@ -508,7 +516,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
 def _startup_refresh() -> None:
     try:
-        artifact = json.loads((PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8"))
+        artifact, _ = ensure_refresh_artifact(PROJECT_ROOT)
         write_live_overlay(artifact, refresh_market=True)
         print("Live market/news overlay refreshed on startup.")
     except Exception as exc:

@@ -122,6 +122,55 @@ def test_complete_strategy_history_is_published_without_mixing_research():
     assert all("research_metrics" not in row for row in history)
 
 
+def test_performance_analytics_layer_is_data_bound_and_separates_research():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    data = contract()
+    ordinary = [
+        row
+        for row in data["strategies"]
+        if row["membership_state"] == "executed"
+        and row["internal_id"] != "COMBINED_PORTFOLIO"
+    ]
+    assert len(ordinary) == 16
+    assert len(data["portfolio_daily"]) < 20
+    for marker in (
+        "function performanceRows(c)",
+        "MASTER_PORTFOLIO",
+        "PORTFOLIO & STRATEGY PERFORMANCE ANALYTICS",
+        "Master Portfolio, 16 ordinary active, Combined, and #000018 pending",
+        "Insufficient Official History",
+        "Minimum official observations required",
+        "Official Ledger: portfolio_daily only; delayed estimates excluded",
+        "Operational Ledger: strategy_daily official shadow-live rows",
+        "Operational paper-ledger metrics and research/backtest metrics remain separate",
+        "Missing research artifacts are shown as Not loaded rather than estimated",
+        "Derived from ordinary strategy net returns; no separate Combined paper fills; no cost double count",
+        "APPROVED_PENDING / PRE_OPERATIONAL. Current sleeve N/A; Operational NAV N/A; Operational P&L N/A; No Paper Fill; No Live Brokerage Fill.",
+        "Research vs Operational Performance",
+        "Portfolio performance analytics",
+    ):
+        assert marker in app
+    assert "intraday_estimate" not in app.split("function performanceRows(c)", 1)[1].split("function performanceDisplay", 1)[0]
+
+
+def test_strategy_monitor_status_hierarchy_keeps_provenance_secondary():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    for marker in (
+        'return s.membership_state==="executed"?"Active Paper"',
+        'if(s.internal_id==="COMBINED_PORTFOLIO")return "Active Composite"',
+        "Execution Mode: Paper Only | Provenance: Pending | Live Fill: No",
+        "Execution Mode: Derived | Provenance: Derived from ordinary strategy net returns | Live Fill: No | No separate Combined paper fills | No cost double count",
+        "Current Sleeve: N/A | Operational NAV/P&L: N/A | Paper Fill: No Paper Fill | Live Fill: No Live Brokerage Fill | Next Action: Pending admission evidence",
+        "statusLabel=strategyPrimaryState(s)",
+        "tone:strategyPrimaryTone(s)",
+    ):
+        assert marker in app
+    status_cell = app.split("function strategyPanel()", 1)[1].split("function alerts", 1)[0]
+    assert "strategyPrimaryState(r)" in status_cell
+    assert "strategySecondaryState(r)" in status_cell
+    assert "operationalDisplayLabel(r)" not in status_cell
+
+
 def test_invalid_legacy_contract_is_rejected():
     invalid = contract()
     invalid["strategies"][0]["internal_id"] = "STRAT_001"
@@ -549,7 +598,8 @@ def test_left_rail_navigation_maps_to_current_top_tabs():
         "data-rail-key",
         "data-rail-page",
         "page=RAIL_TO_TAB[i]",
-        "active=page===state.selectedPage",
+        "PRIMARY_RAIL_BY_TAB",
+        "active=PRIMARY_RAIL_BY_TAB[state.selectedPage]===i",
         "const body=Array.isArray(rows)?rows.join(\"\"):rows",
         'document.querySelectorAll("[data-rail-page]")',
         "state.selectedPage=b.dataset.railPage",

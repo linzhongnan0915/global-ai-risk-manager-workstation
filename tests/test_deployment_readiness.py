@@ -85,6 +85,27 @@ def test_missing_artifact_startup_failure(tmp_path: Path):
         ensure_deployment_artifact(tmp_path)
 
 
+def test_fresh_runtime_starts_without_output_directory(tmp_path: Path):
+    original_root = WorkstationHandler.server_root
+    original_snapshot = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = tmp_path
+    WorkstationHandler.operational_snapshot_bytes = None
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = _fetch(f"http://127.0.0.1:{port}/api/health")
+        assert status == 200
+        assert json.loads(body.decode("utf-8"))["status"] == "ok"
+        assert not (tmp_path / "output").exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_snapshot
+
+
 def test_validate_deployment_artifact_script_passes():
     result = subprocess.run(
         [sys.executable, str(PROJECT_ROOT / "scripts" / "validate_deployment_artifact.py")],
@@ -132,15 +153,14 @@ def test_gzip_json_and_static_responses():
         server.server_close()
 
 
-def test_api_errors_do_not_expose_tracebacks():
+def test_api_errors_do_not_expose_tracebacks(monkeypatch):
     port = _free_port()
     server = _start_server(port)
-    original = WorkstationHandler._load_artifact
 
-    def _boom(_self):
+    def _boom(_root):
         raise RuntimeError("secret internal failure")
 
-    WorkstationHandler._load_artifact = _boom  # type: ignore[method-assign]
+    monkeypatch.setattr("scripts.run_workstation_server.ensure_refresh_artifact", _boom)
     try:
         status, _, body = _fetch(
             f"http://127.0.0.1:{port}/api/live-summary",
@@ -153,25 +173,28 @@ def test_api_errors_do_not_expose_tracebacks():
         payload = json.loads(text)
         assert payload["ok"] is False
     finally:
-        WorkstationHandler._load_artifact = original
         server.shutdown()
         server.server_close()
 
 
-def test_manual_refresh_cooldown():
+def test_manual_refresh_cooldown(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.run_workstation_server.run_intraday_refresh",
+        lambda **kwargs: {"ok": False, "error": "controlled refresh failure", "refresh_status": "failed"},
+    )
     port = _free_port()
     server = _start_server(port)
     WorkstationHandler.last_manual_refresh_at = 0.0
     try:
         first_status, _, _ = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             headers={"Accept-Encoding": "identity", "Content-Type": "application/json"},
             method="POST",
             data=b"{}",
         )
-        assert first_status in {200, 409, 500}
+        assert first_status == 503
         second_status, _, second_body = _fetch(
-            f"http://127.0.0.1:{port}/api/refresh",
+            f"http://127.0.0.1:{port}/api/refresh-data",
             headers={"Accept-Encoding": "identity", "Content-Type": "application/json"},
             method="POST",
             data=b"{}",

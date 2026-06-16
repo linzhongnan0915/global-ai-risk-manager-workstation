@@ -236,6 +236,19 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert "ENABLE_INTRADAY_SCHEDULER" in server
 
 
+def test_dashboard_snapshot_loading_cannot_remain_infinite_loading_shell():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "SNAPSHOT_LOAD_TIMEOUT_MS=45000" in app
+    assert "AbortController" in app
+    assert "snapshotShapeError" in app
+    assert "renderLoadFailed" in app
+    assert 'data-load-state="LOAD_FAILED"' in app
+    assert "DATA_MISSING" in app
+    assert 'snapshotLoadState:"READY"' in app
+    assert 'snapshotLoadState:"LOAD_FAILED"' in app
+
+
 def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")

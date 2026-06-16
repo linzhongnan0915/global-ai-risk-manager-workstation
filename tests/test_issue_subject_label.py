@@ -35,8 +35,8 @@ SUBJECT_LABEL_JS = """
   return {
     label,
     portfolioLabel,
-    usesSuppliedStrategy: label === "Strategy · Supplied Strategy Name",
-    avoidsStaleGlobal: label !== "Strategy · Stale Global Name",
+    usesSuppliedStrategy: label === "Strategy - Supplied Strategy Name",
+    avoidsStaleGlobal: label !== "Strategy - Stale Global Name",
     portfolioNotDuplicated: portfolioLabel === "Portfolio",
   };
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,10 @@ import pytest
 from src.reporting.operational_snapshot import (
     build_operational_snapshot,
     classify_execution_provenance,
+    load_operational_snapshot_for_response,
+    official_promotion_readiness,
     persist_decision,
+    read_operational_intraday_overlay,
     refresh_operational_snapshot,
     snapshot_refresh_lock,
 )
@@ -41,13 +45,23 @@ def _digest(path: Path) -> str:
 def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
     canonical = _canonical()
     snapshot = build_operational_snapshot(canonical, generated_at="2026-06-14T12:00:00+00:00")
-    assert snapshot["snapshot_version"] == "3.6.6"
+    assert snapshot["snapshot_version"] == "3.6.7"
     assert snapshot["official_daily"]["accounting_label"] == "OFFICIAL_DAILY"
     assert snapshot["official_daily"]["latest_official_close_date"] == "2026-06-12"
     assert snapshot["official_daily"]["missing_dates"] == []
     assert snapshot["official_daily"]["blocker"] is None
     assert snapshot["portfolio_daily"][-1]["official_close_date"] == "2026-06-12"
     assert snapshot["intraday_estimate"]["written_to_official_ledger"] is False
+    assert snapshot["latest_official_ledger_date"] == "2026-06-11"
+    assert snapshot["official_close_as_of"] == "2026-06-12"
+    assert snapshot["delayed_estimate_as_of"] is None
+    assert snapshot["current_trading_session_date"] is None
+    assert snapshot["trading_session_lifecycle"]["state"] == "OFFICIAL_ONLY"
+    assert snapshot["trading_session_lifecycle"]["accounting_convention"] == "NEXT_OPEN_TO_OPEN"
+    assert snapshot["official_promotion_readiness"]["readiness_state"] == "OFFICIAL_ONLY"
+    assert snapshot["official_promotion_readiness"]["can_promote"] is False
+    assert snapshot["official_promotion_readiness"]["execute_enabled"] is False
+    assert "No current delayed estimate is available" in snapshot["official_promotion_blockers"][0]
     assert snapshot["strategies"][0]["display_id"] == "#COMBINED"
     assert [row["display_id"] for row in snapshot["strategies"][1:-1]] == [f"#{i:06d}" for i in range(1, 17)]
     assert snapshot["strategies"][-1]["display_id"] == "#000018"
@@ -132,7 +146,7 @@ def test_paper_execution_fields_use_real_reference_price_and_five_bps_cost():
     assert trade["total_cost"] == pytest.approx(trade["notional"] * 0.0005)
     assert (trade["buy_cost"] is None) != (trade["sell_cost"] is None)
     assert trade["execution_provenance"] == "INVALID_EXECUTION_RECORD"
-    assert trade["status"] == "Invalid Execution Record"
+    assert trade["status"] == "Paper Provenance Pending"
     assert trade["fill_type"] == "No Verified Paper Fill"
     assert trade["brokerage_fill"] == "No Live Brokerage Fill"
 
@@ -141,6 +155,8 @@ def test_refresh_changes_snapshot_preserves_official_ledger_and_failure_keeps_go
     root = _copy_root(tmp_path)
     canonical_path = root / "dashboard/data/canonical_operational.json"
     before_hash = _digest(canonical_path)
+    base = load_operational_snapshot_for_response(root)
+    base_hash = _digest(root / "output/operational_snapshot.json")
 
     def fake_fetch(tickers, **kwargs):
         return {
@@ -163,6 +179,10 @@ def test_refresh_changes_snapshot_preserves_official_ledger_and_failure_keeps_go
     first = refresh_operational_snapshot(root, fetch_fn=fake_fetch)
     assert first["ok"] is True
     assert first["data_freshness"] == "DELAYED"
+    assert first["intraday_runtime_status"] == "LOADED"
+    assert first["intraday_overlay_available"] is True
+    assert read_operational_intraday_overlay(root)["schema_version"] == "intraday_overlay_v1"
+    assert _digest(root / "output/operational_snapshot.json") == base_hash
     first_id = first["snapshot_id"]
     second = refresh_operational_snapshot(root, fetch_fn=fake_fetch)
     assert second["snapshot_id"] != first_id
@@ -173,12 +193,15 @@ def test_refresh_changes_snapshot_preserves_official_ledger_and_failure_keeps_go
 
     failed = refresh_operational_snapshot(root, fetch_fn=fail_fetch)
     assert failed["ok"] is False
-    assert failed["refresh_status"] == "STALE"
-    assert failed["snapshot_id"] == second["snapshot_id"]
-    stale_snapshot = json.loads((root / "output/operational_snapshot.json").read_text())
-    assert stale_snapshot["snapshot_id"] == second["snapshot_id"]
-    assert stale_snapshot["data_freshness"] == "STALE"
-    assert stale_snapshot["portfolio_daily"] == second["portfolio_daily"]
+    assert failed["refresh_status"] == "ERROR"
+    assert failed["snapshot_id"] == base["snapshot_id"]
+    assert _digest(root / "output/operational_snapshot.json") == base_hash
+    overlay = read_operational_intraday_overlay(root)
+    assert overlay["status"] == "ERROR"
+    assert "provider unavailable" in overlay["errors"][0]
+    merged = load_operational_snapshot_for_response(root)
+    assert merged["intraday_runtime_status"] == "ERROR"
+    assert merged["portfolio_daily"] == base["portfolio_daily"]
 
 
 def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors(tmp_path: Path):
@@ -210,6 +233,7 @@ def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors
     assert first["ok"] is True
     assert second["ok"] is True
     assert second["snapshot_id"] != first["snapshot_id"]
+    assert second["intraday_runtime_status"] == "LOADED"
     assert second["intraday_estimate"]["written_to_official_ledger"] is False
     assert second["portfolio_daily"] == first["portfolio_daily"]
     assert second["official_daily"]["latest_official_close_date"] == "2026-06-12"
@@ -251,8 +275,144 @@ def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors
     assert all(row["bar_width_percent"] == pytest.approx(abs(row["daily_pnl"]) / denominator * 100) for row in visible)
 
 
-def test_missing_delayed_prices_mark_snapshot_stale_without_zeroing_pnl(tmp_path: Path):
+def test_clean_base_snapshot_without_overlay_is_official_only_and_does_not_create_intraday_point(tmp_path: Path):
     root = _copy_root(tmp_path)
+    snapshot = load_operational_snapshot_for_response(root, scheduler_enabled=False)
+    assert snapshot["intraday_runtime_status"] == "NOT_LOADED"
+    assert snapshot["intraday_overlay_available"] is False
+    assert snapshot["intraday_scheduler_enabled"] is False
+    assert snapshot["trading_session_lifecycle"]["state"] == "OFFICIAL_ONLY"
+    assert snapshot["intraday_estimate"]["estimated_nav"] is None
+    assert snapshot["portfolio_daily"][-1]["date"] == "2026-06-11"
+    assert not any(row["date"] == "2026-06-15" for row in snapshot["portfolio_daily"])
+
+
+def test_stale_intraday_overlay_is_not_merged_into_official_snapshot(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    base = load_operational_snapshot_for_response(root)
+    overlay_path = root / "output/operational_intraday_overlay.json"
+    overlay_path.write_text(json.dumps({
+        "schema_version": "intraday_overlay_v1",
+        "generated_at": "2026-06-15T10:00:00+00:00",
+        "status": "LOADED",
+        "provider": "test-delayed",
+        "current_trading_session_date": "2026-06-15",
+        "market_session_status": "Open",
+        "delayed_estimate_as_of": "2026-06-15T10:00:00-04:00",
+        "estimated_nav": 1_004_500.0,
+        "estimated_pnl": 40.0,
+        "estimated_return": 0.00004,
+        "price_coverage": {"covered": 222, "total": 222},
+        "strategy_estimates": [],
+        "top_contributors": [],
+        "top_detractors": [],
+        "errors": [],
+        "stale_after_seconds": 60,
+    }), encoding="utf-8")
+    merged = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-15T10:05:00+00:00"),
+    )
+    assert merged["intraday_runtime_status"] == "STALE"
+    assert merged["intraday_overlay_available"] is False
+    assert merged["intraday_estimate"]["estimated_nav"] is None
+    assert merged["portfolio_daily"] == base["portfolio_daily"]
+
+
+def test_intraday_session_lifecycle_blocks_unpromoted_eod_estimate_without_fabricating_official_row():
+    snapshot = build_operational_snapshot(
+        _canonical(),
+        intraday={
+            "provider": "test-delayed",
+            "estimated_nav": 1_004_500.0,
+            "estimated_pnl": 40.0,
+            "market_data_as_of": "2026-06-15T16:05:00-04:00",
+            "covered_tickers": 222,
+            "total_tickers": 222,
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "refresh_meta": {
+                "data_freshness": "DELAYED",
+                "market_session_status": "After-hours",
+                "session_date": "2026-06-15",
+            },
+        },
+    )
+    lifecycle = snapshot["trading_session_lifecycle"]
+    assert lifecycle["state"] == "EOD_PENDING_OFFICIAL_PROMOTION"
+    assert lifecycle["state_label"] == "EOD estimate pending official ledger promotion"
+    assert snapshot["latest_official_ledger_date"] == "2026-06-11"
+    assert snapshot["official_close_as_of"] == "2026-06-12"
+    assert snapshot["delayed_estimate_as_of"] == "2026-06-15T16:05:00-04:00"
+    assert snapshot["current_trading_session_date"] == "2026-06-15"
+    assert snapshot["intraday_estimate"]["written_to_official_ledger"] is False
+    assert snapshot["portfolio_daily"][-1]["date"] == "2026-06-11"
+    assert not any(row["date"] == "2026-06-15" for row in snapshot["portfolio_daily"])
+    assert any("Official portfolio_daily row is not present" in item for item in lifecycle["official_promotion_blockers"])
+    assert any("NEXT_OPEN_TO_OPEN requires the next-open return endpoint" in item for item in lifecycle["official_promotion_blockers"])
+    assert any("Missing complete ordinary strategy daily rows" in item for item in lifecycle["official_promotion_blockers"])
+    assert any("Missing paper fill rows" in item for item in lifecycle["official_promotion_blockers"])
+    assert any("Missing position rows" in item for item in lifecycle["official_promotion_blockers"])
+    assert "delayed estimates are never written to the official ledger" in lifecycle["promotion_condition"]
+    readiness = snapshot["official_promotion_readiness"]
+    assert readiness["readiness_state"] == "EOD_PENDING_OFFICIAL_PROMOTION"
+    assert readiness["can_promote"] is False
+    assert readiness["target_ledger_date"] == "2026-06-15"
+    assert readiness["required_return_endpoint"] == "next trading open after 2026-06-15"
+    assert readiness["accounting_convention"] == "NEXT_OPEN_TO_OPEN"
+    assert any("NEXT_OPEN_TO_OPEN requires the next-open return endpoint" in item for item in readiness["blockers"])
+
+
+def test_official_promotion_readiness_allows_ready_only_without_input_blockers():
+    readiness = official_promotion_readiness(
+        {
+            "trading_session_lifecycle": {
+                "state": "EOD_PENDING_OFFICIAL_PROMOTION",
+                "latest_official_ledger_date": "2026-06-11",
+                "official_close_as_of": "2026-06-12",
+                "delayed_estimate_as_of": "2026-06-15T16:05:00-04:00",
+                "current_trading_session_date": "2026-06-15",
+                "market_session_status": "After-hours",
+                "accounting_convention": "NEXT_OPEN_TO_OPEN",
+                "official_promotion_blockers": [
+                    "Official portfolio_daily row is not present for the current trading session.",
+                    "Operational snapshot must be rebuilt after official ledger generation.",
+                ],
+            }
+        }
+    )
+    assert readiness["readiness_state"] == "READY_FOR_PROMOTION"
+    assert readiness["can_promote"] is True
+    assert readiness["target_ledger_date"] == "2026-06-15"
+    assert readiness["recommended_command"].endswith("--target-date 2026-06-15 --dry-run")
+    assert readiness["execute_enabled"] is False
+
+
+def test_official_promoted_readiness_does_not_duplicate_estimate():
+    readiness = official_promotion_readiness(
+        {
+            "trading_session_lifecycle": {
+                "state": "OFFICIAL_PROMOTED",
+                "latest_official_ledger_date": "2026-06-15",
+                "official_close_as_of": "2026-06-16",
+                "delayed_estimate_as_of": "2026-06-15T16:05:00-04:00",
+                "current_trading_session_date": "2026-06-15",
+                "market_session_status": "After-hours",
+                "accounting_convention": "NEXT_OPEN_TO_OPEN",
+                "official_promotion_blockers": [],
+            }
+        }
+    )
+    assert readiness["readiness_state"] == "OFFICIAL_PROMOTED"
+    assert readiness["can_promote"] is False
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    assert '["INTRADAY_ESTIMATE","EOD_PENDING_OFFICIAL_PROMOTION"].includes(lifecycle(c).state)' in app
+
+
+def test_missing_delayed_prices_write_error_overlay_without_mutating_official_snapshot(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    base = load_operational_snapshot_for_response(root)
+    base_hash = _digest(root / "output/operational_snapshot.json")
     baseline = refresh_operational_snapshot(
         root,
         fetch_fn=lambda tickers, **kwargs: {
@@ -284,12 +444,17 @@ def test_missing_delayed_prices_mark_snapshot_stale_without_zeroing_pnl(tmp_path
             "latest_observation_ts_et": None,
         },
     )
-    snapshot = json.loads((root / "output/operational_snapshot.json").read_text())
+    snapshot = load_operational_snapshot_for_response(root)
+    overlay = read_operational_intraday_overlay(root)
     assert failed["ok"] is False
-    assert snapshot["snapshot_id"] == baseline["snapshot_id"]
-    assert snapshot["data_freshness"] == "STALE"
-    assert snapshot["intraday_estimate"]["estimated_pnl"] == baseline["intraday_estimate"]["estimated_pnl"]
-    assert snapshot["intraday_estimate"]["estimated_pnl"] != 0
+    assert baseline["intraday_runtime_status"] == "LOADED"
+    assert _digest(root / "output/operational_snapshot.json") == base_hash
+    assert snapshot["snapshot_id"] == base["snapshot_id"]
+    assert snapshot["intraday_runtime_status"] == "ERROR"
+    assert snapshot["data_freshness"] == "OFFICIAL_CLOSE"
+    assert snapshot["intraday_estimate"]["estimated_pnl"] is None
+    assert overlay["status"] == "ERROR"
+    assert overlay["estimated_pnl"] is None
 
 
 def test_overlapping_refresh_is_blocked(tmp_path: Path):
@@ -411,7 +576,7 @@ def test_strategy_effective_dates_are_specific_and_pre_effective_rows_are_exclud
     assert active["strategy_effective_date"] == "2026-06-04"
     assert pending["strategy_effective_date"] == "2026-06-15"
     assert pending["current_operational_status"] == "PRE_OPERATIONAL"
-    assert pending["current_operational_label"] == "Pre-Operational"
+    assert pending["current_operational_label"] == "APPROVED_PENDING / PRE_OPERATIONAL"
     assert pending["ending_nav"] is None
     assert pending["daily_pnl"] is None
     assert not any(row["strategy_id"] == "WQ_ALPHA_018" for row in snapshot["strategy_daily"])
@@ -445,7 +610,13 @@ def test_wq_admission_requires_canonical_execution_evidence_and_keeps_combined_n
     assert gate["evidence"]["canonical_trade_rows"] == 0
     assert gate["evidence"]["canonical_position_rows"] == 0
     assert gate["evidence"]["verified_execution_rows"] == 0
-    assert "No canonical WQ Paper Execution / Paper Fill rows are present." in gate["blockers"]
+    assert gate["blockers"] == [
+        "Missing canonical signal date",
+        "Missing target rows",
+        "Missing paper fill rows",
+        "Missing position rows",
+        "Missing verified execution provenance",
+    ]
     assert wq["admission_gate"]["exact_blocker"] == gate["exact_blocker"]
     assert wq["current_operational_status"] == "PRE_OPERATIONAL"
     assert wq["daily_pnl"] is None

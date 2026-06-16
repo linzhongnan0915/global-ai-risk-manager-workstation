@@ -54,7 +54,9 @@ def test_dashboard_foundation_uses_canonical_operational_contract():
         "Intraday Estimated NAV",
         "Intraday Estimated P&L",
         "Latest Delayed Price As-Of",
+        "Official Ledger Date",
         "Last Official Close",
+        "Official close/as-of",
         "Estimated Contribution",
         "Not Official Ledger",
     ):

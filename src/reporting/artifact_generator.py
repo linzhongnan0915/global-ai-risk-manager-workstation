@@ -246,7 +246,7 @@ def _data_classification(*, market_as_of: str | None, retrieved_at: str) -> dict
         "operating_period_source": "historical_backtest_slice",
         "market_as_of": market_as_of,
         "retrieved_at": retrieved_at,
-        "disclosure": "Prototype model portfolio · ETF proxy research data · Not live positions or fills",
+        "disclosure": "Prototype model portfolio - ETF proxy research data - Not live positions or fills",
     }
 
 
@@ -1087,9 +1087,9 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
             "Allocation & Rebalance",
             "Risk Factors & Exposure",
             "Correlation & Diversification",
-            "Market & Macro Monitor",
+            "Workflow & Shadow-Live Testing",
             "Backtesting & Research Lab",
-            "Strategy Library & Workflow",
+            "Strategy Library & Governance",
             "Daily Risk Report / Decision Log",
         ],
     }
@@ -1503,9 +1503,9 @@ def generate_dashboard_artifact(
             "Allocation & Rebalance",
             "Risk Factors & Exposure",
             "Correlation & Diversification",
-            "Market & Macro Monitor",
+            "Workflow & Shadow-Live Testing",
             "Backtesting & Research Lab",
-            "Strategy Library & Workflow",
+            "Strategy Library & Governance",
             "Daily Risk Report / Decision Log",
         ],
     }

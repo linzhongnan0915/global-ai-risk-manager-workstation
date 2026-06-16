@@ -1,6 +1,6 @@
 # Risk Manager Workstation
 
-Final local release candidate `47a3a88241a642ab67a6b4956b73cad0e7d9f687` for a source-backed risk management workstation. The app presents a Shadow-Live Paper Portfolio, strategy-level operating records, date-effective membership, delayed intraday estimates, and research evidence without granting brokerage authority.
+Current local staging MVP is ready to commit after final QA. Last pushed `main` remains `a12fb5f` until this staging update is committed and pushed. The app presents a Shadow-Live Paper Portfolio, strategy-level operating records, date-effective membership, delayed intraday estimates, and research evidence without granting brokerage authority.
 
 ## Operating Model
 
@@ -59,19 +59,19 @@ READY:
 - Command Center
 - Strategy Monitor
 - Strategy Detail
-- Strategy Library & Workflow
+- Strategy Library & Governance
 
 MVP_READY:
 
 - Allocation & Rebalance
 - Backtesting & Research Lab
 - Daily Risk Report
+- Workflow & Shadow-Live Testing
 
 IN_DEVELOPMENT:
 
 - Risk Factors & Exposure
 - Correlation & Diversification
-- Market & Macro Monitor
 
 BLOCKED:
 
@@ -104,7 +104,7 @@ python scripts/verify_dashboard_browser.py --no-screenshots
 node --check dashboard/foundation-app.js
 ```
 
-Expected final focused result: `40 passed`, browser verifier PASS, JavaScript syntax PASS, browser console `0` errors.
+Expected final focused result: `47 passed`, browser verifier PASS, JavaScript syntax PASS, browser console `0` errors.
 
 ## Release Docs
 

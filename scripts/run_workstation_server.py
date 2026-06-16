@@ -37,7 +37,9 @@ from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.reporting.operational_snapshot import (
+    load_operational_snapshot_for_response,
     load_or_build_operational_snapshot,
+    official_promotion_readiness,
     persist_decision,
     read_decisions,
     refresh_operational_snapshot,
@@ -84,6 +86,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     bootstrap_artifact_bytes: bytes | None = None
     research_extension_bytes: bytes | None = None
     operational_snapshot_bytes: bytes | None = None
+    intraday_scheduler_enabled = False
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
 
@@ -95,10 +98,9 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     @classmethod
     def warm_operational_snapshot_cache(cls, root: Path) -> None:
-        snapshot_path = root / "output" / "operational_snapshot.json"
-        if not snapshot_path.exists():
-            load_or_build_operational_snapshot(root)
-        cls.operational_snapshot_bytes = snapshot_path.read_bytes()
+        scheduler_enabled = bool(getattr(cls, "intraday_scheduler_enabled", False))
+        snapshot = load_operational_snapshot_for_response(root, scheduler_enabled=scheduler_enabled)
+        cls.operational_snapshot_bytes = _json_bytes(snapshot)
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -260,7 +262,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
                 body = self.operational_snapshot_bytes
-                if body is None:
+                if body is None or b"official_promotion_readiness" not in body:
                     self.warm_operational_snapshot_cache(self.server_root)
                     body = self.operational_snapshot_bytes
                 self._send_precomputed_json(body or b"{}")
@@ -357,8 +359,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         if parsed.path in {"/api/refresh", "/api/refresh/"}:
             try:
                 result = refresh_operational_snapshot(self.server_root)
-                if result.get("ok"):
-                    self.warm_operational_snapshot_cache(self.server_root)
+                self.warm_operational_snapshot_cache(self.server_root)
                 status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 503
                 self._send_json(result, status=status)
             except Exception as exc:
@@ -375,7 +376,10 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     {
                         "ok": True,
                         "decision": decision,
-                        "snapshot": load_or_build_operational_snapshot(self.server_root),
+                        "snapshot": load_operational_snapshot_for_response(
+                            self.server_root,
+                            scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                        ),
                     },
                     status=201,
                 )
@@ -512,6 +516,7 @@ def _startup_refresh() -> None:
 
 
 def _intraday_scheduler_loop(root: Path) -> None:
+    official_promotion_enabled = os.environ.get("ENABLE_OFFICIAL_PROMOTION", "").strip().lower() in {"1", "true", "yes", "on"}
     while True:
         interval = 10
         try:
@@ -522,12 +527,20 @@ def _intraday_scheduler_loop(root: Path) -> None:
                 selected_interval_minutes=status.get("selected_interval_minutes"),
             )
             if cfg.get("enabled", True):
-                run_intraday_refresh(
-                    interval_minutes=interval,
-                    force=False,
-                    artifact_path=root / "output" / "dashboard_artifact.json",
-                    config=cfg,
-                )
+                result = refresh_operational_snapshot(root)
+                if result.get("ok"):
+                    WorkstationHandler.warm_operational_snapshot_cache(root)
+                    logger.info("Operational intraday overlay refreshed: %s", result.get("snapshot_id"))
+                else:
+                    WorkstationHandler.warm_operational_snapshot_cache(root)
+                    logger.warning("Operational intraday overlay refresh failed: %s", result.get("error"))
+                readiness = official_promotion_readiness(result if isinstance(result, dict) else {})
+                if readiness.get("readiness_state") == "READY_FOR_PROMOTION":
+                    logger.info("Official promotion readiness: READY_FOR_PROMOTION")
+                    if not official_promotion_enabled:
+                        logger.info("Official promotion execution disabled; set ENABLE_OFFICIAL_PROMOTION=1 only after manual approval.")
+                elif readiness.get("readiness_state") == "EOD_PENDING_OFFICIAL_PROMOTION":
+                    logger.info("Official promotion readiness blocked: %s", (readiness.get("blockers") or ["N/A"])[0])
         except Exception as exc:
             logger.exception("Intraday scheduler error: %s", exc)
         time.sleep(max(interval, 1) * 60)
@@ -542,13 +555,25 @@ def main(
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     bind_host, bind_port = resolve_server_bind(host, port)
-    set_background_scheduler_enabled(False)
-    if refresh_on_start or intraday_scheduler:
-        print("External refresh and scheduler are disabled for the Phase 1 local foundation.")
+    env_scheduler = os.environ.get("ENABLE_INTRADAY_SCHEDULER", "").strip().lower() in {"1", "true", "yes", "on"}
+    scheduler_enabled = bool(not no_intraday_scheduler and (intraday_scheduler is True or env_scheduler))
+    set_background_scheduler_enabled(scheduler_enabled)
+    WorkstationHandler.intraday_scheduler_enabled = scheduler_enabled
+    if refresh_on_start:
+        print("Startup official/live refresh is disabled for the Foundation dashboard.")
     WorkstationHandler.warm_operational_snapshot_cache(PROJECT_ROOT)
     server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
     print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
     print("Default page load: /api/operational-snapshot (official ledger plus separate intraday estimate)")
+    if scheduler_enabled:
+        threading.Thread(target=_intraday_scheduler_loop, args=(PROJECT_ROOT,), daemon=True).start()
+        print("Operational intraday overlay scheduler enabled.")
+    else:
+        print("Operational intraday overlay scheduler disabled.")
+    if os.environ.get("ENABLE_OFFICIAL_PROMOTION", "").strip().lower() in {"1", "true", "yes", "on"}:
+        print("Official promotion readiness hook enabled; execute mode remains manual.")
+    else:
+        print("Official promotion execution disabled. Readiness is reported only.")
     server.serve_forever()
 
 

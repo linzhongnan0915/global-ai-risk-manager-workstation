@@ -17,7 +17,9 @@ from src.reporting.strategy_research_artifacts import load_strategy_research_art
 from src.strategies.display_metadata import strategy_display_metadata
 
 
-SNAPSHOT_VERSION = "3.6.6"
+SNAPSHOT_VERSION = "3.6.7"
+INTRADAY_OVERLAY_SCHEMA_VERSION = "intraday_overlay_v1"
+INTRADAY_OVERLAY_STALE_AFTER_SECONDS = 10 * 60
 REFRESH_INTERVAL_SECONDS = 300
 INITIAL_SHADOW_CAPITAL = 1_000_000.0
 EXPECTED_ORDINARY_ACTIVE_SLEEVES = 16
@@ -36,7 +38,7 @@ PROVENANCE_LABELS = {
     "RECONSTRUCTED_PAPER_BACKFILL": "Reconstructed Paper Record / Retrospective Paper Backfill",
     "PENDING_EXECUTION": "Pending Execution",
     "PRE_OPERATIONAL": "Pre-Operational",
-    "INVALID_EXECUTION_RECORD": "Invalid Execution Record",
+    "INVALID_EXECUTION_RECORD": "Paper Provenance Pending",
 }
 
 
@@ -73,6 +75,7 @@ def _paths(root: Path) -> dict[str, Path]:
         "canonical": root / "dashboard/data/canonical_operational.json",
         "source_bundle": root / "dashboard/data/shadow_live_bundle.json",
         "snapshot": root / "output/operational_snapshot.json",
+        "intraday_overlay": root / "output/operational_intraday_overlay.json",
         "status": root / "output/operational_refresh_status.json",
         "lock": root / "output/operational_snapshot.lock",
         "decisions": root / "output/command_center_decisions.json",
@@ -319,6 +322,173 @@ def _official_contributors(strategies: list[dict[str, Any]], limit: int = 4) -> 
     return [enrich(row) for row in winners], [enrich(row) for row in losers]
 
 
+def _date_from_iso(value: str | None) -> str | None:
+    if not value:
+        return None
+    return str(value)[:10]
+
+
+def _trading_session_lifecycle(
+    *,
+    portfolio_daily: list[dict[str, Any]],
+    strategy_daily: list[dict[str, Any]],
+    trades: list[dict[str, Any]],
+    holdings: list[dict[str, Any]],
+    official: dict[str, Any],
+    intraday_estimate: dict[str, Any],
+    refresh_meta: dict[str, Any],
+) -> dict[str, Any]:
+    """Classify delayed estimates without promoting them into official NEXT_OPEN_TO_OPEN records."""
+    latest_official_ledger_date = portfolio_daily[-1].get("date") if portfolio_daily else None
+    official_dates = {row.get("date") for row in portfolio_daily if row.get("date")}
+    delayed_as_of = intraday_estimate.get("market_data_as_of")
+    current_session = refresh_meta.get("session_date") or _date_from_iso(delayed_as_of)
+    has_estimate = (
+        delayed_as_of is not None
+        or intraday_estimate.get("estimated_nav") is not None
+        or intraday_estimate.get("estimated_pnl") is not None
+    )
+    market_status = refresh_meta.get("market_session_status")
+    official_promoted = bool(current_session and current_session in official_dates)
+    blockers: list[str] = []
+    if not has_estimate:
+        state = "OFFICIAL_ONLY"
+        blockers.append("No current delayed estimate is available for official promotion.")
+    elif official_promoted:
+        state = "OFFICIAL_PROMOTED"
+    else:
+        closed_status = str(market_status or "").lower() in {"after-hours", "closed", "post_close_pending"}
+        state = "EOD_PENDING_OFFICIAL_PROMOTION" if closed_status else "INTRADAY_ESTIMATE"
+        blockers.append("Official portfolio_daily row is not present for the current trading session.")
+        blockers.append("NEXT_OPEN_TO_OPEN requires the next-open return endpoint; same-day close promotion would require a separate accounting decision.")
+        ordinary_rows = [
+            row for row in strategy_daily
+            if row.get("date") == current_session and row.get("strategy_id") != "COMBINED_PORTFOLIO"
+        ]
+        if len({row.get("strategy_id") for row in ordinary_rows}) < EXPECTED_ORDINARY_ACTIVE_SLEEVES:
+            blockers.append("Missing complete ordinary strategy daily rows for the current trading session.")
+        if not any(row.get("execution_date") == current_session for row in trades):
+            blockers.append("Missing paper fill rows for the current trading session.")
+        if not any(row.get("date") == current_session for row in holdings):
+            blockers.append("Missing position rows for the current trading session.")
+        blockers.append("Target row detail is not loaded in the operational snapshot; verify canonical target snapshots before promotion.")
+        blockers.append("Operational snapshot must be rebuilt after official ledger generation.")
+    required_inputs = [
+        {
+            "input": "market data endpoint required by NEXT_OPEN_TO_OPEN",
+            "status": "Complete" if official_promoted else ("Pending" if has_estimate else "Not loaded"),
+        },
+        {
+            "input": "strategy daily rows",
+            "status": "Complete" if current_session and any(row.get("date") == current_session for row in strategy_daily) else "Missing",
+        },
+        {
+            "input": "target rows",
+            "status": "Not loaded in operational snapshot",
+        },
+        {
+            "input": "paper fill rows",
+            "status": "Complete" if current_session and any(row.get("execution_date") == current_session for row in trades) else "Missing",
+        },
+        {
+            "input": "position rows",
+            "status": "Complete" if current_session and any(row.get("date") == current_session for row in holdings) else "Missing",
+        },
+        {
+            "input": "Combined derived row",
+            "status": "Derived complete" if current_session and any(
+                row.get("date") == current_session and row.get("strategy_id") == "COMBINED_PORTFOLIO"
+                for row in strategy_daily
+            ) else "Derived unavailable",
+        },
+        {
+            "input": "snapshot rebuild",
+            "status": "Required after official generation" if not official_promoted else "Complete",
+        },
+    ]
+    labels = {
+        "OFFICIAL_ONLY": "Official only",
+        "INTRADAY_ESTIMATE": "Intraday estimate / not official ledger",
+        "EOD_PENDING_OFFICIAL_PROMOTION": "EOD estimate pending official ledger promotion",
+        "OFFICIAL_PROMOTED": "Official promoted",
+    }
+    return {
+        "state": state,
+        "state_label": labels[state],
+        "latest_official_ledger_date": latest_official_ledger_date,
+        "official_close_as_of": official.get("latest_official_close_date"),
+        "delayed_estimate_as_of": delayed_as_of,
+        "current_trading_session_date": current_session,
+        "market_session_status": market_status,
+        "official_promotion_blockers": blockers,
+        "required_inputs": required_inputs,
+        "accounting_convention": "NEXT_OPEN_TO_OPEN",
+        "promotion_condition": "Promotion requires a canonical portfolio_daily row generated from real NEXT_OPEN_TO_OPEN inputs; delayed estimates are never written to the official ledger.",
+        "chart_behavior": "Official portfolio_daily.date records are solid; delayed estimates are dashed and excluded when the session is official-promoted.",
+    }
+
+
+def official_promotion_readiness(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Return deterministic EOD promotion readiness without mutating official ledgers."""
+    lifecycle = snapshot.get("trading_session_lifecycle") or {}
+    state = lifecycle.get("state") or "OFFICIAL_ONLY"
+    target_ledger_date = lifecycle.get("current_trading_session_date")
+    blockers = list(lifecycle.get("official_promotion_blockers") or [])
+    hard_blockers = [
+        item for item in blockers
+        if not str(item).startswith("Official portfolio_daily row is not present")
+        and not str(item).startswith("Operational snapshot must be rebuilt")
+    ]
+    if state == "EOD_PENDING_OFFICIAL_PROMOTION" and not hard_blockers:
+        readiness_state = "READY_FOR_PROMOTION"
+        can_promote = True
+    else:
+        readiness_state = state
+        can_promote = False
+    if state == "OFFICIAL_PROMOTED":
+        can_promote = False
+    command = None
+    if can_promote and target_ledger_date:
+        command = (
+            f"python scripts\\promote_eod_official_ledger.py --target-date {target_ledger_date} --dry-run"
+        )
+    return {
+        "can_promote": can_promote,
+        "readiness_state": readiness_state,
+        "target_ledger_date": target_ledger_date,
+        "required_return_endpoint": (
+            f"next trading open after {target_ledger_date}"
+            if target_ledger_date
+            else "N/A"
+        ),
+        "accounting_convention": lifecycle.get("accounting_convention") or "NEXT_OPEN_TO_OPEN",
+        "blockers": blockers if not can_promote else [],
+        "input_blockers": hard_blockers,
+        "recommended_command": command,
+        "manual_dry_run_command": (
+            f"python scripts\\promote_eod_official_ledger.py --target-date {target_ledger_date} --dry-run"
+            if target_ledger_date
+            else "N/A"
+        ),
+        "execute_enabled": False,
+        "execute_mode": "Deferred in Step 13A; use dry-run readiness only.",
+        "latest_official_ledger_date": lifecycle.get("latest_official_ledger_date"),
+        "official_close_as_of": lifecycle.get("official_close_as_of"),
+        "delayed_estimate_as_of": lifecycle.get("delayed_estimate_as_of"),
+        "current_trading_session_date": target_ledger_date,
+        "market_session_status": lifecycle.get("market_session_status"),
+        "promotion_policy": (
+            "Official promotion is manual and disabled by default. Under NEXT_OPEN_TO_OPEN, "
+            "same-day close does not automatically create a same-day portfolio_daily.date."
+        ),
+        "required_pipeline": [
+            "scripts\\run_shadow_live_daily.py with the correct raw_end_date",
+            "scripts\\build_canonical_frontend_contract.py",
+            "scripts\\build_operational_snapshot.py",
+        ],
+    }
+
+
 def _proposal_state(strategies: list[dict[str, Any]], portfolio: dict[str, Any], decisions: list[dict]) -> dict:
     accepted = [row for row in strategies if row["membership_state"] in {"executed", "approved_pending"}]
     proposed = {row["internal_id"]: portfolio["approved_equal_weight"] for row in accepted}
@@ -377,20 +547,16 @@ def _wq_admission_gate(canonical: dict[str, Any]) -> dict[str, Any]:
         "execution_enabled": bool(strategy.get("execution_enabled")),
     }
     blockers = []
-    if not evidence["membership_effective_reached_in_canonical"]:
-        blockers.append(
-            f"Membership effective date {effective_from or 'N/A'} is after canonical portfolio as-of {as_of_date or 'N/A'}."
-        )
     if not evidence["canonical_signal_date"]:
-        blockers.append("No canonical WQ signal date is present.")
+        blockers.append("Missing canonical signal date")
     if evidence["canonical_target_rows"] == 0:
-        blockers.append("No canonical WQ target-position artifact is present.")
+        blockers.append("Missing target rows")
     if evidence["canonical_trade_rows"] == 0:
-        blockers.append("No canonical WQ Paper Execution / Paper Fill rows are present.")
+        blockers.append("Missing paper fill rows")
     if evidence["canonical_position_rows"] == 0:
-        blockers.append("No canonical WQ position rows are present.")
+        blockers.append("Missing position rows")
     if evidence["verified_execution_rows"] == 0:
-        blockers.append("No WQ record satisfies VERIFIED_SHADOW_EXECUTION provenance.")
+        blockers.append("Missing verified execution provenance")
     admitted = not blockers
     return {
         "strategy_id": strategy_id,
@@ -451,7 +617,7 @@ def build_operational_snapshot(
         trade["execution_provenance"] = classify_execution_provenance(trade)
         trade["execution_provenance_label"] = PROVENANCE_LABELS[trade["execution_provenance"]]
         if trade["execution_provenance"] != "VERIFIED_SHADOW_EXECUTION":
-            trade["status"] = trade["execution_provenance"].replace("_", " ").title()
+            trade["status"] = PROVENANCE_LABELS[trade["execution_provenance"]]
             trade["fill_type"] = "No Verified Paper Fill"
         trades.append(trade)
     holdings = _current_holdings(canonical["holdings"])
@@ -579,6 +745,7 @@ def build_operational_snapshot(
                 **deepcopy(source),
                 **metadata_by_id[internal_id],
                 "sleeve_weight": None if source.get("membership_state") == "approved_pending" else 1 / TOP_LEVEL_ACTIVE_SLEEVES,
+                "current_weight": None if source.get("membership_state") == "approved_pending" else source.get("current_weight"),
                 "combined_portfolio_contribution": None,
                 "initial_sleeve_capital": INITIAL_SLEEVE_CAPITAL,
                 "first_reconstructed_record_date": first_reconstructed,
@@ -660,6 +827,10 @@ def build_operational_snapshot(
             strategy_record["admission_gate"] = deepcopy(wq_gate)
             strategy_record["exact_blocker"] = wq_gate["exact_blocker"]
             strategy_record["proposed_post_admission_sleeve_weight"] = 1 / PENDING_POST_ADMISSION_SLEEVES
+            strategy_record["current_operational_label"] = "APPROVED_PENDING / PRE_OPERATIONAL"
+            strategy_record["paper_fill_status"] = "No Paper Fill"
+            strategy_record["live_brokerage_fill"] = "Disabled / No Live Brokerage Fill"
+            strategy_record["action"] = "PENDING ADMISSION"
         strategies.append(strategy_record)
         strategies[-1]["max_drawdown"] = _max_drawdown(
             [{"current_drawdown": row.get("current_drawdown")} for row in strategy_history]
@@ -722,6 +893,16 @@ def build_operational_snapshot(
         "written_to_official_ledger": False,
     }
     refresh_meta = (intraday or {}).get("refresh_meta") or {}
+    trading_session_lifecycle = _trading_session_lifecycle(
+        portfolio_daily=portfolio_daily,
+        strategy_daily=strategy_daily,
+        trades=trades,
+        holdings=holdings,
+        official=official,
+        intraday_estimate=intraday_estimate,
+        refresh_meta=refresh_meta,
+    )
+    official_readiness = official_promotion_readiness({"trading_session_lifecycle": trading_session_lifecycle})
     decision_rows = decisions or []
     portfolio_summary = deepcopy(canonical["portfolio_summary"])
     portfolio_summary.update(
@@ -780,8 +961,15 @@ def build_operational_snapshot(
         "generated_at": generated,
         "refresh_status": refresh_status,
         "data_freshness": refresh_meta.get("data_freshness") or ("DELAYED" if intraday else "OFFICIAL_CLOSE"),
-        "market_session_status": refresh_meta.get("market_session_status"),
+        "market_session_status": trading_session_lifecycle["market_session_status"],
         "market_data_as_of": intraday_estimate["market_data_as_of"],
+        "latest_official_ledger_date": trading_session_lifecycle["latest_official_ledger_date"],
+        "official_close_as_of": trading_session_lifecycle["official_close_as_of"],
+        "delayed_estimate_as_of": trading_session_lifecycle["delayed_estimate_as_of"],
+        "current_trading_session_date": trading_session_lifecycle["current_trading_session_date"],
+        "official_promotion_blockers": trading_session_lifecycle["official_promotion_blockers"],
+        "trading_session_lifecycle": trading_session_lifecycle,
+        "official_promotion_readiness": official_readiness,
         "portfolio_valuation_as_of": official["as_of"],
         "official_strategy_signal_as_of": canonical["operational_status"].get("latest_valid_target_position_date"),
         "latest_execution_as_of": canonical["operational_status"].get("latest_simulated_execution_date"),
@@ -914,6 +1102,8 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
         if (
             existing.get("snapshot_version") == SNAPSHOT_VERSION
             and existing.get("capital_reconciliation")
+            and existing.get("official_promotion_readiness")
+            and not existing.get("intraday_estimate", {}).get("provider")
             and (not _research_mapping_available(root) or _snapshot_research_evidence(existing))
         ):
             return existing
@@ -922,28 +1112,7 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
     research = load_strategy_research_artifacts(root, canonical["strategies"])
     snapshot = build_operational_snapshot(
         canonical,
-        intraday={
-            "provider": existing.get("intraday_estimate", {}).get("provider"),
-            "estimated_nav": existing.get("intraday_estimate", {}).get("estimated_nav"),
-            "estimated_pnl": existing.get("intraday_estimate", {}).get("estimated_pnl"),
-            "market_data_as_of": existing.get("intraday_estimate", {}).get("market_data_as_of"),
-            "covered_tickers": existing.get("intraday_estimate", {}).get("covered_tickers"),
-            "missing_tickers": existing.get("intraday_estimate", {}).get("missing_tickers"),
-            "stale_tickers": existing.get("intraday_estimate", {}).get("stale_tickers"),
-            "residual_pnl": existing.get("intraday_estimate", {}).get("residual_pnl"),
-            "holdings": existing.get("holdings"),
-            "strategy_contribution": {
-                row["internal_id"]: row.get("intraday_estimated_pnl")
-                for row in existing.get("strategies", [])
-            },
-            "ticker_security_contribution": existing.get("ticker_security_contribution"),
-            "refresh_meta": {
-                "data_freshness": existing.get("data_freshness"),
-                "market_session_status": existing.get("market_session_status"),
-                "last_successful_refresh": existing.get("last_successful_refresh"),
-                "next_refresh": existing.get("next_refresh"),
-            },
-        } if existing.get("intraday_estimate", {}).get("provider") else None,
+        intraday=None,
         decisions=read_decisions(root),
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=research,
@@ -964,17 +1133,183 @@ def _snapshot_research_evidence(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_iso_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _is_overlay_stale(overlay: dict[str, Any], *, now: datetime | None = None) -> bool:
+    generated = _parse_iso_timestamp(overlay.get("generated_at"))
+    if generated is None:
+        return True
+    stale_after = int(overlay.get("stale_after_seconds") or INTRADAY_OVERLAY_STALE_AFTER_SECONDS)
+    current = now or datetime.now(timezone.utc)
+    return (current - generated).total_seconds() > stale_after
+
+
+def _read_intraday_overlay(root: Path) -> dict[str, Any] | None:
+    overlay = _read_json(_paths(root)["intraday_overlay"], {})
+    return overlay or None
+
+
+def _intraday_from_overlay(overlay: dict[str, Any]) -> dict[str, Any] | None:
+    if overlay.get("schema_version") != INTRADAY_OVERLAY_SCHEMA_VERSION:
+        return None
+    if overlay.get("status") != "LOADED":
+        return None
+    coverage = overlay.get("price_coverage") or {}
+    return {
+        "provider": overlay.get("provider"),
+        "estimated_nav": overlay.get("estimated_nav"),
+        "estimated_pnl": overlay.get("estimated_pnl"),
+        "market_data_as_of": overlay.get("delayed_estimate_as_of"),
+        "covered_tickers": coverage.get("covered"),
+        "total_tickers": coverage.get("total"),
+        "missing_tickers": overlay.get("missing_tickers") or [],
+        "stale_tickers": overlay.get("stale_tickers") or [],
+        "residual_pnl": overlay.get("residual_pnl"),
+        "holdings": overlay.get("holdings") or [],
+        "strategy_contribution": {
+            row["internal_id"]: row.get("estimated_pnl")
+            for row in overlay.get("strategy_estimates") or []
+            if row.get("internal_id")
+        },
+        "ticker_security_contribution": overlay.get("ticker_security_contribution") or [],
+        "refresh_meta": {
+            "data_freshness": "DELAYED",
+            "market_session_status": overlay.get("market_session_status"),
+            "session_date": overlay.get("current_trading_session_date"),
+            "last_successful_refresh": overlay.get("generated_at"),
+            "next_refresh": overlay.get("next_refresh"),
+        },
+    }
+
+
+def _runtime_message(status: str, overlay: dict[str, Any] | None) -> str:
+    if status == "LOADED":
+        as_of = (overlay or {}).get("delayed_estimate_as_of") or "N/A"
+        return f"Delayed estimate loaded as-of {as_of}; not official ledger."
+    if status == "STALE":
+        as_of = (overlay or {}).get("delayed_estimate_as_of") or "N/A"
+        return f"Last delayed estimate as-of {as_of} is stale; official ledger unchanged."
+    if status == "ERROR":
+        errors = (overlay or {}).get("errors") or ["Delayed estimate refresh failed."]
+        return f"{errors[0]} Official ledger unchanged."
+    return "Delayed estimate not loaded; official ledger remains separate."
+
+
+def _attach_intraday_runtime_fields(
+    snapshot: dict[str, Any],
+    *,
+    status: str,
+    overlay: dict[str, Any] | None,
+    scheduler_enabled: bool,
+    available: bool,
+) -> dict[str, Any]:
+    enriched = deepcopy(snapshot)
+    enriched["intraday_runtime_status"] = status
+    enriched["intraday_overlay_available"] = available
+    enriched["intraday_scheduler_enabled"] = bool(scheduler_enabled)
+    enriched["intraday_refresh_message"] = _runtime_message(status, overlay)
+    enriched["intraday_overlay_metadata"] = {
+        "schema_version": (overlay or {}).get("schema_version"),
+        "generated_at": (overlay or {}).get("generated_at"),
+        "status": status,
+        "stale_after_seconds": (overlay or {}).get("stale_after_seconds"),
+        "delayed_estimate_as_of": (overlay or {}).get("delayed_estimate_as_of"),
+        "current_trading_session_date": (overlay or {}).get("current_trading_session_date"),
+        "errors": (overlay or {}).get("errors") or [],
+    }
+    return enriched
+
+
+def load_operational_snapshot_for_response(
+    root: Path,
+    *,
+    scheduler_enabled: bool = False,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Return official base snapshot merged with a fresh delayed overlay when available."""
+    base = load_or_build_operational_snapshot(root)
+    overlay = _read_intraday_overlay(root)
+    if not overlay:
+        return _attach_intraday_runtime_fields(
+            base,
+            status="NOT_LOADED",
+            overlay=None,
+            scheduler_enabled=scheduler_enabled,
+            available=False,
+        )
+    if overlay.get("status") == "ERROR":
+        return _attach_intraday_runtime_fields(
+            base,
+            status="ERROR",
+            overlay=overlay,
+            scheduler_enabled=scheduler_enabled,
+            available=False,
+        )
+    if overlay.get("status") != "LOADED" or _is_overlay_stale(overlay, now=now):
+        return _attach_intraday_runtime_fields(
+            base,
+            status="STALE" if overlay.get("status") == "LOADED" else str(overlay.get("status") or "NOT_LOADED"),
+            overlay=overlay,
+            scheduler_enabled=scheduler_enabled,
+            available=False,
+        )
+    intraday = _intraday_from_overlay(overlay)
+    if intraday is None:
+        return _attach_intraday_runtime_fields(
+            base,
+            status="ERROR",
+            overlay={
+                **overlay,
+                "errors": ["Intraday overlay schema is invalid for dashboard merge."],
+            },
+            scheduler_enabled=scheduler_enabled,
+            available=False,
+        )
+    canonical = _read_json(_paths(root)["canonical"], {})
+    source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
+    merged = build_operational_snapshot(
+        canonical,
+        intraday=intraday,
+        decisions=read_decisions(root),
+        operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
+        strategy_research_details=_snapshot_research_evidence(base),
+        refresh_status="SUCCESS",
+    )
+    return _attach_intraday_runtime_fields(
+        merged,
+        status="LOADED",
+        overlay=overlay,
+        scheduler_enabled=scheduler_enabled,
+        available=True,
+    )
+
+
+def read_operational_intraday_overlay(root: Path) -> dict[str, Any] | None:
+    """Public test/audit helper for the runtime delayed estimate overlay."""
+    return _read_intraday_overlay(root)
+
+
 def refresh_operational_snapshot(
     root: Path,
     *,
     fetch_fn: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Refresh delayed intraday estimates and atomically publish a last-known-good snapshot."""
+    """Refresh delayed intraday estimates into a runtime overlay without mutating official ledger rows."""
     paths = _paths(root)
     with snapshot_refresh_lock(paths["lock"]) as acquired:
         if not acquired:
             return {"ok": False, "refresh_status": "REFRESHING", "error": "refresh_already_in_progress"}
-        prior = load_or_build_operational_snapshot(root)
+        base = load_or_build_operational_snapshot(root)
         try:
             canonical = _read_json(paths["canonical"], {})
             source = _read_json(paths["source_bundle"], {}).get("shadow_live", {})
@@ -1036,46 +1371,107 @@ def refresh_operational_snapshot(
                 "refresh_meta": {
                     "data_freshness": freshness,
                     "market_session_status": session.status,
+                    "session_date": session.session_date,
                     "last_successful_refresh": now.isoformat(),
                     "next_refresh": (now + timedelta(seconds=REFRESH_INTERVAL_SECONDS)).isoformat(),
                 },
             }
-            snapshot = build_operational_snapshot(
+            merged = build_operational_snapshot(
                 canonical,
                 intraday=intraday,
                 decisions=read_decisions(root),
                 operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
-                strategy_research_details=_snapshot_research_evidence(prior),
+                strategy_research_details=_snapshot_research_evidence(base),
                 refresh_status="SUCCESS" if freshness == "DELAYED" else "STALE",
             )
-            _atomic_write_json(paths["snapshot"], snapshot)
-            _atomic_write_json(paths["status"], {"state": snapshot["refresh_status"], "snapshot_id": snapshot["snapshot_id"], "at": now.isoformat()})
-            return {"ok": True, **snapshot}
-        except Exception as exc:
-            failed_at = datetime.now(timezone.utc).isoformat()
-            stale_snapshot = deepcopy(prior) if prior else {}
-            if stale_snapshot:
-                stale_snapshot["refresh_status"] = "STALE"
-                stale_snapshot["data_freshness"] = "STALE"
-                stale_snapshot["last_failed_refresh"] = failed_at
-                stale_snapshot["refresh_error"] = str(exc)
-                stale_snapshot["alerts"] = list(stale_snapshot.get("alerts") or []) + [
+            overlay = {
+                "schema_version": INTRADAY_OVERLAY_SCHEMA_VERSION,
+                "generated_at": now.isoformat(),
+                "status": "LOADED",
+                "provider": intraday["provider"],
+                "current_trading_session_date": session.session_date,
+                "market_session_status": session.status,
+                "delayed_estimate_as_of": latest_price_as_of,
+                "estimated_nav": intraday["estimated_nav"],
+                "estimated_pnl": intraday["estimated_pnl"],
+                "estimated_return": (
+                    intraday["estimated_pnl"] / official_nav
+                    if official_nav not in {None, 0} and intraday["estimated_pnl"] is not None
+                    else None
+                ),
+                "price_coverage": {
+                    "covered": priced_tickers,
+                    "total": len(tickers),
+                },
+                "strategy_estimates": [
                     {
-                        "severity": "HIGH",
-                        "title": "Delayed price refresh failed",
-                        "detail": str(exc),
+                        "internal_id": row["internal_id"],
+                        "display_id": row.get("display_id"),
+                        "display_name": row.get("display_name"),
+                        "estimated_pnl": row.get("intraday_estimated_pnl"),
+                        "estimated_nav": row.get("intraday_estimated_nav"),
+                        "unavailable_reason": row.get("intraday_estimate_unavailable_reason"),
                     }
-                ]
-                _atomic_write_json(paths["snapshot"], stale_snapshot)
+                    for row in merged.get("strategies", [])
+                ],
+                "top_contributors": merged.get("top_contributors") or [],
+                "top_detractors": merged.get("top_detractors") or [],
+                "ticker_security_contribution": intraday["ticker_security_contribution"],
+                "holdings": enriched_holdings,
+                "missing_tickers": sorted(missing),
+                "stale_tickers": sorted(stale),
+                "residual_pnl": intraday["residual_pnl"],
+                "errors": [],
+                "stale_after_seconds": INTRADAY_OVERLAY_STALE_AFTER_SECONDS,
+                "next_refresh": intraday["refresh_meta"]["next_refresh"],
+                "official_ledger_unchanged": True,
+            }
+            _atomic_write_json(paths["intraday_overlay"], overlay)
             _atomic_write_json(
                 paths["status"],
-                {"state": "FAILED", "snapshot_id": prior.get("snapshot_id"), "failed_at": failed_at, "error": str(exc)},
+                {
+                    "state": "SUCCESS" if freshness == "DELAYED" else "STALE",
+                    "overlay_status": "LOADED",
+                    "snapshot_id": base.get("snapshot_id"),
+                    "overlay_generated_at": now.isoformat(),
+                    "at": now.isoformat(),
+                },
+            )
+            response = load_operational_snapshot_for_response(root, scheduler_enabled=False, now=now)
+            return {"ok": True, **response}
+        except Exception as exc:
+            failed_at = datetime.now(timezone.utc).isoformat()
+            error_overlay = {
+                "schema_version": INTRADAY_OVERLAY_SCHEMA_VERSION,
+                "generated_at": failed_at,
+                "status": "ERROR",
+                "provider": None,
+                "current_trading_session_date": None,
+                "market_session_status": None,
+                "delayed_estimate_as_of": None,
+                "estimated_nav": None,
+                "estimated_pnl": None,
+                "estimated_return": None,
+                "price_coverage": {"covered": None, "total": None},
+                "strategy_estimates": [],
+                "top_contributors": [],
+                "top_detractors": [],
+                "errors": [str(exc)],
+                "stale_after_seconds": INTRADAY_OVERLAY_STALE_AFTER_SECONDS,
+                "official_ledger_unchanged": True,
+            }
+            _atomic_write_json(paths["intraday_overlay"], error_overlay)
+            _atomic_write_json(
+                paths["status"],
+                {"state": "FAILED", "overlay_status": "ERROR", "snapshot_id": base.get("snapshot_id"), "failed_at": failed_at, "error": str(exc)},
             )
             return {
                 "ok": False,
-                "refresh_status": "STALE" if prior else "FAILED",
-                "snapshot_id": prior.get("snapshot_id"),
-                "generated_at": prior.get("generated_at"),
+                "refresh_status": "ERROR",
+                "intraday_runtime_status": "ERROR",
+                "intraday_overlay_available": False,
+                "snapshot_id": base.get("snapshot_id"),
+                "generated_at": base.get("generated_at"),
                 "error": str(exc),
             }
 
@@ -1130,27 +1526,7 @@ def persist_decision(root: Path, payload: dict[str, Any]) -> dict[str, Any]:
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     snapshot = build_operational_snapshot(
         canonical,
-        intraday={
-            "provider": prior.get("intraday_estimate", {}).get("provider"),
-            "estimated_nav": prior.get("intraday_estimate", {}).get("estimated_nav"),
-            "estimated_pnl": prior.get("intraday_estimate", {}).get("estimated_pnl"),
-            "market_data_as_of": prior.get("market_data_as_of"),
-            "covered_tickers": prior.get("intraday_estimate", {}).get("covered_tickers"),
-            "missing_tickers": prior.get("intraday_estimate", {}).get("missing_tickers"),
-            "residual_pnl": prior.get("intraday_estimate", {}).get("residual_pnl"),
-            "holdings": prior.get("holdings"),
-            "strategy_contribution": {
-                row["internal_id"]: row.get("intraday_estimated_pnl")
-                for row in prior.get("strategies", [])
-            },
-            "ticker_security_contribution": prior.get("ticker_security_contribution"),
-            "refresh_meta": {
-                "data_freshness": prior.get("data_freshness"),
-                "market_session_status": prior.get("market_session_status"),
-                "last_successful_refresh": prior.get("last_successful_refresh"),
-                "next_refresh": prior.get("next_refresh"),
-            },
-        } if prior.get("intraday_estimate", {}).get("provider") else None,
+        intraday=None,
         decisions=decisions,
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=_snapshot_research_evidence(prior),

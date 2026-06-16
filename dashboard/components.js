@@ -76,7 +76,7 @@ function formatFixedNumber(value, digits = 2) {
 function formatFactorLimitCard(check, exposureMap = {}, artifact = activeArtifact) {
   const metric = check?.metric;
   const label = humanizeMetricLabel(metric, artifact);
-  const tooltip = FACTOR_PROXY_METHODOLOGY[metric] || "Signed ETF proxy factor loading from the research model. Not a position-level institutional sensitivity.";
+  const tooltip = FACTOR_PROXY_METHODOLOGY[metric] || "Signed ETF proxy score from the research model. Not a position-level institutional sensitivity or validated institutional model.";
   if (isFactorExposureNotModeled(check)) {
     return {
       label,
@@ -168,7 +168,7 @@ function formatEligibilityDisplay(strategy) {
   if (current > 0 && !elig.eligible) {
     if (proposed > current + 1e-6) {
       return {
-        label: "Existing allocation under review · Reduce-only",
+        label: "Existing allocation under review - Reduce-only",
         status: "warning",
         detail: "No increase permitted under current gates.",
       };
@@ -407,11 +407,11 @@ function resolveCheckSubjectType(check, artifact = activeArtifact) {
 function formatIssueSubjectLabel(check, artifact = activeArtifact) {
   const type = resolveCheckSubjectType(check, artifact);
   const label = resolveCheckSubject(check, artifact);
-  if (type === "portfolio") return label === "Portfolio" ? "Portfolio" : `Portfolio · ${label}`;
-  if (type === "strategy") return `Strategy · ${label}`;
-  if (type === "factor") return `Factor · ${label}`;
-  if (type === "strategy pair") return `Strategy pair · ${label}`;
-  return `${humanize(type)} · ${label}`;
+  if (type === "portfolio") return label === "Portfolio" ? "Portfolio" : `Portfolio - ${label}`;
+  if (type === "strategy") return `Strategy - ${label}`;
+  if (type === "factor") return `Factor - ${label}`;
+  if (type === "strategy pair") return `Strategy pair - ${label}`;
+  return `${humanize(type)} - ${label}`;
 }
 
 function inferMetricFamily(check) {
@@ -655,7 +655,7 @@ function deriveCanonicalProxyDataState(artifact = activeArtifact) {
   if (marketStatus && marketStatus !== "Open") {
     return {
       label: "Latest market close",
-      detail: hasSnapshot ? "Outside regular session; showing last valid proxy snapshot." : "No intraday snapshot yet · Using latest validated daily proxy snapshot",
+      detail: hasSnapshot ? "Outside regular session; showing last valid proxy snapshot." : "No intraday snapshot yet - Using latest validated daily proxy snapshot",
       marketStatus,
       tone: "",
     };
@@ -665,7 +665,7 @@ function deriveCanonicalProxyDataState(artifact = activeArtifact) {
   if (status.data_freshness === "Stale") return { label: "Stale", detail: "Observation age exceeds configured threshold.", marketStatus: marketStatus || "Open", tone: "negative" };
   return {
     label: "Latest market close",
-    detail: hasSnapshot ? "Validated proxy snapshot." : "No intraday snapshot yet · Using latest validated daily proxy snapshot",
+    detail: hasSnapshot ? "Validated proxy snapshot." : "No intraday snapshot yet - Using latest validated daily proxy snapshot",
     marketStatus: marketStatus || "Closed",
     tone: "",
   };
@@ -686,7 +686,7 @@ function deriveProposalStatus(artifact, simulationResult, simulatedWeights) {
   const simBlockers = (simulationResult?.checks || []).filter((c) => c.status === "breach");
   const unchanged = proposalIsUnchanged(artifact, simulatedWeights);
   if (unchanged) {
-    return { status: "No rebalance proposed", tone: "neutral", detail: "Transaction cost: $0 · Current weights unchanged" };
+    return { status: "No rebalance proposed", tone: "neutral", detail: "Transaction cost: $0 - Current weights unchanged" };
   }
   if (!simulationResult) {
     return { status: "Simulation required", tone: "warning", detail: "Run simulation before human review" };
@@ -694,7 +694,7 @@ function deriveProposalStatus(artifact, simulationResult, simulatedWeights) {
   if (gateBlockers.length || simBlockers.length) {
     return { status: "Blocked by hard risk gate", tone: "breach", detail: `${gateBlockers.length + simBlockers.length} hard blocker(s)` };
   }
-  return { status: "Ready for human review", tone: "ok", detail: "Gates clear · Awaiting reviewer decision" };
+  return { status: "Ready for human review", tone: "ok", detail: "Gates clear - Awaiting reviewer decision" };
 }
 
 let workstationMonitoring = {

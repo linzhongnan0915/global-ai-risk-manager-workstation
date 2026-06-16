@@ -22,9 +22,9 @@ TABS = [
   "Allocation & Rebalance",
   "Risk Factors & Exposure",
   "Correlation & Diversification",
-  "Market & Macro Monitor",
+  "Workflow & Shadow-Live Testing",
   "Backtesting & Research Lab",
-  "Strategy Library & Workflow",
+  "Strategy Library & Governance",
   "Daily Risk Report / Decision Log",
 ]
 
@@ -268,6 +268,31 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         page.on("response", capture_bad_response)
         page.goto(report["url"], wait_until="load", timeout=120000)
         page.wait_for_timeout(1500)
+        served_snapshot = page.evaluate(
+            """async () => {
+                const response = await fetch(`/api/operational-snapshot?ts=${Date.now()}`);
+                return await response.json();
+            }"""
+        )
+        latest_ledger_date = (served_snapshot.get("portfolio_daily") or [{}])[-1].get("date")
+        official_close_date = (served_snapshot.get("official_daily") or {}).get("latest_official_close_date")
+        initial_body_text = page.locator("body").inner_text()
+        report["checks"]["current_served_labels"] = (
+            "Workflow & Shadow-Live Testing" in initial_body_text
+            and "Strategy Library & Governance" in initial_body_text
+            and "STYLE / FAMILY EXPOSURE PROXY" in initial_body_text
+            and "Market & Macro Monitor" not in initial_body_text
+            and "Strategy Library & Workflow" not in initial_body_text
+            and "Combined Family Mix" not in initial_body_text
+            and "INVALID_EXECUTION_RECORD" not in initial_body_text
+        )
+        report["checks"]["official_date_label_precision"] = (
+            f"Official portfolio ledger through {latest_ledger_date}" in initial_body_text
+            and (
+                latest_ledger_date == official_close_date
+                or f"Official Daily Ledger through {official_close_date}" not in initial_body_text
+            )
+        )
         for _ in range(20):
             if page.locator(".workflow-tabs").count() > 0 or page.locator("button[data-page]").count() > 0 or page.locator("button[data-tab]").count() > 0:
                 break
@@ -280,9 +305,9 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 ("Allocation & Rebalance", "3. Allocation & Rebalance"),
                 ("Risk Factors & Exposure", "4. Risk Factors & Exposure"),
                 ("Correlation & Diversification", "5. Correlation & Diversification"),
-                ("Market & Macro Monitor", "6. Market & Macro Monitor"),
+                ("Workflow & Shadow-Live Testing", "6. Workflow & Shadow-Live Testing"),
                 ("Backtesting & Research Lab", "7. Backtesting & Research Lab"),
-                ("Strategy Library & Workflow", "8. Strategy Library & Workflow"),
+                ("Strategy Library & Governance", "8. Strategy Library & Governance"),
                 ("Daily Risk Report", "9. Daily Risk Report"),
             ]
             for viewport in VIEWPORTS:
@@ -304,13 +329,34 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                         report["screenshots"].append(str(shot.relative_to(PROJECT_ROOT)))
 
             page.set_viewport_size({"width": 1440, "height": 900})
+            rail_checks = [
+                ("workflow", "Workflow & Shadow-Live Testing"),
+                ("settings", "Strategy Library & Governance"),
+                ("reports", "Daily Risk Report"),
+                ("risk", "Risk Factors & Exposure"),
+            ]
+            rail_results = {}
+            for rail_key, expected_tab in rail_checks:
+                page.locator(f'[data-rail-key="{rail_key}"]').click()
+                page.wait_for_timeout(350)
+                body_text = page.locator("body").inner_text()
+                top_active = page.locator(f'button[data-page="{expected_tab}"].active').count() == 1
+                rail_active = page.locator(f'button[data-rail-key="{rail_key}"].active').count() == 1
+                rail_results[rail_key] = expected_tab in body_text and top_active and rail_active
+            report["checks"]["left_rail_navigation"] = all(rail_results.values())
+            report["api_checks"]["left_rail_navigation"] = rail_results
             page.get_by_role("button", name="2. Strategy Monitor", exact=True).click()
             page.wait_for_timeout(500)
+            strategy_monitor_text = page.locator("body").inner_text()
             report["checks"]["final_counts_visible"] = (
-                "TOTAL REGISTRY ENTITIES" in page.locator("body").inner_text().upper()
-                and "ORDINARY ACTIVE" in page.locator("body").inner_text().upper()
-                and "CURRENT TOP-LEVEL ACTIVE" in page.locator("body").inner_text().upper()
-                and "COMBINED CONSTITUENTS" in page.locator("body").inner_text().upper()
+                "TOTAL REGISTRY ENTITIES" in strategy_monitor_text.upper()
+                and "ORDINARY ACTIVE" in strategy_monitor_text.upper()
+                and "CURRENT TOP-LEVEL ACTIVE" in strategy_monitor_text.upper()
+                and "COMBINED CONSTITUENTS" in strategy_monitor_text.upper()
+            )
+            report["checks"]["paper_provenance_boss_label"] = (
+                "Paper Provenance Pending" in strategy_monitor_text
+                and "INVALID_EXECUTION_RECORD" not in strategy_monitor_text
             )
             page.locator('[data-view-id="COMBINED_PORTFOLIO"]').click()
             page.wait_for_timeout(400)
@@ -324,13 +370,27 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             page.get_by_role("button", name="Close strategy detail", exact=True).click()
             page.wait_for_timeout(200)
+            if not report["checks"]["paper_provenance_boss_label"]:
+                page.locator('[data-view-id="C3A1_002"]').click()
+                page.wait_for_timeout(400)
+                provenance_drawer_text = page.locator("#detailDrawer").inner_text()
+                report["checks"]["paper_provenance_boss_label"] = (
+                    "Paper Provenance Pending" in provenance_drawer_text
+                    and "INVALID_EXECUTION_RECORD" not in provenance_drawer_text
+                )
+                page.get_by_role("button", name="Close strategy detail", exact=True).click()
+                page.wait_for_timeout(200)
             page.locator('[data-view-id="WQ_ALPHA_018"]').click()
             page.wait_for_timeout(400)
             wq_text = page.locator("#detailDrawer").inner_text()
+            wq_upper = wq_text.upper()
             report["checks"]["wq_pending_blocker"] = (
-                "PRE OPERATIONAL" in wq_text.upper()
-                and "No canonical WQ signal date is present" in wq_text
-                and ("PRE-OPERATIONAL" in wq_text.upper() or "PRE OPERATIONAL" in wq_text.upper())
+                (
+                    "PRE_OPERATIONAL" in wq_upper
+                    or "PRE-OPERATIONAL" in wq_upper
+                    or "PRE OPERATIONAL" in wq_upper
+                )
+                and "Missing canonical signal date" in wq_text
             )
             report["checks"]["no_console_errors"] = len(report["console_errors"]) == 0
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
@@ -511,7 +571,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             key in memo_text for key in ("equity_beta", "credit_spread", "rates_duration", "factor_herfindahl")
         )
         issues_text = page.locator("#reportIssuesTable").inner_text()
-        report["checks"]["report_no_portfolio_portfolio_label"] = "Portfolio · Portfolio" not in issues_text
+        report["checks"]["report_no_portfolio_portfolio_label"] = "Portfolio - Portfolio" not in issues_text
 
         page.click('button[data-tab="Risk Factors & Exposure"]')
         page.wait_for_timeout(400)

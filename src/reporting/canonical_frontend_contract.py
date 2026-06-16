@@ -28,7 +28,7 @@ class CanonicalContractError(ValueError):
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _previous_day(value: str) -> str:
@@ -118,7 +118,8 @@ def _strategy_records(shadow: dict[str, Any]) -> list[dict[str, Any]]:
                 "membership_state": "approved_pending",
                 "operational_state": "approved_pending",
                 "effective_from": details.get("membership_effective_date") or shadow.get("membership_effective_date"),
-                "current_weight": approved_outer_weight,
+                "current_weight": None,
+                "proposed_post_admission_weight": approved_outer_weight,
                 "data_status": "PENDING_EFFECTIVE_DATE",
                 "validation_status": details.get("validation_status"),
                 "latest_signal_date": None,

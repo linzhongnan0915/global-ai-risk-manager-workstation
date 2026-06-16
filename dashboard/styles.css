@@ -425,7 +425,7 @@ tr.research-only-row {
 }
 
 tr.research-only-row td:first-child strong::after {
-  content: " · research";
+  content: " - research";
   color: var(--subtle);
   font-size: 10px;
   font-weight: 500;

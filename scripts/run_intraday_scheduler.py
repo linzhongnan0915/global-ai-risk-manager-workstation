@@ -23,7 +23,7 @@ def main(interval_minutes: int | None = None, once: bool = False) -> None:
         interval_minutes=interval_minutes,
         selected_interval_minutes=status.get("selected_interval_minutes"),
     )
-    print(f"Intraday scheduler started · cadence={interval}m · provider={cfg.get('provider')}")
+    print(f"Intraday scheduler started - cadence={interval}m - provider={cfg.get('provider')}")
     while True:
         if cfg.get("enabled", True):
             result = run_intraday_refresh(interval_minutes=interval, force=False)

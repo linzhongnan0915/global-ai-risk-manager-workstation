@@ -274,7 +274,7 @@ const ResearchUniverse = (() => {
       strategy_name: member.name,
       label: "Composite weight",
       kind: "MEASURED",
-      detail: `${(member.weight * 100).toFixed(2)}% · Sharpe ${member.sharpe == null ? "N/A" : Number(member.sharpe).toFixed(2)}`,
+      detail: `${(member.weight * 100).toFixed(2)}% - Sharpe ${member.sharpe == null ? "N/A" : Number(member.sharpe).toFixed(2)}`,
     }));
   }
 

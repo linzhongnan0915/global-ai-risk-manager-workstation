@@ -82,7 +82,7 @@ DISPLAY_JS = """
     riskChecklistExists: Boolean(document.getElementById('riskChecklist')),
     monitorHasAllocatedStrategyBreaches: monitorKpi.includes('allocated strategy breaches'),
     reportHasRawKeys: rawKeys.some((key) => memo.includes(key)),
-    hasPortfolioPortfolio: issues.includes('Portfolio · Portfolio'),
+    hasPortfolioPortfolio: issues.includes('Portfolio - Portfolio'),
   };
 }
 """

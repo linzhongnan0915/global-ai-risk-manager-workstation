@@ -106,14 +106,14 @@ function scopeSummary(artifact, scopeName) {
 
 function renderTruthDisclosure(artifact = activeArtifact) {
   const disclosure = hasFactoryResearch()
-    ? "US-Equity Research Backtest · Research Only · Not live allocation or fills"
+    ? "US-Equity Research Backtest - Research Only - Not live allocation or fills"
     : (artifact?.data_classification?.disclosure
-      || "Prototype model portfolio · ETF proxy research data · Not live positions or fills");
+      || "Prototype model portfolio - ETF proxy research data - Not live positions or fills");
   const node = document.getElementById("truthDisclosure");
   if (node) node.textContent = disclosure;
   const build = document.getElementById("buildTrace");
   if (build && artifact?.build_metadata) {
-    build.textContent = `Build ${artifact.build_metadata.build_id || "n/a"} · Market as of ${artifact.build_metadata.market_as_of || "n/a"}`;
+    build.textContent = `Build ${artifact.build_metadata.build_id || "n/a"} - Market as of ${artifact.build_metadata.market_as_of || "n/a"}`;
   }
 }
 
@@ -184,7 +184,7 @@ function redrawAllCharts(artifact = activeArtifact) {
   const series = portfolioSeriesForDisplay(artifact);
   const start = investmentStart(artifact);
   const caption = document.getElementById("pnlChartCaption");
-  if (caption) caption.textContent = `Operating period since ${start} · Historical research context in Research Lab`;
+  if (caption) caption.textContent = `Operating period since ${start} - Historical research context in Research Lab`;
   drawOperatingPeriodCharts(series);
   renderFactorExposureBars("portfolioFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorExposureBars("riskFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
@@ -276,7 +276,7 @@ async function renderShadowStrategyRegistry(status = "ALL") {
   const table = document.getElementById("shadowStrategyTable");
   const heading = table?.closest(".strategy-monitor-panel")?.querySelector(".panel-title");
   if (heading && hasFactoryResearch()) {
-    heading.textContent = "US-Equity Research Backtest · Research Only";
+    heading.textContent = "US-Equity Research Backtest - Research Only";
   } else if (heading) {
     heading.textContent = "Retained Research / Shadow Registry";
   }
@@ -388,7 +388,7 @@ function mergeShadowLiveBundle(artifact, shadow) {
   artifact.live_refreshed_at = shadow.refreshed_at;
   artifact.shadow_live = shadow.shadow_live;
   artifact.data_classification = artifact.data_classification || {};
-  artifact.data_classification.disclosure = "SHADOW LIVE / PAPER PORTFOLIO · RESEARCH ONLY · LIVE CAPITAL 0% · EXECUTION DISABLED · NO LIVE FILL";
+  artifact.data_classification.disclosure = "SHADOW LIVE / PAPER PORTFOLIO - RESEARCH ONLY - LIVE CAPITAL 0% - EXECUTION DISABLED - NO LIVE FILL";
   return artifact;
 }
 
@@ -412,15 +412,15 @@ function renderShadowOperationalPanels(artifact) {
     const portfolioSummary = latest
       ? `<p><strong>Portfolio:</strong> continuous NAV ${money(latest.ending_nav)} | gross P&amp;L ${money(cumulativeGross)} | transaction costs ${money(cumulativeCost)} | net P&amp;L ${money(latest.cumulative_pnl)} | cost/gross ${costPctGross == null ? "n/a" : pct(costPctGross, 2)}<br><strong>Allocation:</strong> ACTIVE ${latest.active_count} | equal sleeve ${pct(latest.equal_strategy_weight, 2)} | gross/net exposure ${num(latest.gross_exposure, 2)} / ${num(latest.net_exposure, 2)}</p>`
       : "";
-    status.innerHTML = `<p><strong>SHADOW LIVE / PAPER PORTFOLIO</strong><br>Latest completed interval: ${escapeHtml(artifact.live_market_as_of || "n/a")} · last successful run: ${escapeHtml(shadow.last_successful_run || "n/a")} · live capital 0% · execution disabled</p>
-      <p><strong>Reconciliation:</strong> ${Object.entries(reconciliation).filter(([, value]) => value === false).length ? "ALERT" : "PASS"} · pending: ${(shadow.pending_intervals || []).join(", ") || "none"}</p>
+    status.innerHTML = `<p><strong>SHADOW LIVE / PAPER PORTFOLIO</strong><br>Latest completed interval: ${escapeHtml(artifact.live_market_as_of || "n/a")} - last successful run: ${escapeHtml(shadow.last_successful_run || "n/a")} - live capital 0% - execution disabled</p>
+      <p><strong>Reconciliation:</strong> ${Object.entries(reconciliation).filter(([, value]) => value === false).length ? "ALERT" : "PASS"} - pending: ${(shadow.pending_intervals || []).join(", ") || "none"}</p>
       ${rawStatus}
       ${portfolioSummary}
       ${(shadow.alerts || []).map((alert) => `<p><strong>${escapeHtml(alert.code)}</strong>: ${escapeHtml(alert.detail)}</p>`).join("")}`;
   }
   const correlation = shadow.correlation || {};
   const correlationStatus = document.getElementById("shadowCorrelationStatus");
-  if (correlationStatus) correlationStatus.innerHTML = `<p><strong>${escapeHtml(correlation.status || "NOT ENOUGH LIVE HISTORY")}</strong><br>Observations: ${correlation.observations || 0} · minimum required: ${correlation.minimum_observations || 20}. Research and shadow-live returns are not mixed.</p>`;
+  if (correlationStatus) correlationStatus.innerHTML = `<p><strong>${escapeHtml(correlation.status || "NOT ENOUGH LIVE HISTORY")}</strong><br>Observations: ${correlation.observations || 0} - minimum required: ${correlation.minimum_observations || 20}. Research and shadow-live returns are not mixed.</p>`;
   const warningTable = document.getElementById("shadowCorrelationWarnings");
   if (warningTable) warningTable.innerHTML = `<tr><th>Left</th><th>Right</th><th>Correlation</th></tr>${(correlation.warnings || []).map((row) => `<tr><td>${escapeHtml(row.left)}</td><td>${escapeHtml(row.right)}</td><td>${num(row.correlation, 3)}</td></tr>`).join("") || "<tr><td colspan='3'>NOT ENOUGH LIVE HISTORY</td></tr>"}`;
   renderShadowTradeLog();
@@ -449,7 +449,7 @@ function renderResearchLabShadowDetail(strategyId) {
   if (strategyId === ResearchUniverse.COMPOSITE_ID) {
     const latest = (shadow.portfolio_ledger || []).at(-1);
     detail.innerHTML = latest
-      ? `<div class="research-summary-strip"><span>Latest NAV <strong>${money(latest.ending_nav)}</strong></span><span>Cumulative P&amp;L <strong>${money(latest.cumulative_pnl)}</strong></span><span>Current DD <strong>${pct(latest.current_drawdown, 2)}</strong></span><span>Completed intervals <strong>${shadow.portfolio_ledger.length}</strong></span></div><p>SHADOW LIVE / PAPER PORTFOLIO · ACTIVE sleeves only · live capital 0% · execution disabled · NO LIVE FILL.</p>`
+      ? `<div class="research-summary-strip"><span>Latest NAV <strong>${money(latest.ending_nav)}</strong></span><span>Cumulative P&amp;L <strong>${money(latest.cumulative_pnl)}</strong></span><span>Current DD <strong>${pct(latest.current_drawdown, 2)}</strong></span><span>Completed intervals <strong>${shadow.portfolio_ledger.length}</strong></span></div><p>SHADOW LIVE / PAPER PORTFOLIO - ACTIVE sleeves only - live capital 0% - execution disabled - NO LIVE FILL.</p>`
       : "<p>No completed shadow-live portfolio intervals.</p>";
     return;
   }
@@ -466,7 +466,7 @@ function renderResearchLabShadowDetail(strategyId) {
   const holdings = (shadow.holdings || []).filter((row) => row.strategy_id === strategyId);
   const trades = (shadow.trades || []).filter((row) => row.strategy_id === strategyId);
   detail.innerHTML = `<div class="research-summary-strip"><span>Sleeve NAV <strong>${money(summary.ending_sleeve_nav)}</strong></span><span>Cumulative P&amp;L <strong>${money(summary.cumulative_pnl)}</strong></span><span>Current DD <strong>${pct(summary.current_drawdown, 2)}</strong></span><span>Weight <strong>${pct(summary.sleeve_weight, 2)}</strong></span></div>
-    <p>Shadow returns only through ${escapeHtml(summary.date)} · ${escapeHtml(summary.record_label)} · live capital 0% · execution disabled · NO LIVE FILL.</p>
+    <p>Shadow returns only through ${escapeHtml(summary.date)} - ${escapeHtml(summary.record_label)} - live capital 0% - execution disabled - NO LIVE FILL.</p>
     <p>Latest accepted holdings: ${holdings.length}. Simulated weight-change trades: ${trades.length}. Historical holdings reconstruction is not available from the committed bundle.</p>`;
 }
 
@@ -551,10 +551,10 @@ function renderIntradayRefreshStrip(artifact) {
     <span>Coverage <strong>${successful ?? "n/a"}/${requested ?? "n/a"}</strong></span>
     <span>Failed <strong>${failed ?? "n/a"}</strong></span>
     <span>Shadow PnL <strong>${compositeShadow?.estimated_pnl == null ? "n/a" : money(compositeShadow.estimated_pnl)}</strong></span>
-    <span>Label <strong>INTRADAY_SHADOW_ESTIMATE · delayed/best-effort</strong></span>
+    <span>Label <strong>INTRADAY_SHADOW_ESTIMATE - delayed/best-effort</strong></span>
     ${warning}
     ${coverageWarning}
-    <span class="muted-copy">${monitoring.detail} · Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} · Proxy as-of ${marketAsOf}</span>`;
+    <span class="muted-copy">${monitoring.detail} - Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} - Proxy as-of ${marketAsOf}</span>`;
 }
 
 function formatTimestamp(value) {
@@ -575,7 +575,7 @@ function renderNewsRiskSummary(newsRisk = {}) {
     ? "Sample / proxy headline feed"
     : (newsRisk.source || "yfinance / market-move proxy");
   el.innerHTML = `
-    <p>${statusBadge(watch)} News risk score <strong>${newsRisk.news_risk_score || 0}</strong> · ${items.length} headline(s) · ${escapeHtml(sourceLabel)}</p>
+    <p>${statusBadge(watch)} News risk score <strong>${newsRisk.news_risk_score || 0}</strong> - ${items.length} headline(s) - ${escapeHtml(sourceLabel)}</p>
     ${items.slice(0, 3).map((item) => `<p><strong>${escapeHtml(item.headline)}</strong><br><span class="muted-copy">${escapeHtml(item.risk_interpretation || item.topic || "")}</span></p>`).join("") || "<p class='empty-state'>No live news items loaded.</p>"}`;
 }
 
@@ -868,9 +868,9 @@ function renderFactoryResearchArchitectureBanner() {
   if (el) {
     el.innerHTML = `
       <div class="research-context-banner">
-        <strong>US-Equity Research Platform · Dynamic Combined Portfolio</strong>
+        <strong>US-Equity Research Platform - Dynamic Combined Portfolio</strong>
         <span>${escapeHtml(composite.headline)}</span>
-        <span>Current eligible ACTIVE strategies: <strong>${arch.eligible_active_count}</strong> · Combined Portfolio constituents: <strong>${arch.composite_constituent_count}</strong> · Equal-weight baseline: <strong>${arch.equal_weight_formula}</strong> · Current weight per strategy: <strong>${composite.weightPct}%</strong></span>
+        <span>Current eligible ACTIVE strategies: <strong>${arch.eligible_active_count}</strong> - Combined Portfolio constituents: <strong>${arch.composite_constituent_count}</strong> - Equal-weight baseline: <strong>${arch.equal_weight_formula}</strong> - Current weight per strategy: <strong>${composite.weightPct}%</strong></span>
         <span class="status-muted">${escapeHtml(composite.expansionNote)} Legacy ETF proxy references are retained for comparison only.</span>
       </div>`;
   }
@@ -883,7 +883,7 @@ function renderFactoryResearchArchitectureBanner() {
       <span><strong>${counts.research_candidate}</strong> RESEARCH_CANDIDATE</span>
       <span><strong>${counts.reference}</strong> REFERENCE_ONLY / ARCHIVED</span>
       <span><strong>${counts.composite}</strong> Combined Portfolio</span>
-      <span>${arch.composite_constituent_count} × ${composite.weightPct}% · Dynamic membership: ${composite.dynamicMembership ? "Enabled" : "Disabled"}</span>`;
+      <span>${arch.composite_constituent_count} × ${composite.weightPct}% - Dynamic membership: ${composite.dynamicMembership ? "Enabled" : "Disabled"}</span>`;
   }
 }
 
@@ -964,7 +964,7 @@ function buildCompositeOverviewFields(item) {
     ["Equal-Weight Formula", arch.equal_weight_formula],
     ["Current Weight per Strategy", `${composite.weightPct}%`],
     ["Dynamic Membership", composite.dynamicMembership ? "Enabled" : "Disabled"],
-    ["Research Status", "Research only · not allocation approved", true],
+    ["Research Status", "Research only - not allocation approved", true],
     ["Gross Return", formatMetricNa(backtest.gross_metrics?.cumulative_return, (v) => pct(v, 1))],
     ["Net Return", formatMetricNa(backtest.net_metrics?.cumulative_return, (v) => pct(v, 1))],
     ["Sharpe", formatMetricNa(backtest.net_metrics?.sharpe, (v) => num(v, 3))],
@@ -1164,7 +1164,7 @@ function renderFactoryResearchHoldings(backtest, isComposite = false) {
   const tradeLog = backtest.factory_research?.simulated_trade_log;
   const tradeLogHtml = tradeLog ? `
     <div class="panel-title sub">Simulated Trade Log</div>
-    <p class="status-muted">${escapeHtml(tradeLog.status || "RESEARCH ONLY")} · execution enabled: <strong>${tradeLog.execution_enabled ? "YES" : "NO"}</strong> · records: <strong>${tradeLog.record_count || 0}</strong> · estimated cost: <strong>${pct(tradeLog.estimated_transaction_cost || 0, 2)}</strong></p>
+    <p class="status-muted">${escapeHtml(tradeLog.status || "RESEARCH ONLY")} - execution enabled: <strong>${tradeLog.execution_enabled ? "YES" : "NO"}</strong> - records: <strong>${tradeLog.record_count || 0}</strong> - estimated cost: <strong>${pct(tradeLog.estimated_transaction_cost || 0, 2)}</strong></p>
     <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense">
       <tr><th>Execution Date</th><th>Ticker</th><th>Action</th><th>Target Weight</th><th>Simulated Price</th><th>Estimated Cost</th></tr>
       ${(tradeLog.latest_records || []).map((row) => `<tr>
@@ -1221,7 +1221,7 @@ function renderFactoryResearchCompositeDetail(item) {
     </div>
     <p class="status-muted">${escapeHtml(composite.expansionNote)}</p>
     <div class="panel-title sub">Constituent IDs (${ids.length})</div>
-    <ul class="compact-list">${ids.map((id) => `<li><strong>${escapeHtml(id)}</strong> · ${weightPct}%</li>`).join("") || "<li>No constituent IDs in bundle.</li>"}</ul>`;
+    <ul class="compact-list">${ids.map((id) => `<li><strong>${escapeHtml(id)}</strong> - ${weightPct}%</li>`).join("") || "<li>No constituent IDs in bundle.</li>"}</ul>`;
 }
 
 function latestSeriesValue(values = []) {
@@ -1254,7 +1254,7 @@ function renderFactoryResearchRiskMetrics(backtest, packetSeries = {}, isComposi
     return;
   }
   el.innerHTML = `
-    <span>Turnover <strong>${formatDailyTurnover(turnover.average_daily_turnover)} · ${formatAnnualizedTurnover(turnover.annualized_turnover)}</strong></span>
+    <span>Turnover <strong>${formatDailyTurnover(turnover.average_daily_turnover)} - ${formatAnnualizedTurnover(turnover.annualized_turnover)}</strong></span>
     <span>Cost drag <strong>${formatCostDragRatio(turnover.total_cost_drag ?? turnover.annualized_cost_drag)}</strong></span>
     <span>Current drawdown <strong>${formatMetricNa(currentDrawdown, (v) => pct(v, 2))}</strong></span>`;
 }
@@ -1284,8 +1284,8 @@ function renderFactoryResearchLabPanels(item) {
   if (caption) {
     const composite = compositeDynamicSummary();
     caption.textContent = isComposite
-      ? `${composite.headline} · ${factoryResearchBacktestDates(item)} · N=${arch.composite_constituent_count} · weight=${composite.weightPct}% · dynamic membership enabled`
-      : `${backtest.name} (${item.strategy_id}) · US-Equity Research Backtest · Research Only · ${factoryResearchBacktestDates(item)}`;
+      ? `${composite.headline} - ${factoryResearchBacktestDates(item)} - N=${arch.composite_constituent_count} - weight=${composite.weightPct}% - dynamic membership enabled`
+      : `${backtest.name} (${item.strategy_id}) - US-Equity Research Backtest - Research Only - ${factoryResearchBacktestDates(item)}`;
   }
   const chartEmptyMessage = missingMessage
     || "Bundle field for gross/net series not mapped yet: return_series.gross_returns, return_series.net_returns.";
@@ -1484,7 +1484,7 @@ function renderTopHeader(artifact = activeArtifact) {
   if (!el || !artifact) return;
   const monitoring = formatMonitoringState(artifact);
   const modeLabel = hasFactoryResearch()
-    ? "US-Equity Research Backtest · Research Only"
+    ? "US-Equity Research Backtest - Research Only"
     : "Prototype Model Portfolio";
   el.innerHTML = `
     <span class="mode-badge">${modeLabel}</span>
@@ -1501,13 +1501,13 @@ function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata ||
   if (!el) return;
   const monitoring = formatMonitoringState(artifact);
   const disclosure = hasFactoryResearch()
-    ? "US-Equity Research Backtest · Research Only · Not live allocation or fills"
-    : (artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills");
+    ? "US-Equity Research Backtest - Research Only - Not live allocation or fills"
+    : (artifact?.data_classification?.disclosure || "Prototype - ETF proxy - Not live fills");
   el.innerHTML = `
     <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
     <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
     <span>Operating since ${investmentStart(artifact)}</span>
-    <span>${monitoring.stripMonitoring} · ${monitoring.stripDataState}</span>
+    <span>${monitoring.stripMonitoring} - ${monitoring.stripDataState}</span>
     <span>Proxy as-of ${marketAsOf}</span>
     <span>${disclosure.length > 90 ? `${disclosure.slice(0, 87)}…` : disclosure}</span>`;
 }
@@ -1536,7 +1536,7 @@ function renderHistoricalResearchContext(artifact = activeArtifact) {
   el.innerHTML = `
     <div class="research-context-banner">
       <strong>Historical research context (not operating-period PnL)</strong>
-      <span>Long-window Sharpe ${num(hist.portfolio_sharpe)} · Vol ${pct(hist.portfolio_volatility || 0, 1)} · Max DD ${pct(hist.portfolio_max_drawdown || 0, 1)} · ${dq.common_portfolio_risk_window_observations || 0} aligned obs</span>
+      <span>Long-window Sharpe ${num(hist.portfolio_sharpe)} - Vol ${pct(hist.portfolio_volatility || 0, 1)} - Max DD ${pct(hist.portfolio_max_drawdown || 0, 1)} - ${dq.common_portfolio_risk_window_observations || 0} aligned obs</span>
       <span class="status-muted">${recon.label || "Static weight reconstruction"}: ${recon.description || dq.important_note || ""}</span>
     </div>`;
 }
@@ -1754,7 +1754,7 @@ function renderFactorKpiGrid(artifact) {
         <strong class="${toneClass}" title="Signed proxy loading">${card.exposureText}</strong>
         <span class="factor-proxy-direction">${escapeHtml(card.direction)}</span>
       </div>
-      <small class="factor-proxy-limit">|Loading| / Limit ${escapeHtml(card.loadingLimitText)} · ${escapeHtml(card.utilizationText)}</small>
+      <small class="factor-proxy-limit">|Loading| / Limit ${escapeHtml(card.loadingLimitText)} - ${escapeHtml(card.utilizationText)}</small>
       ${card.utilization != null ? utilizationBar(card.utilization, card.rawStatus) : ""}
       <span class="badge ${card.statusClass}">${escapeHtml(card.statusLabel)}</span>
     </article>`;
@@ -1899,7 +1899,7 @@ function renderApprovalStatusBar(artifact) {
     <div><strong>Est. Transaction Cost</strong><div>${money(proposal.status === "No rebalance proposed" ? 0 : cost)}</div></div>
     <div><strong>Optimizer</strong><div>${humanize(proposalSession.simulation?.optimizerLabel || artifact.rebalance_simulation?.official_optimizer?.optimizer_label, "Heuristic proposal")}</div></div>
     <div><strong>Proposal Gates</strong><div>${gateStatus}</div><small class="status-muted">Current portfolio breaches: ${currentBreaches}</small></div>
-    <div><strong>Governance</strong><div>${humanReview} · Execution authorization: disabled</div></div>`;
+    <div><strong>Governance</strong><div>${humanReview} - Execution authorization: disabled</div></div>`;
   const approveBtn = document.getElementById("approveDecision");
   if (approveBtn) approveBtn.disabled = blocked;
 }
@@ -1933,7 +1933,7 @@ function renderAiRiskSummary(artifact, targetId = "aiRiskSummary") {
     <ul>${recs.slice(0, 5).map((rec) => `<li>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}: ${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</li>`).join("")}</ul>
     <p><strong>Expected metric shifts (official optimizer):</strong></p>
     <ul>${impact.map((metric) => `<li>${humanize(metric.metric)} ${num(metric.current, 3)} → ${num(metric.proposed, 3)} (${metric.expected_outcome})</li>`).join("") || "<li>Run simulation to refresh custom-weight impact.</li>"}</ul>
-    <p><strong>Current portfolio breaches:</strong> ${countCurrentPortfolioBreaches(artifact)} · <strong>Proposal gate blockers:</strong> ${summarizeProposalGateImpact(proposalSession.simulation).blockers}</p>`;
+    <p><strong>Current portfolio breaches:</strong> ${countCurrentPortfolioBreaches(artifact)} - <strong>Proposal gate blockers:</strong> ${summarizeProposalGateImpact(proposalSession.simulation).blockers}</p>`;
 }
 
 function renderRebalanceTradeList(artifact) {
@@ -3120,7 +3120,7 @@ function renderCommandKpiStrip(artifact) {
   const dq = artifact.data_quality || {};
   const intradayDq = dq.intraday || marks.data_quality || {};
   el.innerHTML = compactKpiStrip([
-    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark · not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
+    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark - not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
     [estimatedIntradayPnl != null ? "Est. Intraday PnL" : "Daily PnL", money(estimatedIntradayPnl ?? latestReturn * artifact.initial_capital), estimatedIntradayPnl != null ? "Estimated from proxy bars" : formatOperatingMetric(dailyPnlMetric), cls(estimatedIntradayPnl ?? latestReturn)],
     ["Operating Cum. PnL", money(latestCum * artifact.initial_capital), formatOperatingMetric(cumPnlMetric), cls(latestCum)],
     ["Current Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "", "negative"],
@@ -3207,7 +3207,7 @@ function renderCommandWatchlistPanels(artifact) {
     <p><strong>Missing series:</strong> ${(dq.missing_return_series || []).length || 0}</p>
     <p><strong>Common window:</strong> ${dq.common_portfolio_risk_window_observations || 0} obs</p>
     <p><strong>Governance:</strong> ${humanize(workflowView.workflowStatus, "monitoring")}</p>
-    <p><strong>Open decision reviews:</strong> ${countOpenDecisionReviews(artifact, localDecisionEvents)} · Approval policy applies to ${artifact.strategy_count || 0} strategies</p>`;
+    <p><strong>Open decision reviews:</strong> ${countOpenDecisionReviews(artifact, localDecisionEvents)} - Approval policy applies to ${artifact.strategy_count || 0} strategies</p>`;
 }
 
 function renderTables(artifact) {
@@ -3449,7 +3449,7 @@ function renderAllocationEditor(artifact) {
   const totalState = document.getElementById("weightTotalState");
   if (totalState) {
     totalState.className = total > 1.00001 ? "negative weight-total-state" : "positive weight-total-state";
-    totalState.textContent = `Invested ${pct(total, 1)} · Residual cash ${pct(cash, 1)}`;
+    totalState.textContent = `Invested ${pct(total, 1)} - Residual cash ${pct(cash, 1)}`;
   }
   const table = document.getElementById("allocationEditorTable");
   if (!table) return;
@@ -3515,7 +3515,7 @@ function renderSimulationResult(artifact) {
     : proposalSession.simulation ? "Artifact-embedded official optimizer result." : "Run simulation to refresh checks.";
   const cashSemantics = artifact.factors?.cash_semantics || {};
   const cashHtml = Number.isFinite(proposalSession.simulation?.cashWeight)
-    ? `<p>${cashSemantics.residual_cash_display_label || "Unallocated residual cash"}: <strong>${pct(proposalSession.simulation.cashWeight, 1)}</strong> · Treasury-bill / liquidity proxy tracked separately.</p>`
+    ? `<p>${cashSemantics.residual_cash_display_label || "Unallocated residual cash"}: <strong>${pct(proposalSession.simulation.cashWeight, 1)}</strong> - Treasury-bill / liquidity proxy tracked separately.</p>`
     : "";
   el.innerHTML = `<p class="simulation-source">${sourceNote}</p>${cashHtml}` +
     gates.map((gate) => `<p>${statusBadge(gate.status)} <strong>${humanizeMetricLabel(gate.metric || gate.gate, artifact)}</strong> — ${gate.text || gate.required_action || ""}</p>`).join("") +
@@ -3662,7 +3662,7 @@ function renderStaticTables(artifact) {
   const exposureMap = artifact.factors?.portfolio_factor_exposure_current || {};
   document.getElementById("factorLimitAlerts").innerHTML = (artifact.risk_limits?.factors?.checks || []).filter((check) => check.status !== "ok" && check.status !== "not_modeled").map((check) => {
     const card = formatFactorLimitCard(check, exposureMap, artifact);
-    return `<p><span class="badge ${card.statusClass}">${escapeHtml(card.statusLabel)}</span> <strong>${escapeHtml(card.label)}</strong><br>${escapeHtml(card.direction)} · |Loading| / Limit ${escapeHtml(card.loadingLimitText)} · ${escapeHtml(card.utilizationText)}. ${escapeHtml(check.action || "")}</p>`;
+    return `<p><span class="badge ${card.statusClass}">${escapeHtml(card.statusLabel)}</span> <strong>${escapeHtml(card.label)}</strong><br>${escapeHtml(card.direction)} - |Loading| / Limit ${escapeHtml(card.loadingLimitText)} - ${escapeHtml(card.utilizationText)}. ${escapeHtml(check.action || "")}</p>`;
   }).join("");
 
   const marketRows = artifact.market_monitor || [];
@@ -3920,8 +3920,8 @@ function renderDrawerViewBody(strategy, view, artifact, content) {
     } else if (view === "evidence") {
       html = `<p><strong>Hypothesis:</strong> ${strategy.hypothesis || "—"}</p>
       <p><strong>Data source:</strong> ${strategy.data_source || strategy.evidence_status || "—"}</p>
-      <p><strong>Backtest period:</strong> ${strategy.backtest_evidence?.years?.toFixed(1) || "0"} years · ${summary.observations || 0} obs</p>
-      <p><strong>Walk-forward:</strong> ${walk.number_of_windows || 0} windows · avg OOS Sharpe ${num(walk.average_test_sharpe)}</p>
+      <p><strong>Backtest period:</strong> ${strategy.backtest_evidence?.years?.toFixed(1) || "0"} years - ${summary.observations || 0} obs</p>
+      <p><strong>Walk-forward:</strong> ${walk.number_of_windows || 0} windows - avg OOS Sharpe ${num(walk.average_test_sharpe)}</p>
       <p><strong>Assumptions:</strong> ${strategy.bias_controls?.lookahead_bias || "—"}</p>
       <p><strong>Limitations:</strong> ${(strategy.limitations || [strategy.bias_controls?.survivorship_bias]).filter(Boolean).join("; ") || "See research lab."}</p>`;
     } else if (view === "limits") {
@@ -4007,7 +4007,7 @@ function openStrategyReview(strategy, artifact) {
   const drawer = document.getElementById("strategyDrawer");
   document.getElementById("drawerStrategyId").textContent = strategy.strategy_id;
   document.getElementById("drawerStrategyName").textContent = strategy.name;
-  document.getElementById("drawerStrategyMeta").textContent = `${strategy.strategy_type} · ${strategy.backtest_evidence?.data_source || "proxy data"} · ${positionSummary(strategy)}`;
+  document.getElementById("drawerStrategyMeta").textContent = `${strategy.strategy_type} - ${strategy.backtest_evidence?.data_source || "proxy data"} - ${positionSummary(strategy)}`;
   drawer?.classList.remove("collapsed");
   renderDrawerView(strategy, "overview", artifact);
 }
@@ -4228,10 +4228,10 @@ function renderReportRebalancePanel(artifact) {
   }
   const rows = (artifact.strategies || []).filter((s) => Math.abs((proposalSession.weights[s.strategy_id] || 0) - (s.current_weight || 0)) > 1e-6);
   el.innerHTML = `<div class="rebalance-summary-card">
-    <p><strong>${proposal.status}</strong> · ${proposal.detail}</p>
-    <p>Estimated cost: ${money(proposalSession.simulation.estimatedCost || 0)} · Turnover: ${pct(proposalSession.simulation.turnover || 0, 1)}</p>
+    <p><strong>${proposal.status}</strong> - ${proposal.detail}</p>
+    <p>Estimated cost: ${money(proposalSession.simulation.estimatedCost || 0)} - Turnover: ${pct(proposalSession.simulation.turnover || 0, 1)}</p>
     <p>Gate status: ${statusBadge(proposal.tone === "breach" ? "blocked" : proposal.tone === "warning" ? "watch" : "clear")}</p>
-    <p>Human decision: ${escapeHtml(latestHumanDecision()?.event || "Not recorded")} · Execution: Not authorized</p>
+    <p>Human decision: ${escapeHtml(latestHumanDecision()?.event || "Not recorded")} - Execution: Not authorized</p>
   </div>
   <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense"><tr><th>Strategy</th><th>Current</th><th>Proposed</th><th>Change</th><th>Est. cost</th></tr>
     ${rows.map((s) => {
@@ -4254,9 +4254,9 @@ function renderReportMonitoringPanel(artifact) {
     <p><strong>Market events to monitor</strong></p>
     ${(artifact.market_monitor || []).slice(0, 4).map((row) => `<p>${row.ticker}: ${escapeHtml(row.risk_interpretation || "Monitor proxy move")}</p>`).join("") || emptyState("No market proxy warnings.")}
     <p><strong>Data issues to verify</strong></p>
-    <p>Missing series: ${(dq.missing_return_series || []).length} · Common window: ${dq.common_portfolio_risk_window_observations || 0} obs</p>
+    <p>Missing series: ${(dq.missing_return_series || []).length} - Common window: ${dq.common_portfolio_risk_window_observations || 0} obs</p>
     <p><strong>Follow-up owners</strong></p>
-    <p>Risk manager · Portfolio manager · Data operations (prototype local review)</p>`;
+    <p>Risk manager - Portfolio manager - Data operations (prototype local review)</p>`;
 }
 
 function renderReportDataQualityPanel(artifact) {
@@ -4310,7 +4310,7 @@ function renderDailyMemo(artifact) {
   document.getElementById("generatedReport").innerHTML = `
     <header class="report-print-header">
       <h2>Daily Risk Report — ${artifact.as_of_date}</h2>
-      <p>Prototype model portfolio · Research proxy data · Not live positions or fills</p>
+      <p>Prototype model portfolio - Research proxy data - Not live positions or fills</p>
       ${reportFrozenAt ? `<p>Frozen at ${reportFrozenAt}</p>` : ""}
     </header>${html}`;
   const caption = document.getElementById("reportPreviewCaption");
@@ -4401,7 +4401,7 @@ function buildOperationalProductionShell() {
   operationalPanel("Portfolio Command Center").innerHTML = `
     <section id="combinedPortfolio" class="operational-page">
       <div id="operationalKpis"></div>
-      <article class="panel v2-panel"><div class="panel-title">Combined Portfolio · Date-Effective ACTIVE Membership</div><div id="combinedMembership"></div></article>
+      <article class="panel v2-panel"><div class="panel-title">Combined Portfolio - Date-Effective ACTIVE Membership</div><div id="combinedMembership"></div></article>
       <section class="v2-grid command-v2-grid">
         <article class="panel v2-panel panel-span-6"><div class="panel-title">Current Strategy Allocation</div><div id="combinedAllocation" class="allocation-bars compact-bars"></div></article>
         <article class="panel v2-panel panel-span-3"><div class="panel-title">Top Contributors</div><table class="data-table dense" id="operationalContributors"></table></article>
@@ -4428,7 +4428,7 @@ function buildOperationalProductionShell() {
 
   operationalPanel("Trade Log").innerHTML = `
     <section class="operational-page">
-      <article class="panel v2-panel"><div class="monitor-heading"><div class="panel-title">Simulated Trade Log · NO LIVE FILL · <span id="tradeLogCount"></span></div>
+      <article class="panel v2-panel"><div class="monitor-heading"><div class="panel-title">Simulated Trade Log - NO LIVE FILL - <span id="tradeLogCount"></span></div>
         <div class="monitor-controls"><input id="tradeDateFrom" type="date"><input id="tradeDateTo" type="date"><input id="tradeStrategy" placeholder="Strategy"><input id="tradeTicker" placeholder="Ticker"><select id="tradeAction"><option value="">All actions</option><option>BUY</option><option>SELL</option><option>SHORT</option><option>COVER</option></select></div></div>
         <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="operationalTradeLog"></table></div></div>
       </article>
@@ -4436,13 +4436,13 @@ function buildOperationalProductionShell() {
 
   operationalPanel("Correlation & Diversification").innerHTML = `
     <section class="operational-page correlation-layout">
-      <article class="panel v2-panel"><div class="panel-title">Research Correlation · Accepted Historical Returns</div><p class="empty-state">Research correlation remains separate and is not loaded into the operational production bundle.</p></article>
-      <article class="panel v2-panel"><div class="panel-title">Shadow-Live Correlation · Operational Returns Only</div><div id="operationalCorrelation"></div></article>
+      <article class="panel v2-panel"><div class="panel-title">Research Correlation - Accepted Historical Returns</div><p class="empty-state">Research correlation remains separate and is not loaded into the operational production bundle.</p></article>
+      <article class="panel v2-panel"><div class="panel-title">Shadow-Live Correlation - Operational Returns Only</div><div id="operationalCorrelation"></div></article>
     </section>`;
 
   operationalPanel("Backtesting & Research Lab").innerHTML = `
     <section class="operational-page">
-      <article class="panel v2-panel"><div class="panel-title">Strategy Detail · Operational Source</div><div id="operationalStrategyDetail"><p class="empty-state">Select a current strategy from Strategies.</p></div></article>
+      <article class="panel v2-panel"><div class="panel-title">Strategy Detail - Operational Source</div><div id="operationalStrategyDetail"><p class="empty-state">Select a current strategy from Strategies.</p></div></article>
     </section>`;
 }
 
@@ -4517,7 +4517,7 @@ function renderOperationalCommandCenter(artifact) {
     ["Current Membership", `N=${currentEffectiveCount(shadow)}`, `1/N = ${pct(currentEffectiveWeight(shadow), 4)}`, ""],
     ["Latest Signal", shadow.latest_valid_target_position_date || "n/a", "Target-position snapshot", ""],
     ["Latest Execution", shadow.latest_simulated_execution_date || "pending", `${shadow.trade_log_row_count || 0} simulated trades`, ""],
-    ["Data Status", `${shadow.successful_strategy_count}/${shadow.configured_strategy_count}`, `${shadow.partial_strategy_count} partial · ${shadow.unavailable_strategy_count} unavailable · ${alerts.length} alerts`, ""],
+    ["Data Status", `${shadow.successful_strategy_count}/${shadow.configured_strategy_count}`, `${shadow.partial_strategy_count} partial - ${shadow.unavailable_strategy_count} unavailable - ${alerts.length} alerts`, ""],
   ]);
   document.getElementById("combinedMembership").innerHTML = `
     <div class="research-summary-strip">
@@ -4556,7 +4556,7 @@ function renderCombinedHoldings(shadow) {
 function renderOperationalStrategies(artifact) {
   const shadow = artifact.shadow_live;
   const rows = operationalStrategyRows(shadow);
-  document.getElementById("operationalStrategies").innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Effective Date</th><th>Sleeve Weight</th><th>Daily Return</th><th>Daily P&L</th><th>Cumulative Return</th><th>Cumulative P&L</th><th>Holdings</th><th>Latest Signal</th><th>Data</th><th>Action</th></tr>${rows.map((row)=>`<tr data-operational-strategy="${escapeHtml(row.strategy_id)}"><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.strategy_name)}</td><td>${row.data_status === "PENDING_EFFECTIVE_DATE" ? "APPROVED · PENDING" : "ACTIVE · EXECUTED"}</td><td>${escapeHtml(row.membership_effective_date || `Before ${shadow.membership_effective_date}`)}</td><td>${pct(row.sleeve_weight,4)}</td><td>${row.net_return == null ? "N/A" : pct(row.net_return,3)}</td><td>${row.daily_pnl == null ? "N/A" : money(row.daily_pnl)}</td><td>${row.cumulative_return == null ? "N/A" : pct(row.cumulative_return,3)}</td><td>${row.cumulative_pnl == null ? "N/A" : money(row.cumulative_pnl)}</td><td>${Number(row.long_count||0)+Number(row.short_count||0)}</td><td>${escapeHtml(row.latest_signal_date || "pending")}</td><td>${escapeHtml(row.data_status)}</td><td><button class="table-link" data-operational-strategy="${escapeHtml(row.strategy_id)}">View Details</button></td></tr>`).join("")}`;
+  document.getElementById("operationalStrategies").innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Effective Date</th><th>Sleeve Weight</th><th>Daily Return</th><th>Daily P&L</th><th>Cumulative Return</th><th>Cumulative P&L</th><th>Holdings</th><th>Latest Signal</th><th>Data</th><th>Action</th></tr>${rows.map((row)=>`<tr data-operational-strategy="${escapeHtml(row.strategy_id)}"><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.strategy_name)}</td><td>${row.data_status === "PENDING_EFFECTIVE_DATE" ? "APPROVED - PENDING" : "ACTIVE - EXECUTED"}</td><td>${escapeHtml(row.membership_effective_date || `Before ${shadow.membership_effective_date}`)}</td><td>${pct(row.sleeve_weight,4)}</td><td>${row.net_return == null ? "N/A" : pct(row.net_return,3)}</td><td>${row.daily_pnl == null ? "N/A" : money(row.daily_pnl)}</td><td>${row.cumulative_return == null ? "N/A" : pct(row.cumulative_return,3)}</td><td>${row.cumulative_pnl == null ? "N/A" : money(row.cumulative_pnl)}</td><td>${Number(row.long_count||0)+Number(row.short_count||0)}</td><td>${escapeHtml(row.latest_signal_date || "pending")}</td><td>${escapeHtml(row.data_status)}</td><td><button class="table-link" data-operational-strategy="${escapeHtml(row.strategy_id)}">View Details</button></td></tr>`).join("")}`;
   document.querySelectorAll("[data-operational-strategy]").forEach((node) => node.addEventListener("click", () => openOperationalStrategyDetail(node.dataset.operationalStrategy)));
 }
 
@@ -4568,11 +4568,11 @@ function openOperationalStrategyDetail(strategyId) {
   const holdings = (shadow.holdings || []).filter((row) => row.strategy_id === strategyId && row.date === latestHoldingsDate);
   const trades = (shadow.trades || []).filter((row) => row.strategy_id === strategyId);
   document.getElementById("operationalStrategyDetail").innerHTML = `
-    <div class="research-summary-strip"><span>ID <strong>${escapeHtml(strategyId)}</strong></span><span>Status <strong>${summary.data_status === "PENDING_EFFECTIVE_DATE" ? "APPROVED · PENDING" : "ACTIVE · EXECUTED"}</strong></span><span>Effective <strong>${escapeHtml(details.membership_effective_date || `Before ${shadow.membership_effective_date}`)}</strong></span><span>Current holdings <strong>${holdings.length}</strong></span><span>Trades <strong>${trades.length}</strong></span></div>
+    <div class="research-summary-strip"><span>ID <strong>${escapeHtml(strategyId)}</strong></span><span>Status <strong>${summary.data_status === "PENDING_EFFECTIVE_DATE" ? "APPROVED - PENDING" : "ACTIVE - EXECUTED"}</strong></span><span>Effective <strong>${escapeHtml(details.membership_effective_date || `Before ${shadow.membership_effective_date}`)}</strong></span><span>Current holdings <strong>${holdings.length}</strong></span><span>Trades <strong>${trades.length}</strong></span></div>
     <p><strong>Economic hypothesis:</strong> ${escapeHtml(details.rationale || "Stored in accepted research history; not duplicated in the operational ledger.")}</p>
     <p><strong>Signal definition:</strong> ${escapeHtml(details.formula || "Frozen registered strategy function.")}</p>
-    <p><strong>Universe:</strong> CURRENT_LISTED_DIAGNOSTIC · SURVIVORSHIP_BIAS_PRESENT. <strong>Execution:</strong> NEXT_OPEN_TO_OPEN · simulated · NO LIVE FILL.</p>
-    <p><strong>Shadow-live:</strong> daily P&L ${summary.daily_pnl == null ? "pending" : money(summary.daily_pnl)} · cumulative P&L ${summary.cumulative_pnl == null ? "pending" : money(summary.cumulative_pnl)} · data ${escapeHtml(summary.data_status)}.</p>
+    <p><strong>Universe:</strong> CURRENT_LISTED_DIAGNOSTIC - SURVIVORSHIP_BIAS_PRESENT. <strong>Execution:</strong> NEXT_OPEN_TO_OPEN - simulated - NO LIVE FILL.</p>
+    <p><strong>Shadow-live:</strong> daily P&L ${summary.daily_pnl == null ? "pending" : money(summary.daily_pnl)} - cumulative P&L ${summary.cumulative_pnl == null ? "pending" : money(summary.cumulative_pnl)} - data ${escapeHtml(summary.data_status)}.</p>
     <p><strong>Limitations:</strong> ${escapeHtml(details.limitations || "Research only; live allocation 0%; execution disabled.")}</p>`;
   setActiveTab("Backtesting & Research Lab");
 }

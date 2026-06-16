@@ -62337,7 +62337,7 @@
       {
         "severity": "INFO",
         "code": "MEMBERSHIP_EFFECTIVE_DATE_PENDING_EXECUTION",
-        "detail": "WQ_ALPHA_018 becomes ACTIVE on 2026-06-15; no future open or fill is fabricated."
+        "detail": "WQ Alpha 018 has effective-date review on 2026-06-15; admission remains blocked until canonical operating records and verified provenance are present."
       }
     ],
     "reconciliation": {

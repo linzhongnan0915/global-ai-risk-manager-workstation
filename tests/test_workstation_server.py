@@ -20,6 +20,7 @@ def _free_port() -> int:
 
 
 def _start_server(port: int) -> ThreadingHTTPServer:
+    WorkstationHandler.warm_operational_snapshot_cache(Path(__file__).resolve().parents[1])
     server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -116,6 +117,27 @@ def test_health_and_refresh_status_content_length():
                 assert payload["status"] == "ok"
             else:
                 assert "market_status" in payload or "canonical_data_state" in payload
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_operational_snapshot_endpoint_includes_intraday_runtime_fields():
+    port = _free_port()
+    server = _start_server(port)
+    try:
+        status, headers, body = _fetch(f"http://127.0.0.1:{port}/api/operational-snapshot")
+        assert status == 200
+        assert int(headers["content-length"]) == len(body)
+        payload = json.loads(body.decode("utf-8"))
+        assert payload["intraday_runtime_status"] in {"NOT_LOADED", "LOADED", "STALE", "ERROR"}
+        assert "intraday_overlay_available" in payload
+        assert "intraday_scheduler_enabled" in payload
+        assert "intraday_refresh_message" in payload
+        assert "official_promotion_readiness" in payload
+        assert payload["official_promotion_readiness"]["execute_enabled"] is False
+        assert payload["portfolio_daily"][-1]["date"] == "2026-06-11"
+        assert not any(row["date"] == "2026-06-15" for row in payload["portfolio_daily"])
     finally:
         server.shutdown()
         server.server_close()

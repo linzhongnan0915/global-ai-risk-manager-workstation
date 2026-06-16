@@ -614,7 +614,7 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
     if ohlcv_audit["latest_raw_ohlcv_date"] < WQ_ALPHA_018_EFFECTIVE_DATE:
         alerts.append({
             "severity": "INFO", "code": "MEMBERSHIP_EFFECTIVE_DATE_PENDING_EXECUTION",
-            "detail": f"WQ_ALPHA_018 becomes ACTIVE on {WQ_ALPHA_018_EFFECTIVE_DATE}; no future open or fill is fabricated.",
+            "detail": f"WQ Alpha 018 has effective-date review on {WQ_ALPHA_018_EFFECTIVE_DATE}; admission remains blocked until canonical operating records and verified provenance are present.",
         })
     strategy_all = _read_csv(output / "strategy_daily_ledger.csv")
     portfolio_all = _read_csv(output / "portfolio_daily_ledger.csv")

@@ -171,7 +171,10 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert "location.reload" not in app
     assert 'data-decision-action="APPROVE"' in app
     assert 'data-contributor-id="' in app
-    assert "Math.abs(r[basis])/max*100" in app
+    assert "posMax=Math.max" in app
+    assert "negMax=Math.max" in app
+    assert "Math.abs(r[basis])/sectionMax*100" in app
+    assert "contributors and detractors scale independently" in app
     assert "/api/operational-snapshot?ts=" in app
     assert '"Cache-Control":"no-store"' in app
     for blocked in ("sec.gov", "/api/live-summary", "dashboard_artifact.json", "news"):
@@ -179,6 +182,9 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
         assert blocked not in index.lower()
     assert "/api/operational-snapshot" in server
     assert "/api/decisions" in server
+    assert "load_operational_snapshot_for_response" in server
+    assert "operational_intraday_overlay.json" in (ROOT / "src/reporting/operational_snapshot.py").read_text(encoding="utf-8")
+    assert "ENABLE_INTRADAY_SCHEDULER" in server
 
 
 def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
@@ -211,7 +217,7 @@ def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
     assert "Array.isArray(values)&&values.length>1?commandSpark(values,tone)" in app
     assert "flat=[1,1,1,1,1]" not in app
     assert "Operational Records" in app
-    assert "Verified Shadow-Live Start" in app
+    assert "Official Promotion" in app
     assert "Execution Provenance Review" in app
     assert "Shadow-Live / Operational" not in app
     assert "Historical Research" in app
@@ -228,6 +234,49 @@ def test_shared_kpi_cards_do_not_render_decorative_sparklines():
     assert "variant:i" not in app
     assert "Current cross-section, not a time series" in app
     assert "Array.isArray(values)&&values.length>1?commandSpark(values,tone)" in app
+
+
+def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
+    data = contract()
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    assert [row["date"] for row in data["portfolio_daily"]] == [
+        "2026-06-04",
+        "2026-06-05",
+        "2026-06-08",
+        "2026-06-10",
+        "2026-06-11",
+    ]
+    assert data["portfolio_daily"][-1]["data_as_of"] == "2026-06-12"
+    assert data["portfolio_daily"][-1]["date"] != data["portfolio_daily"][-1]["data_as_of"]
+    assert "Visible ledger date uses portfolio_daily.date" in app
+    assert "function latestPortfolioLedgerDate(c)" in app
+    assert "Official portfolio ledger through ${latestPortfolioLedgerDate(c)}" in app
+    assert "Official close/as-of" in app
+    assert "Official Daily Ledger records + Delayed Estimate" in app
+    assert "function lifecycle(c)" in app
+    assert "function showIntradayPoint(c)" in app
+    assert "Official Promotion" in app
+    assert "function promotionReadiness(c)" in app
+    assert "Ready for promotion" in app
+    assert "EOD pending promotion" in app
+    assert "Blocked / Pending required canonical inputs" in app
+    assert "Official ledger promotion is blocked by missing runtime promotion input and required canonical pipeline readiness. Delayed estimates remain separate and are not official ledger records." in app
+    assert "Official ledger promotion blocked" in app
+    assert "Manual dry-run only" in app
+    assert "Execute disabled" in app
+    assert "Intraday Runtime" in app
+    assert "function intradayRuntimeValue(c)" in app
+    assert "Delayed Estimate Loaded" in app
+    assert "Not Running / Not Loaded" in app
+    assert "official ledger remains separate" in app
+    assert "EOD estimate pending official ledger promotion" in app
+    assert "Delayed estimate / not official ledger" in app
+    assert "sessionLabel(c)" in app
+    assert "Official Daily Ledger through" not in app
+    assert '<span>${r.date}</span>' in app
+    assert "ctx.fillText(rows[i].date.slice(5),q.x,h-13)" in app
+    assert "official_close_date||rows[i].date" not in app
+    assert "r.official_close_date||r.date" not in app
 
 
 def test_strategy_detail_tabs_are_data_bound_and_gate_incomplete_wq():
@@ -255,26 +304,170 @@ def test_strategy_detail_tabs_are_data_bound_and_gate_incomplete_wq():
     assert "gate-checks" in css
 
 
-def test_strategy_library_workflow_page_is_data_bound():
+def test_strategy_library_governance_page_is_data_bound():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
-    css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
     for marker in (
-        "function workflowNodes(c)",
-        "Data Inputs",
-        "Research Artifacts",
-        "Paper Execution",
-        "Holdings Ledger",
-        "Combined Strategy",
-        "c.wq_admission_gate",
-        "prov.trade_record_counts",
-        "lifecycleStage(s)",
-        "lifecycleNextAction(s)",
-        "Strategy lifecycle registry",
-        "Verified Shadow Start",
+        "Strategy Library & Governance",
+        "Data-bound strategy registry, canonical inputs, transformation lineage, evidence gates, and operating authority.",
+        "function governanceRegistryRows(c)",
+        "function governanceInputRows(c)",
+        "function governanceLineageRows(c)",
+        "function governanceGateRows(c)",
+        "function governanceAuthorityRows(c)",
+        "function governanceBlockedRows(c)",
+        "function governanceHandoffRows(c)",
+        "STRATEGY LIFECYCLE REGISTRY",
+        "Display ID",
+        "Lifecycle",
+        "Operational Status",
+        "Research Status",
+        "Effective Date",
+        "Current Sleeve",
+        "Proposed Sleeve",
+        "Execution Authority",
+        "Data State",
+        "Next Action",
+        "function governanceLifecycle(s)",
+        "function governanceResearchStatus(s)",
+        "function governanceDataState(s)",
+        "function governanceNextAction(s)",
+        "PRE_OPERATIONAL",
+        "APPROVED_PENDING",
+        "Pending evidence",
+        "Pending admission evidence",
+        "Derived Complete",
+        "Independent active top-level sleeve",
+        "no separate Combined paper fills",
+        'pending?"N/A":UI.percent',
+        'pending?UI.percent(proposed,2):"N/A"',
+        "CANONICAL INPUT INVENTORY",
+        "Input Artifact",
+        "Current Status",
+        "Observed Count",
+        "As-of / Effective Date",
+        "Downstream Use",
+        "Portfolio daily ledger",
+        "Strategy registry",
+        "Strategy daily ledgers",
+        "Paper execution records",
+        "Position / holdings rows",
+        "Target rows",
+        "Price coverage universe",
+        "Candidate admission records",
+        "Research evidence registry",
+        "Operational snapshot metadata",
+        "c.portfolio_daily.at(-1)?.date",
+        "u.current_price_covered_ticker_count??intr.covered_tickers",
+        "External institutional data research is tracked separately and is not represented as loaded",
+        "DATA PROCESSING LINEAGE",
+        "Processing Step",
+        "Work Performed",
+        "1. Load canonical snapshot",
+        "operational snapshot / shadow live bundle",
+        "Dashboard state model",
+        "2. Reconcile membership",
+        "cr.top_level_active_sleeves??active.length",
+        "${pending.length} pending candidate",
+        "3. Calculate top-level sleeves",
+        "UI.percent(topWeight,2)",
+        "4. Derive Combined strategy",
+        "${ordinary.length} ordinary active strategy net returns",
+        "5. Align portfolio performance dates",
+        "portfolio_daily.date",
+        "Use ledger date for visible chart/card dates; keep official close/data_as_of as metadata",
+        "6. Build style / family proxy",
+        "active strategy families",
+        "7. Apply evidence gates",
+        "signal rows, target rows, paper fill rows, position rows, execution provenance",
+        "8. Block unsupported risk models",
+        "VaR / ES / scenario / macro regime remain Blocked when not loaded",
+        "EVIDENCE GATE MATRIX",
+        "Strategy Group",
+        "Canonical Signal",
+        "Target Rows",
+        "Paper Fill Rows",
+        "Position Rows",
+        "Verified Provenance",
+        "Admission State",
+        "Ordinary active strategies",
+        "Combined strategy",
+        "WQ_ALPHA_018 / #000018",
+        "Missing canonical signal date",
+        "Missing target rows",
+        "Missing paper fill rows",
+        "Missing position rows",
+        "Missing verified execution provenance",
+        "APPROVED_PENDING / PRE_OPERATIONAL / BLOCKED",
+        "No separate Combined paper fills",
+        "Derived from ordinary strategy net returns",
+        "No cost double count",
+        "OPERATING AUTHORITY & EXECUTION CONTROLS",
+        "Initial Shadow Capital",
+        "Real Funded Brokerage Capital",
+        "Brokerage Execution",
+        "Live Allocation",
+        "No Live Brokerage Fill",
+        "Human Review Required",
+        "The dashboard can display paper operating records and human review states, but it does not authorize or submit live brokerage orders.",
+        "DATA GAPS & BLOCKED ANALYTICS",
+        "Analytics Area",
+        "Required Input",
+        "Fallback Policy",
+        "Decision Use",
+        "STYLE / FAMILY EXPOSURE PROXY",
+        "Derived from active strategy families, not a validated factor model.",
+        "This is a portfolio construction proxy derived from active strategy families. It is not a Barra model, factor loading model, covariance model, VaR model, or ES model.",
+        "Factor contribution to risk",
+        "validated institutional factor model + covariance history",
+        "Human review only",
+        "VaR",
+        "validated VaR model + return history",
+        "Expected Shortfall",
+        "validated ES model + return distribution",
+        "Scenario shock",
+        "scenario definitions + exposure model",
+        "Macro regime",
+        "validated macro feed / regime model",
+        "External institutional data",
+        "Bloomberg / Morningstar / Factiva / CRSP exports or licensed feeds",
+        "Tracked separately",
+        "Not represented as loaded",
+        "Research only",
+        "PROJECT HANDOFF REFERENCES",
+        "Static project references; not market or accounting data",
+        "Reference Area",
+        "Reference",
+        "Use",
+        "GitHub",
+        "https://github.com/linzhongnan0915/global-ai-risk-manager-workstation",
+        "Hosting",
+        "https://global-ai-risk-manager-workstation.onrender.com",
+        "LLM / Agentic Platform",
+        "ChatGPT / Codex / Cursor-assisted engineering workflow for implementation planning, testing guidance, release notes, and dashboard QA.",
+        "c.strategies.length",
+        "c.strategy_daily.length",
+        "c.trades.length",
+        "c.holdings.length",
+        "c.portfolio_daily.length",
+        "Top-Level Active",
+        "16 ordinary active strategies + 1 active Combined strategy",
+        "Paper Provenance Gate",
+        "Pending / Not Fully Verified",
+        "Raw provenance gate count:",
+        "rawProvenanceCount=c.execution_provenance?.trade_record_counts?.VERIFIED_SHADOW_EXECUTION??0",
+        "wq_admission_gate",
         "combined_rebalance_allowed",
     ):
         assert marker in app
-    assert "workflow-node-grid" in css
+    old_library_label = "Strategy Library & " + "Workflow"
+    assert old_library_label not in app
+    assert "Verified Shadow Rows" not in app
+    for misleading in (
+        "Factor Exposure " + "Heatmap",
+        "Portfolio Factor " + "Exposure",
+        "Combined family mix",
+    ):
+        assert misleading not in app
 
 
 def test_page_release_safety_gates_incomplete_pages():
@@ -288,12 +481,44 @@ def test_page_release_safety_gates_incomplete_pages():
         "Allocation & Rebalance",
         "Risk Factors & Exposure",
         "Correlation & Diversification",
-        "Market & Macro Monitor",
+        "Workflow & Shadow-Live Testing",
         "Backtesting & Research Lab",
-        "Strategy Library & Workflow",
+        "Strategy Library & Governance",
         "Daily Risk Report",
     ):
         assert f'"{page}"' in app
+    old_tab_label = "Market & " + "Macro Monitor"
+    assert old_tab_label not in app
+    assert "NO_LIVE_BROKERAGE" in app
+    assert "Risk tab staging status" in app
+    assert "Institutional factor model, VaR, ES, scenario shock, macro regime, and stress analytics are Blocked / Not loaded." in app
+    assert "Correlation tab staging status" in app
+    assert "No correlation matrix, duplicate-pair heatmap, cluster map, or diversification score is rendered or inferred." in app
+    assert "Research Lab staging status" in app
+    assert "OOS, walk-forward, stress test, macro regime, and backtest metrics are displayed only when loaded as canonical evidence." in app
+    assert "Daily report staging status" in app
+    assert "BLOCKED_SAFE" in app
+    assert "external institutional data research is tracked separately" in app.lower()
+    assert "Strategy Development Workflow" in app
+    assert "Shadow-Live Paper Testing Workflow" in app
+    assert "Strategy Admission Gate" in app
+    assert "Combined Strategy Operating Workflow" in app
+    assert "Risk Review Workflow" in app
+    assert "Local-First Release Workflow" in app
+    assert "Project Handoff References" in app
+    assert "Research Idea" in app
+    assert "Signal Definition" in app
+    assert "Target Construction" in app
+    assert "Paper Execution Record" in app
+    assert "Position Ledger" in app
+    assert "Human Approval" in app
+    assert "WQ_ALPHA_018 / #000018" in app
+    assert "Current sleeve</span><b>N/A</b>" in app
+    assert "Operational NAV</span><b>N/A</b>" in app
+    assert "Operational P&L</span><b>N/A</b>" in app
+    assert "Paper fill</span><b class=\"tone-warning\">Not present</b>" in app
+    assert "Live brokerage fill</span><b class=\"tone-warning\">Disabled / Not present</b>" in app
+    assert "codex-clipboard" not in app
     assert "function releasePanel" in app
     assert 'function releasePanel(page=state.selectedPage){return ""}' in app
     assert "No fabricated widgets" not in app
@@ -302,3 +527,32 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "Research and operational returns remain separate</button>" not in app
     assert "Review required</button>" not in app
     assert "release-safety-panel" in css
+    assert "workflow-testing-grid" in css
+    assert "workflow-step-card" in css
+
+
+def test_left_rail_navigation_maps_to_current_top_tabs():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    for marker in (
+        "const RAIL_TO_TAB =",
+        'portfolio:"Portfolio Command Center"',
+        'strategies:"Strategy Monitor"',
+        'risk:"Risk Factors & Exposure"',
+        'allocation:"Allocation & Rebalance"',
+        'analytics:"Correlation & Diversification"',
+        'research:"Backtesting & Research Lab"',
+        'workflow:"Workflow & Shadow-Live Testing"',
+        'reports:"Daily Risk Report"',
+        'alerts:"Daily Risk Report"',
+        'data:"Workflow & Shadow-Live Testing"',
+        'settings:"Strategy Library & Governance"',
+        "data-rail-key",
+        "data-rail-page",
+        "page=RAIL_TO_TAB[i]",
+        "active=page===state.selectedPage",
+        "const body=Array.isArray(rows)?rows.join(\"\"):rows",
+        'document.querySelectorAll("[data-rail-page]")',
+        "state.selectedPage=b.dataset.railPage",
+    ):
+        assert marker in app
+    assert "NAV_PAGE_MAP" not in app

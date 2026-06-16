@@ -471,7 +471,8 @@
       "membership_state": "approved_pending",
       "operational_state": "approved_pending",
       "effective_from": "2026-06-15",
-      "current_weight": 0.05555555555555555,
+      "current_weight": null,
+      "proposed_post_admission_weight": 0.05555555555555555,
       "data_status": "PENDING_EFFECTIVE_DATE",
       "validation_status": "PROVISIONAL",
       "latest_signal_date": null,
@@ -62298,7 +62299,7 @@
     {
       "severity": "INFO",
       "code": "MEMBERSHIP_EFFECTIVE_DATE_PENDING_EXECUTION",
-      "detail": "WQ_ALPHA_018 becomes ACTIVE on 2026-06-15; no future open or fill is fabricated."
+      "detail": "WQ Alpha 018 has effective-date review on 2026-06-15; admission remains blocked until canonical operating records and verified provenance are present."
     }
   ],
   "pending_membership": [

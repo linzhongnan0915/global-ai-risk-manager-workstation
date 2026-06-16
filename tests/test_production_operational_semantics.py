@@ -51,7 +51,7 @@ def test_production_render_path_is_operational_bundle_only():
     app = (ROOT / "dashboard/app.js").read_text(encoding="utf-8")
     index = (ROOT / "dashboard/index.html").read_text(encoding="utf-8")
 
-    assert "Combined Portfolio · Date-Effective ACTIVE Membership" in app
+    assert "Combined Portfolio - Date-Effective ACTIVE Membership" in app
     assert "canonicalOperationalArtifact(shadowBundle)" in app
     init = app[app.rfind("async function init()") :]
     assert "loadArtifact()" not in init

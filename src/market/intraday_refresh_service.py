@@ -451,6 +451,9 @@ def run_intraday_refresh(
                     "snapshot_id": snapshot_id,
                     "previous_valid_snapshot_id": previous_snapshot_id,
                     "refresh_status": "success",
+                    "position_source": position_source,
+                    "legacy_artifact_position_estimate_authoritative": False,
+                    "position_source_disclosure": marks["position_source_disclosure"],
                     "latest_market_observation_at": snapshot["latest_observation_ts_et"],
                     "last_successful_refresh_at": completed.isoformat(),
                 }

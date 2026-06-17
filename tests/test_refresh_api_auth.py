@@ -316,6 +316,9 @@ def test_refresh_uses_committed_shadow_holdings_when_shadow_db_unavailable(intra
     result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
 
     assert result.get("ok") is True
+    assert result["position_source"] == "committed_shadow_holdings"
+    assert result["legacy_artifact_position_estimate_authoritative"] is False
+    assert "no live brokerage positions or fills" in result["position_source_disclosure"]
     assert seen["tickers"] == ["SPY", "TLT"]
     snapshot = read_latest_snapshot(intraday_cfg)
     assert snapshot["position_source"] == "committed_shadow_holdings"

@@ -640,29 +640,38 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "risk_factor_market_proxy_table",
         "Market Data Risk Proxy Matrix",
         "Market Data Proxy",
-        "Delayed yfinance overlay",
+        "cached delayed yfinance overlay",
         "Not a validated Barra / institutional factor model",
-        "Not live brokerage",
-        "Not live real-time market data",
-        "Market-data proxy from cached delayed yfinance overlay. Not a validated institutional factor model.",
+        "No live brokerage positions/fills",
+        "Not live market data",
+        "Market-data proxy from cached delayed yfinance overlay. Not a validated Barra / institutional factor model. Not live market data. No live brokerage positions/fills.",
+        "function marketReadinessPanel(rows)",
+        "SPY beta / corr",
+        "Insufficient History until >=20 overlapping observations",
+        "Momentum / liquidity",
         "function marketProxyRows(c)",
         "function marketProxyTable(c)",
-        "SPY beta/correlation require sufficient overlapping benchmark history; missing values remain status labels, not zero.",
+        "SPY beta/correlation and volatility readiness are summarized above; missing values remain status labels, not zero.",
+        '["Strategy","Status","Weight","Drawdown","Momentum","Liquidity / ADV","Concentration","Data / Coverage"]',
         "Rows come from risk_factor_market_proxy_table in /api/operational-snapshot when available; rendering does not hard-code strategy count.",
     ):
         assert marker in app
     for marker in (
         ".market-proxy-panel",
-        ".market-proxy-table{min-width:2450px}",
+        ".market-proxy-table{min-width:1180px}",
+        ".market-readiness-strip",
         ".proxy-disclosure",
         ".proxy-cell.missing",
         ".proxy-cell.pending",
         ".risk-matrix-secondary",
     ):
         assert marker in css
-    table_function = app.split("function marketProxyRows(c)", 1)[1].split("function marketProxyTable", 1)[0]
+    table_function = app.split("function marketProxyRows(c)", 1)[1].split("function marketReadinessPanel", 1)[0]
     assert ".map(r=>" in table_function
     assert "slice(0" not in table_function
+    assert "r.evidence_source" not in table_function
+    assert "r.spy_beta" not in table_function
+    assert "r.spy_correlation" not in table_function
 
 
 def test_left_rail_navigation_maps_to_current_top_tabs():

@@ -646,13 +646,29 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "Not live market data",
         "Market-data proxy from cached delayed yfinance overlay. Not a validated Barra / institutional factor model. Not live market data. No live brokerage positions/fills.",
         "function marketReadinessPanel(rows)",
+        "function marketProxyStateLabel(r)",
         "SPY beta / corr",
         "Insufficient History until >=20 overlapping observations",
         "Momentum / liquidity",
         "function marketProxyRows(c)",
         "function marketProxyTable(c)",
+        "function fullFactorHeatmap(c)",
+        "function fullHeatmapRows(c)",
+        "function fullHeatmapCell(v,type)",
+        "function riskSecondaryPanels(c,p)",
+        "Market Data Risk Proxy Summary with Drawdown, Momentum, Liquidity, Concentration, and Data Quality prioritized",
+        "Show Full Factor Heatmap",
+        "Hide Full Factor Heatmap",
+        "Full heatmap includes market-data proxy fields and future factor placeholders. Cached delayed yfinance overlay only. Not a validated Barra / institutional factor model. Not live market data.",
+        '["Strategy / Sleeve","State","Weight","SPY Beta","SPY Corr","Vol 20D","Vol 60D","Drawdown","Mom 20D","Mom 63D","Liq Score","Avg $ Vol","Top Hold","Top 5","Sector","Size","Value","Quality","Event / Filing","Microstructure","Crowding / Conc.","Coverage","Warnings"]',
         "SPY beta/correlation and volatility readiness are summarized above; missing values remain status labels, not zero.",
         '["Strategy","Status","Weight","Drawdown","Momentum","Liquidity / ADV","Concentration","Data / Coverage"]',
+        "Portfolio Exposure Summary",
+        "Strategy Family Mix - Proxy Only, Not a Validated Factor Model",
+        "Model Readiness",
+        "Proxy metrics do not substitute for Barra, VaR, ES, scenario, macro regime, or stress analytics.",
+        "<details class=\"risk-governance-disclosure\"><summary>Refresh Scheme B disclosure</summary>",
+        "<details class=\"risk-matrix-secondary\"><summary>Show metadata fallback table</summary>",
         "Rows come from risk_factor_market_proxy_table in /api/operational-snapshot when available; rendering does not hard-code strategy count.",
     ):
         assert marker in app
@@ -660,9 +676,20 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         ".market-proxy-panel",
         ".market-proxy-table{min-width:1180px}",
         ".market-readiness-strip",
+        ".risk-factor-page{overflow-x:hidden}",
+        ".market-proxy-table{width:100%;min-width:1040px;table-layout:fixed}",
+        ".risk-matrix-secondary summary",
+        ".full-factor-heatmap",
+        ".full-factor-heatmap-table{min-width:2850px",
+        ".heat-cell.insufficient",
+        ".heat-cell.missing",
         ".proxy-disclosure",
         ".proxy-cell.missing",
         ".proxy-cell.pending",
+        ".risk-secondary-strip.compact",
+        ".risk-exposure-summary",
+        ".risk-model-tags",
+        ".risk-governance-disclosure",
         ".risk-matrix-secondary",
     ):
         assert marker in css
@@ -672,6 +699,14 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
     assert "r.evidence_source" not in table_function
     assert "r.spy_beta" not in table_function
     assert "r.spy_correlation" not in table_function
+    assert "r.proxy_status||r.primary_status" not in table_function
+    assert "marketProxyStateLabel(r)" in table_function
+    heatmap_function = app.split("function fullHeatmapRows(c)", 1)[1].split("function fullFactorHeatmap", 1)[0]
+    assert "c.risk_factor_market_proxy_table||[]" in heatmap_function
+    assert ".map(fullHeatmapFromBigRow)" in heatmap_function
+    assert "Not Loaded" in heatmap_function
+    assert "||0" not in heatmap_function
+    assert "r.evidence_source" not in heatmap_function
 
 
 def test_left_rail_navigation_maps_to_current_top_tabs():

@@ -257,6 +257,73 @@ def test_refresh_failure_preserves_last_valid_snapshot(intraday_cfg, minimal_art
     assert read_latest_snapshot(intraday_cfg)["snapshot_id"] == first_id
 
 
+def test_refresh_uses_committed_shadow_holdings_when_shadow_db_unavailable(intraday_cfg, minimal_artifact, tmp_path: Path):
+    root = tmp_path
+    artifact_path = root / "output" / "dashboard_artifact.json"
+    artifact_path.parent.mkdir(parents=True)
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    canonical_dir = root / "dashboard" / "data"
+    canonical_dir.mkdir(parents=True)
+    canonical_dir.joinpath("canonical_operational.json").write_text(
+        json.dumps(
+            {
+                "holdings": [
+                    {"date": "2026-06-10", "strategy_id": "S1", "ticker": "OLD", "target_weight": 1.0},
+                    {"date": "2026-06-11", "strategy_id": "S1", "ticker": "SPY", "target_weight": 0.5},
+                    {"date": "2026-06-11", "strategy_id": "S2", "ticker": "TLT", "target_weight": -0.5},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    seen = {}
+
+    def _mock_fetch_success(tickers, **kwargs):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        seen["tickers"] = list(tickers)
+        now_et = datetime.now(tz=ZoneInfo("America/New_York")).isoformat()
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": ticker,
+                    "observation_ts_et": now_et,
+                    "session_date": now_et[:10],
+                    "open": 100.0,
+                    "high": 101.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+                for ticker in tickers
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": now_et,
+            "latest_completed_bar_ts_et": now_et,
+        }
+
+    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
+
+    assert result.get("ok") is True
+    assert seen["tickers"] == ["SPY", "TLT"]
+    snapshot = read_latest_snapshot(intraday_cfg)
+    assert snapshot["position_source"] == "committed_shadow_holdings"
+    assert snapshot["marks"]["position_source"] == "committed_shadow_holdings"
+    assert snapshot["marks"]["legacy_artifact_position_estimate_authoritative"] is False
+    assert "no live brokerage positions or fills" in snapshot["marks"]["position_source_disclosure"]
+
+
 @pytest.fixture
 def intraday_cfg(tmp_path: Path) -> dict:
     from src.market.intraday_config import load_intraday_config

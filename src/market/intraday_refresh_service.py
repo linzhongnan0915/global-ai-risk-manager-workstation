@@ -68,6 +68,22 @@ def collect_refresh_tickers(artifact: dict[str, Any]) -> list[str]:
     return sorted(tickers)
 
 
+def collect_committed_shadow_holding_tickers(root: Path) -> list[str]:
+    """Use committed operational holdings as a non-live, auditable refresh universe."""
+    path = root / "dashboard" / "data" / "canonical_operational.json"
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    holdings = payload.get("holdings") or []
+    latest_date = max((row.get("date") or "" for row in holdings), default="")
+    tickers = {
+        str(row.get("ticker"))
+        for row in holdings
+        if row.get("date") == latest_date and row.get("ticker") and float(row.get("target_weight") or 0) != 0
+    }
+    return sorted(tickers)
+
+
 @contextmanager
 def refresh_lock(lock_path: Path):
     acquired = False
@@ -299,9 +315,16 @@ def run_intraday_refresh(
             baseline_allocation = dict(artifact.get("allocation", {}).get("current_weights") or {})
             baseline_signals_as_of = artifact.get("as_of_date")
             tickers = collect_shadow_position_tickers(shadow_database)
+            position_source = "shadow_database"
+            if not tickers:
+                resolved_artifact = Path(artifact_path).resolve()
+                committed_root = resolved_artifact.parent.parent if resolved_artifact.parent.name == "output" else resolved_artifact.parent
+                tickers = collect_committed_shadow_holding_tickers(committed_root)
+                position_source = "committed_shadow_holdings" if tickers else "missing"
             if not tickers:
                 if cfg.get("allow_artifact_position_fallback", False):
                     tickers = collect_refresh_tickers(artifact)
+                    position_source = "legacy_artifact_position_fallback"
                 else:
                     raise ValueError("no current SHADOW positions available; old dashboard proxy allocations are not used")
             bar_interval = bar_interval_for_refresh(cfg, interval)
@@ -360,6 +383,13 @@ def run_intraday_refresh(
             )
             marks["canonical_return_definition"] = "session first usable open to latest completed 5-minute close"
             marks["legacy_artifact_position_estimate_authoritative"] = False
+            marks["position_source"] = position_source
+            marks["position_source_disclosure"] = (
+                "Committed operational shadow holdings are used only as the delayed yfinance pricing universe; "
+                "no live brokerage positions or fills are represented."
+                if position_source == "committed_shadow_holdings"
+                else position_source
+            )
             marks["strategy_marks"] = shadow_intraday.get("strategies") or []
             daily_finalization = finalize_daily_shadow_returns(
                 shadow_database,
@@ -384,6 +414,7 @@ def run_intraday_refresh(
                 "market_session_status": session.status,
                 "ticker_count_requested": requested,
                 "ticker_count_successful": successful,
+                "position_source": position_source,
                 "missing_tickers": fetch_result.get("missing_tickers") or [],
                 "stale_tickers": fetch_result.get("stale_tickers") or [],
                 "retry_count": int(fetch_result.get("retry_count") or 0),

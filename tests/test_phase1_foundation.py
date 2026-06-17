@@ -652,15 +652,24 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "Momentum / liquidity",
         "function marketProxyRows(c)",
         "function marketProxyTable(c)",
-        "function fullFactorHeatmap(c)",
-        "function fullHeatmapRows(c)",
-        "function fullHeatmapCell(v,type)",
+        "const RISK_HEATMAP_COLUMNS=",
+        "function riskHeatmapSourceRows(c)",
+        "function riskHeatmapNumeric(v)",
+        "function riskHeatmapLargestConcentrationValue(r)",
+        "function riskHeatmapSummaryCards(c)",
+        "function riskHeatmapRows(c)",
+        "function riskHeatmapRow(r,columns)",
+        "function riskFactorHeatmap(c)",
+        "Risk Factor Heatmap",
+        "Heatmap-first market-data proxy view with data-derived rows and no hard-coded strategy count",
+        "Market Proxy Coverage",
+        "Largest Concentration",
+        "SPY Beta Readiness",
+        "canonical_operational.json -> committed_shadow_holdings -> risk_factor_market_proxy_cache.json -> /api/operational-snapshot -> Risk Factor Heatmap",
+        "Columns are fixed factor definitions; rows and values are loaded from the operational snapshot. Missing values stay status labels, not zero.",
+        "Future Layer",
         "function riskSecondaryPanels(c,p)",
-        "Market Data Risk Proxy Summary with Drawdown, Momentum, Liquidity, Concentration, and Data Quality prioritized",
-        "Show Full Factor Heatmap",
-        "Hide Full Factor Heatmap",
-        "Full heatmap includes market-data proxy fields and future factor placeholders. Cached delayed yfinance overlay only. Not a validated Barra / institutional factor model. Not live market data.",
-        '["Strategy / Sleeve","State","Weight","SPY Beta","SPY Corr","Vol 20D","Vol 60D","Drawdown","Mom 20D","Mom 63D","Liq Score","Avg $ Vol","Top Hold","Top 5","Sector","Size","Value","Quality","Event / Filing","Microstructure","Crowding / Conc.","Coverage","Warnings"]',
+        "Heatmap-first market-data proxy view with data-derived rows and no hard-coded strategy count",
         "SPY beta/correlation and volatility readiness are summarized above; missing values remain status labels, not zero.",
         '["Strategy","Status","Weight","Drawdown","Momentum","Liquidity / ADV","Concentration","Data / Coverage"]',
         "Portfolio Exposure Summary",
@@ -676,13 +685,16 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         ".market-proxy-panel",
         ".market-proxy-table{min-width:1180px}",
         ".market-readiness-strip",
+        ".risk-heatmap-summary",
+        ".risk-factor-heatmap-v1",
+        ".risk-heatmap-table",
+        ".risk-heat-cell.loaded.positive",
+        ".risk-heat-cell.loaded.negative",
+        ".risk-heat-cell.future",
+        ".risk-heatmap-legend",
         ".risk-factor-page{overflow-x:hidden}",
         ".market-proxy-table{width:100%;min-width:1040px;table-layout:fixed}",
         ".risk-matrix-secondary summary",
-        ".full-factor-heatmap",
-        ".full-factor-heatmap-table{min-width:2850px",
-        ".heat-cell.insufficient",
-        ".heat-cell.missing",
         ".proxy-disclosure",
         ".proxy-cell.missing",
         ".proxy-cell.pending",
@@ -701,12 +713,30 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
     assert "r.spy_correlation" not in table_function
     assert "r.proxy_status||r.primary_status" not in table_function
     assert "marketProxyStateLabel(r)" in table_function
-    heatmap_function = app.split("function fullHeatmapRows(c)", 1)[1].split("function fullFactorHeatmap", 1)[0]
-    assert "c.risk_factor_market_proxy_table||[]" in heatmap_function
-    assert ".map(fullHeatmapFromBigRow)" in heatmap_function
-    assert "Not Loaded" in heatmap_function
-    assert "||0" not in heatmap_function
-    assert "r.evidence_source" not in heatmap_function
+    assert "Show Full Factor Heatmap" not in app
+    assert "Hide Full Factor Heatmap" not in app
+    assert "function fullFactorHeatmap(c)" not in app
+    assert ".full-factor-heatmap" not in css
+    main_heatmap_function = app.split("function riskHeatmapRows(c)", 1)[1].split("function riskHeatmapRow", 1)[0]
+    assert "riskHeatmapSourceRows(c)" in main_heatmap_function
+    assert "rows.map(r=>riskHeatmapRow(r,columns)).join(\"\")" in main_heatmap_function
+    assert "slice(0" not in main_heatmap_function
+    assert "18" not in main_heatmap_function
+    assert "Data Pending" in main_heatmap_function
+    heatmap_row_function = app.split("function riskHeatmapRow(r,columns)", 1)[1].split("function riskHeatmapLegend", 1)[0]
+    assert "columns.map(col=>" in heatmap_row_function
+    assert "marketProxyStateLabel(r)" in heatmap_row_function
+    assert "strategy_id===\"WQ_ALPHA_018\"" not in heatmap_row_function
+    assert "display_id===\"#000018\"" not in heatmap_row_function
+    fallback_function = app.split("function riskHeatmapFallbackValue(r,key)", 1)[1].split("function riskHeatmapCell", 1)[0]
+    assert "Object.prototype.hasOwnProperty.call(r,key)" in fallback_function
+    assert "Data Pending" in fallback_function
+    assert "Not Loaded" in fallback_function
+    assert "Future Layer" in fallback_function
+    assert "||0" not in fallback_function
+    summary_function = app.split("function riskHeatmapSummaryCards(c)", 1)[1].split("function riskHeatmapRows", 1)[0]
+    assert "riskHeatmapLargestConcentrationValue" in summary_function
+    assert "||0" not in summary_function
 
 
 def test_left_rail_navigation_maps_to_current_top_tabs():

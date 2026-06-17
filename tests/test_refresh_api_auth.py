@@ -27,28 +27,43 @@ def _free_port() -> int:
 
 
 def _prepare_refresh_root(root: Path) -> None:
+    _write_canonical_holdings(root, ["SPY"])
+    config_dir = root / "data" / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "intraday_refresh.yaml").write_text(
+        (PROJECT_ROOT / "data" / "config" / "intraday_refresh.yaml").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+
+def _write_canonical_holdings(root: Path, tickers: list[str] | None = None) -> None:
     canonical_dir = root / "dashboard" / "data"
-    canonical_dir.mkdir(parents=True)
-    (canonical_dir / "canonical_operational.json").write_text(
+    canonical_dir.mkdir(parents=True, exist_ok=True)
+    tickers = tickers or ["SPY", "TLT"]
+    canonical_dir.joinpath("canonical_operational.json").write_text(
         json.dumps(
             {
                 "portfolio_summary": {"as_of_date": "2026-06-12", "nav": 1_000_000},
                 "strategies": [
                     {
-                        "internal_id": "S1",
-                        "display_name": "Paper Sleeve 1",
+                        "internal_id": f"S{index + 1}",
+                        "display_name": f"Paper Sleeve {index + 1}",
                         "membership_state": "executed",
-                        "current_weight": 1.0,
+                        "current_weight": 1 / len(tickers),
                     }
+                    for index, _ in enumerate(tickers)
+                ],
+                "holdings": [
+                    {
+                        "date": "2026-06-12",
+                        "strategy_id": f"S{index + 1}",
+                        "ticker": ticker,
+                        "target_weight": 1 / len(tickers),
+                    }
+                    for index, ticker in enumerate(tickers)
                 ],
             }
         ),
-        encoding="utf-8",
-    )
-    config_dir = root / "data" / "config"
-    config_dir.mkdir(parents=True)
-    (config_dir / "intraday_refresh.yaml").write_text(
-        (PROJECT_ROOT / "data" / "config" / "intraday_refresh.yaml").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
 
@@ -209,7 +224,7 @@ def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cf
 
 
 def test_refresh_failure_preserves_last_valid_snapshot(intraday_cfg, minimal_artifact, tmp_path: Path):
-    intraday_cfg["allow_artifact_position_fallback"] = True
+    _write_canonical_holdings(tmp_path)
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
 
@@ -325,6 +340,167 @@ def test_refresh_uses_committed_shadow_holdings_when_shadow_db_unavailable(intra
     assert snapshot["marks"]["position_source"] == "committed_shadow_holdings"
     assert snapshot["marks"]["legacy_artifact_position_estimate_authoritative"] is False
     assert "no live brokerage positions or fills" in snapshot["marks"]["position_source_disclosure"]
+
+
+def test_refresh_uses_committed_holdings_without_creating_legacy_artifact(intraday_cfg, tmp_path: Path):
+    root = tmp_path
+    artifact_path = root / "output" / "dashboard_artifact.json"
+    canonical_dir = root / "dashboard" / "data"
+    canonical_dir.mkdir(parents=True)
+    canonical_dir.joinpath("canonical_operational.json").write_text(
+        json.dumps(
+            {
+                "portfolio_summary": {"as_of_date": "2026-06-12", "nav": 1_000_000},
+                "strategies": [
+                    {"internal_id": "S1", "display_name": "Paper Sleeve 1", "membership_state": "executed", "current_weight": 1.0}
+                ],
+                "holdings": [
+                    {"date": "2026-06-12", "strategy_id": "S1", "ticker": "SPY", "target_weight": 1.0}
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _mock_fetch_success(tickers, **kwargs):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        now_et = datetime.now(tz=ZoneInfo("America/New_York")).isoformat()
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": "SPY",
+                    "observation_ts_et": now_et,
+                    "session_date": now_et[:10],
+                    "open": 100.0,
+                    "high": 101.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": now_et,
+            "latest_completed_bar_ts_et": now_et,
+        }
+
+    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
+
+    assert result["ok"] is True
+    assert result["position_source"] == "committed_shadow_holdings"
+    assert result["paper_only"] is True
+    assert result["live_brokerage_execution"] is False
+    assert artifact_path.exists() is False
+
+
+def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path)
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch_partial(tickers, **kwargs):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        now_et = datetime.now(tz=ZoneInfo("America/New_York")).isoformat()
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": tickers[0],
+                    "observation_ts_et": now_et,
+                    "session_date": now_et[:10],
+                    "open": 100.0,
+                    "high": 101.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+            ],
+            "missing_tickers": tickers[1:],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": 1,
+            "latest_observation_ts_et": now_et,
+            "latest_completed_bar_ts_et": now_et,
+        }
+
+    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_partial)
+
+    assert result["ok"] is True
+    assert result["warnings"]
+    snapshot = read_latest_snapshot(intraday_cfg)
+    assert snapshot["warnings"]
+
+
+def test_refresh_rate_limit_returns_stale_cooldown_with_previous_snapshot(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path)
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch_success(tickers, **kwargs):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        now_et = datetime.now(tz=ZoneInfo("America/New_York")).isoformat()
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": tickers[0],
+                    "observation_ts_et": now_et,
+                    "session_date": now_et[:10],
+                    "open": 100.0,
+                    "high": 101.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": now_et,
+            "latest_completed_bar_ts_et": now_et,
+        }
+
+    ok = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
+    first_id = ok["snapshot_id"]
+
+    def _mock_fetch_rate_limited(tickers, **kwargs):
+        raise RuntimeError("yfinance 429 Too Many Requests")
+
+    stale = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_rate_limited)
+
+    assert stale["ok"] is True
+    assert stale["skipped"] is True
+    assert stale["refresh_status"] == "stale_cooldown"
+    assert stale["provider_cooldown"] is True
+    assert stale["snapshot_id"] == first_id
 
 
 @pytest.fixture

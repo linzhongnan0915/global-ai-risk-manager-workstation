@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.market.demo_hosting import demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
-from src.market.artifact_contract import ensure_dashboard_artifact_for_path
 from src.market.refresh_auth import refresh_api_token_configured
 from src.market.intraday_config import (
     bar_interval_for_refresh,
@@ -54,8 +53,92 @@ def load_dashboard_artifact(path: Path | str = DEFAULT_ARTIFACT_PATH) -> dict[st
     artifact_path = Path(path)
     if artifact_path.exists():
         return json.loads(artifact_path.read_text(encoding="utf-8"))
-    artifact, _ = ensure_dashboard_artifact_for_path(artifact_path)
-    return artifact
+    return build_committed_shadow_refresh_artifact(_refresh_root_from_artifact_path(artifact_path))
+
+
+def _refresh_root_from_artifact_path(path: Path | str) -> Path:
+    resolved = Path(path).resolve()
+    return resolved.parent.parent if resolved.parent.name == "output" else resolved.parent
+
+
+def load_committed_operational_canonical(root: Path) -> dict[str, Any]:
+    path = root / "dashboard" / "data" / "canonical_operational.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def build_committed_shadow_refresh_artifact(root: Path) -> dict[str, Any]:
+    """Build an in-memory Refresh Scheme B baseline without restoring legacy artifacts."""
+    payload = load_committed_operational_canonical(root)
+    portfolio = payload.get("portfolio_summary") or {}
+    strategies = payload.get("strategies") or []
+    holdings = payload.get("holdings") or []
+    latest_date = max((row.get("date") or "" for row in holdings), default="")
+    holdings_by_strategy: dict[str, list[dict[str, Any]]] = {}
+    for row in holdings:
+        if row.get("date") != latest_date or not row.get("ticker"):
+            continue
+        if float(row.get("target_weight") or 0) == 0:
+            continue
+        strategy_id = str(row.get("strategy_id") or row.get("internal_id") or "")
+        if not strategy_id:
+            continue
+        holdings_by_strategy.setdefault(strategy_id, []).append(
+            {
+                "ticker": str(row["ticker"]),
+                "source_ticker": str(row["ticker"]),
+                "weight": float(row.get("target_weight") or 0),
+            }
+        )
+
+    artifact_strategies: list[dict[str, Any]] = []
+    current_weights: dict[str, float] = {}
+    for strategy in strategies:
+        strategy_id = str(strategy.get("internal_id") or strategy.get("strategy_id") or "")
+        if not strategy_id:
+            continue
+        weight = float(strategy.get("current_weight") or strategy.get("weight") or 0)
+        if strategy.get("membership_state") == "executed" or strategy_id in holdings_by_strategy:
+            current_weights[strategy_id] = weight
+        artifact_strategies.append(
+            {
+                "strategy_id": strategy_id,
+                "name": strategy.get("display_name") or strategy.get("name") or strategy_id,
+                "current_weight": weight,
+                "position_packet": {"latest_positions": holdings_by_strategy.get(strategy_id, [])},
+            }
+        )
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    initial_capital = portfolio.get("initial_shadow_capital") or portfolio.get("nav") or 1_000_000
+    return {
+        "as_of_date": portfolio.get("as_of_date") or portfolio.get("official_ledger_date") or latest_date,
+        "initial_capital": float(initial_capital),
+        "allocation": {
+            "current_weights": current_weights,
+            "approval_required": True,
+            "rationale": "Refresh Scheme B: committed shadow holdings; no live brokerage positions or fills.",
+        },
+        "strategies": artifact_strategies,
+        "factors": {"portfolio_factor_exposure_current": {}},
+        "risk_limits": {"checks": [], "factors": {"checks": []}},
+        "operating_period_risk": {"pnl": {"cumulative_return": {"available": False, "value": None}}},
+        "data_classification": {
+            "is_live_portfolio_data": False,
+            "brokerage_execution_enabled": False,
+            "market_data_mode": "delayed_yfinance_proxy",
+            "paper_only": True,
+        },
+        "build_metadata": {
+            "artifact_generated_at": generated_at,
+            "source": "committed_shadow_holdings",
+            "legacy_artifact_position_estimate_authoritative": False,
+        },
+        "refresh_scheme": "B",
+        "position_source": "committed_shadow_holdings",
+        "legacy_artifact_position_estimate_authoritative": False,
+    }
 
 
 def collect_refresh_tickers(artifact: dict[str, Any]) -> list[str]:
@@ -70,10 +153,7 @@ def collect_refresh_tickers(artifact: dict[str, Any]) -> list[str]:
 
 def collect_committed_shadow_holding_tickers(root: Path) -> list[str]:
     """Use committed operational holdings as a non-live, auditable refresh universe."""
-    path = root / "dashboard" / "data" / "canonical_operational.json"
-    if not path.exists():
-        return []
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_committed_operational_canonical(root)
     holdings = payload.get("holdings") or []
     latest_date = max((row.get("date") or "" for row in holdings), default="")
     tickers = {
@@ -82,6 +162,11 @@ def collect_committed_shadow_holding_tickers(root: Path) -> list[str]:
         if row.get("date") == latest_date and row.get("ticker") and float(row.get("target_weight") or 0) != 0
     }
     return sorted(tickers)
+
+
+def _is_provider_rate_limit_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(token in message for token in ("429", "too many requests", "rate limit", "rate-limited", "cooldown"))
 
 
 @contextmanager
@@ -311,22 +396,17 @@ def run_intraday_refresh(
         )
 
         try:
+            refresh_root = _refresh_root_from_artifact_path(artifact_path)
             artifact = load_dashboard_artifact(artifact_path)
             baseline_allocation = dict(artifact.get("allocation", {}).get("current_weights") or {})
             baseline_signals_as_of = artifact.get("as_of_date")
-            tickers = collect_shadow_position_tickers(shadow_database)
-            position_source = "shadow_database"
+            tickers = collect_committed_shadow_holding_tickers(refresh_root)
+            position_source = "committed_shadow_holdings" if tickers else "missing"
             if not tickers:
-                resolved_artifact = Path(artifact_path).resolve()
-                committed_root = resolved_artifact.parent.parent if resolved_artifact.parent.name == "output" else resolved_artifact.parent
-                tickers = collect_committed_shadow_holding_tickers(committed_root)
-                position_source = "committed_shadow_holdings" if tickers else "missing"
+                tickers = collect_shadow_position_tickers(shadow_database)
+                position_source = "shadow_database" if tickers else "missing"
             if not tickers:
-                if cfg.get("allow_artifact_position_fallback", False):
-                    tickers = collect_refresh_tickers(artifact)
-                    position_source = "legacy_artifact_position_fallback"
-                else:
-                    raise ValueError("no current SHADOW positions available; old dashboard proxy allocations are not used")
+                raise ValueError("no committed SHADOW holdings available for Refresh Scheme B")
             bar_interval = bar_interval_for_refresh(cfg, interval)
             fetcher = fetch_fn or fetch_intraday_bars
             fetch_result = fetcher(
@@ -363,9 +443,12 @@ def run_intraday_refresh(
             successful = int(fetch_result.get("ticker_count_successful") or 0)
             ratio = successful / max(requested, 1)
             min_ratio = float(cfg.get("min_success_ticker_ratio") or 0.6)
+            refresh_warnings: list[str] = []
+            if successful <= 0:
+                raise ValueError("no ticker coverage from delayed market-data provider")
             if ratio < min_ratio:
-                raise ValueError(
-                    f"insufficient ticker coverage ({successful}/{requested}, need {min_ratio:.0%})"
+                refresh_warnings.append(
+                    f"partial ticker coverage ({successful}/{requested}, below {min_ratio:.0%}); stale/missing ticker labels preserved"
                 )
 
             marks = revalue_mark_sensitive_outputs(artifact, fetch_result, load_market_universe())
@@ -391,6 +474,11 @@ def run_intraday_refresh(
                 else position_source
             )
             marks["strategy_marks"] = shadow_intraday.get("strategies") or []
+            marks["refresh_warnings"] = refresh_warnings
+            marks["paper_only"] = True
+            marks["live_brokerage_execution"] = False
+            marks["delayed_market_data"] = True
+            marks["not_live_market_data"] = True
             daily_finalization = finalize_daily_shadow_returns(
                 shadow_database,
                 shadow_intraday,
@@ -417,6 +505,7 @@ def run_intraday_refresh(
                 "position_source": position_source,
                 "missing_tickers": fetch_result.get("missing_tickers") or [],
                 "stale_tickers": fetch_result.get("stale_tickers") or [],
+                "warnings": refresh_warnings,
                 "retry_count": int(fetch_result.get("retry_count") or 0),
                 "refresh_interval_minutes": interval,
                 "marks": marks,
@@ -454,6 +543,11 @@ def run_intraday_refresh(
                     "position_source": position_source,
                     "legacy_artifact_position_estimate_authoritative": False,
                     "position_source_disclosure": marks["position_source_disclosure"],
+                    "warnings": refresh_warnings,
+                    "paper_only": True,
+                    "live_brokerage_execution": False,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
                     "latest_market_observation_at": snapshot["latest_observation_ts_et"],
                     "last_successful_refresh_at": completed.isoformat(),
                 }
@@ -462,6 +556,36 @@ def run_intraday_refresh(
         except Exception as exc:
             failed_at = datetime.now(timezone.utc)
             last_valid = read_latest_snapshot(cfg)
+            if last_valid and _is_provider_rate_limit_error(exc):
+                write_refresh_status(
+                    {
+                        "state": "cooldown",
+                        "in_progress": False,
+                        "last_error": str(exc),
+                        "failed_at": failed_at.isoformat(),
+                        "data_freshness": "Stale",
+                        "last_snapshot_id": last_valid.get("snapshot_id"),
+                        "selected_interval_minutes": interval,
+                    },
+                    cfg,
+                )
+                payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+                payload.update(
+                    {
+                        "ok": True,
+                        "skipped": True,
+                        "reason": "provider_rate_limited_stale_snapshot_preserved",
+                        "refresh_status": "stale_cooldown",
+                        "provider_cooldown": True,
+                        "error": str(exc),
+                        "snapshot_id": last_valid.get("snapshot_id"),
+                        "previous_valid_snapshot_id": last_valid.get("previous_valid_snapshot_id"),
+                        "data_freshness": "Stale",
+                        "stale_usable": True,
+                        "warnings": ["Delayed market-data provider rate-limited; previous valid snapshot preserved."],
+                    }
+                )
+                return payload
             write_refresh_status(
                 {
                     "state": "failed",

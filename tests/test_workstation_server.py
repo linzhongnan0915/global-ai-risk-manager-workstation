@@ -191,7 +191,7 @@ def test_contract_bootstrap_artifact_is_safe_non_live(tmp_path):
     assert artifact["data_classification"]["live_brokerage_fills_represented"] is False
 
 
-def test_refresh_data_initializes_missing_dashboard_artifact(tmp_path, monkeypatch):
+def test_refresh_data_does_not_require_missing_dashboard_artifact(tmp_path, monkeypatch):
     root = tmp_path
     canonical_dir = root / "dashboard" / "data"
     canonical_dir.mkdir(parents=True)
@@ -240,6 +240,9 @@ intraday_refresh:
                         "current_weight": 1.0,
                     }
                 ],
+                "holdings": [
+                    {"date": "2026-06-12", "strategy_id": "S1", "ticker": "SPY", "target_weight": 1.0}
+                ],
             }
         ),
         encoding="utf-8",
@@ -250,9 +253,10 @@ intraday_refresh:
         artifact_path = Path(kwargs["artifact_path"])
         calls["artifact_exists"] = artifact_path.exists()
         return {
-            "ok": False,
-            "error": "no current SHADOW positions available; old dashboard proxy allocations are not used",
-            "refresh_status": "failed",
+            "ok": True,
+            "refresh_status": "success",
+            "position_source": "committed_shadow_holdings",
+            "legacy_artifact_position_estimate_authoritative": False,
         }
 
     monkeypatch.setattr("scripts.run_workstation_server.run_intraday_refresh", _refresh_stub)
@@ -268,16 +272,14 @@ intraday_refresh:
         status, _, body = _post_json(f"http://127.0.0.1:{port}/api/refresh-data")
         payload = json.loads(body.decode("utf-8"))
         artifact_path = root / "output" / "dashboard_artifact.json"
-        assert status == 503
-        assert calls["artifact_exists"] is True
-        assert artifact_path.exists()
-        assert payload["ok"] is False
-        assert payload["refresh_status"] == "failed"
-        assert payload["refresh_artifact"]["state"] == "initialized"
-        assert payload["refresh_artifact"]["reason"] == "missing_dashboard_artifact"
-        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-        assert artifact["data_classification"]["is_live_portfolio_data"] is False
-        assert artifact["data_classification"]["market_data_mode"] == "unavailable_until_refresh"
+        assert status == 200
+        assert calls["artifact_exists"] is False
+        assert artifact_path.exists() is False
+        assert payload["ok"] is True
+        assert payload["refresh_status"] == "success"
+        assert payload["refresh_artifact"]["state"] == "not_required"
+        assert payload["refresh_artifact"]["reason"] == "refresh_scheme_b_committed_shadow_holdings"
+        assert payload["refresh_artifact"]["legacy_artifact_position_estimate_authoritative"] is False
     finally:
         server.shutdown()
         server.server_close()

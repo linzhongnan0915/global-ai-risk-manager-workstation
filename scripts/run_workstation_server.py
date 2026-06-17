@@ -86,6 +86,16 @@ def ensure_refresh_artifact(root: Path = PROJECT_ROOT) -> tuple[dict, dict]:
     return ensure_dashboard_artifact(root)
 
 
+def refresh_scheme_b_artifact_state(root: Path = PROJECT_ROOT) -> dict:
+    canonical_path = root / "dashboard" / "data" / "canonical_operational.json"
+    return {
+        "state": "not_required",
+        "reason": "refresh_scheme_b_committed_shadow_holdings",
+        "legacy_artifact_position_estimate_authoritative": False,
+        "canonical_operational_path": str(canonical_path),
+    }
+
+
 class WorkstationHandler(BaseHTTPRequestHandler):
     server_root = PROJECT_ROOT
     deployment_artifact: dict | None = None
@@ -415,7 +425,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", "0"))
                 raw = self.rfile.read(length) if length else b"{}"
                 body = json.loads(raw.decode("utf-8") or "{}")
-                _, artifact_state = ensure_refresh_artifact(self.server_root)
+                artifact_state = refresh_scheme_b_artifact_state(self.server_root)
                 interval = body.get("interval_minutes")
                 if mode == "external":
                     interval = int(interval) if interval is not None else EXTERNAL_REFRESH_INTERVAL_MINUTES
@@ -428,7 +438,11 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     artifact_path=self.server_root / "output" / "dashboard_artifact.json",
                     config=self._intraday_config(),
                 )
-                if result.get("ok") and result.get("snapshot_id"):
+                if (
+                    result.get("ok")
+                    and result.get("snapshot_id")
+                    and (self.server_root / "output" / "dashboard_artifact.json").exists()
+                ):
                     artifact = self._load_artifact()
                     snapshot = read_latest_snapshot_payload(self._intraday_config())
                     overlay = self._overlay_from_intraday_snapshot(snapshot, artifact)

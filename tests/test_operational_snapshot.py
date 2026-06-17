@@ -13,6 +13,7 @@ import pytest
 from src.reporting.operational_snapshot import (
     build_operational_snapshot,
     classify_execution_provenance,
+    load_or_build_operational_snapshot,
     load_operational_snapshot_for_response,
     official_promotion_readiness,
     persist_decision,
@@ -91,7 +92,8 @@ def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
     assert snapshot["strategies"][1]["display_name"] == "Relative Strength 12-1"
     assert snapshot["strategies"][1]["last_rebalance"] == "2026-06-10"
     assert snapshot["strategies"][-1]["daily_pnl"] is None
-    assert snapshot["pending_membership"]["effective_from"] == "2026-06-15"
+    assert snapshot["pending_membership"] is None
+    assert snapshot["removed_from_current_workstation_strategy_ids"] == ["WQ_ALPHA_018"]
     assert len(snapshot["strategies"]) == 18
     assert sum(row["membership_state"] == "executed" for row in snapshot["strategies"]) == 17
     assert snapshot["strategies"][-1]["display_name"] == "Low Intraday Range & Open-Close Correlation"
@@ -669,17 +671,18 @@ def test_risk_factor_market_proxy_table_is_snapshot_bound_without_live_market_fe
     snapshot = build_operational_snapshot(_canonical())
     rows = snapshot["risk_factor_market_proxy_table"]
     by_id = {row["strategy_id"]: row for row in rows}
+    current_strategy_ids = {
+        row["internal_id"]
+        for row in snapshot["strategies"]
+        if row["internal_id"] not in snapshot["removed_from_current_workstation_strategy_ids"]
+    }
 
-    assert len(rows) == len(snapshot["strategies"])
-    assert {row["strategy_id"] for row in rows} == {row["internal_id"] for row in snapshot["strategies"]}
+    assert len(rows) == len(current_strategy_ids)
+    assert {row["strategy_id"] for row in rows} == current_strategy_ids
     assert by_id["COMBINED_PORTFOLIO"]["sleeve_type"] == "Composite"
     assert by_id["COMBINED_PORTFOLIO"]["primary_status"] == "Active Composite"
     assert by_id["COMBINED_PORTFOLIO"]["proxy_status"] == "Constituent-Derived Pending"
-    assert by_id["WQ_ALPHA_018"]["sleeve_type"] == "Pending"
-    assert by_id["WQ_ALPHA_018"]["primary_status"] == "APPROVED_PENDING / PRE_OPERATIONAL"
-    assert by_id["WQ_ALPHA_018"]["spy_beta"] == "Not Applicable"
-    assert by_id["WQ_ALPHA_018"]["realized_vol_20d"] == "Not Applicable"
-    assert by_id["WQ_ALPHA_018"]["current_weight"] is None
+    assert "WQ_ALPHA_018" not in by_id
     assert "Delayed yfinance overlay" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
     assert "Not live brokerage" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
     assert "Not live real-time market data" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
@@ -723,6 +726,122 @@ def test_new_strategy_gets_market_proxy_row_with_pending_data_without_frontend_h
     assert row["realized_vol_20d"] == "Insufficient History"
     assert row["top_holding_concentration"] == "Not Available"
     assert row["proxy_status"] == "Insufficient History"
+
+
+def test_sp500_reference_universe_missing_artifact_is_not_loaded_without_breaking_snapshot(tmp_path):
+    snapshot = build_operational_snapshot(_canonical())
+
+    universe = snapshot["sp500_reference_universe"]
+    assert universe["status"] == "NOT_LOADED"
+    assert universe["artifact_path"] == "dashboard/data/universes/sp500_current.json"
+    assert universe["description"] == "Current S&P 500 reference universe, not historical constituent-corrected."
+    assert universe["constituent_count"] == 0
+    assert universe["constituents"] == []
+    assert "ticker" in universe["fields"]
+    assert "current_constituent" in universe["fields"]
+
+    root = _copy_root(tmp_path)
+    loaded = load_or_build_operational_snapshot(root)
+    assert loaded["sp500_reference_universe"]["status"] == "NOT_LOADED"
+    assert loaded["risk_factor_market_proxy_table"]
+
+
+def test_sp500_reference_universe_artifact_loads_as_reference_only():
+    artifact = json.loads((ROOT / "dashboard/data/universes/sp500_current.json").read_text(encoding="utf-8"))
+    snapshot = build_operational_snapshot(_canonical(), sp500_reference_universe=artifact)
+    universe = snapshot["sp500_reference_universe"]
+
+    assert universe["status"] == "LOADED"
+    assert universe["constituent_count"] >= 500
+    assert universe["current_constituent"] is True
+    assert universe["constituents"]
+    first = universe["constituents"][0]
+    assert {
+        "ticker",
+        "company_name",
+        "sector",
+        "industry",
+        "source",
+        "provider",
+        "as_of_date",
+        "current_constituent",
+    } <= set(first)
+    assert all(row["current_constituent"] is True for row in universe["constituents"])
+    canonical_tickers = {row.get("internal_id") for row in _canonical()["strategies"]}
+    assert "AAPL" not in canonical_tickers
+
+
+def test_cached_snapshot_missing_risk_factor_contract_fields_is_rebuilt(tmp_path):
+    root = _copy_root(tmp_path)
+    artifact = json.loads((ROOT / "dashboard/data/universes/sp500_current.json").read_text(encoding="utf-8"))
+    stale = build_operational_snapshot(_canonical(), sp500_reference_universe=artifact)
+    stale.pop("risk_factors")
+    stale.pop("research_summary")
+    snapshot_path = root / "output/operational_snapshot.json"
+    snapshot_path.parent.mkdir(parents=True)
+    snapshot_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    loaded = load_or_build_operational_snapshot(root)
+
+    assert isinstance(loaded["risk_factors"], dict)
+    assert isinstance(loaded["research_summary"], dict)
+    assert loaded["risk_factors"]["visible_active_strategy_count"] == 17
+    assert loaded["research_summary"]["labels"]["active_avg_sharpe"] == "Active Avg / Research"
+
+
+def test_benchmark_reference_uses_cached_spy_returns_without_live_fetch():
+    canonical = _canonical()
+    cache = _market_proxy_cache_for_strategy(canonical, "C3A1_002")
+    snapshot = build_operational_snapshot(canonical, market_proxy_cache=cache)
+    benchmark = snapshot["benchmark_reference"]
+
+    assert benchmark["benchmark_symbol"] == "SPY"
+    assert benchmark["delayed_market_data"] is True
+    assert benchmark["not_live_market_data"] is True
+    assert benchmark["provider"] == "yfinance"
+    assert benchmark["observations"] == 24
+    assert benchmark["return_20d"] is not None
+    assert benchmark["volatility_20d"] is not None
+    assert benchmark["return_63d"] is None
+    assert benchmark["source"] == "dashboard/data/risk_factor_market_proxy_cache.json"
+
+
+def test_risk_factor_contract_summary_and_research_fallbacks_are_explicit():
+    canonical = _canonical()
+    research = load_strategy_research_artifacts(ROOT, canonical["strategies"])
+    cache = _market_proxy_cache_for_strategy(canonical, "C3A1_002")
+    snapshot = build_operational_snapshot(canonical, market_proxy_cache=cache, strategy_research_details=research)
+
+    risk_factors = snapshot["risk_factors"]
+    assert risk_factors["visible_active_strategy_count"] == 17
+    assert risk_factors["pending_excluded_count"] == 0
+    assert risk_factors["default_matrix_excludes"] == []
+    assert risk_factors["pending_excluded_strategy_ids"] == []
+    assert risk_factors["removed_from_current_workstation_strategy_ids"] == ["WQ_ALPHA_018"]
+    assert all(row["strategy_id"] != "WQ_ALPHA_018" for row in snapshot["risk_factor_market_proxy_table"])
+    default_rows = [
+        row for row in snapshot["risk_factor_market_proxy_table"]
+        if row["strategy_id"] not in risk_factors["pending_excluded_strategy_ids"]
+    ]
+    assert len(default_rows) == risk_factors["visible_active_strategy_count"]
+
+    summary = snapshot["research_summary"]
+    assert summary["combined_sharpe_available"] is False
+    assert summary["combined_mdd_available"] is False
+    assert summary["combined_sharpe"] is None
+    assert summary["combined_max_drawdown"] is None
+    assert summary["active_strategy_metrics_count"] == 16
+    assert summary["active_avg_sharpe"] is not None
+    assert summary["active_avg_sharpe"] != 0
+    assert summary["active_median_sharpe"] is not None
+    assert summary["worst_active_mdd"] < 0
+    assert summary["labels"]["active_avg_sharpe"] == "Active Avg / Research"
+    assert summary["labels"]["worst_active_mdd"] == "Worst Active / Research"
+    assert summary["quality_flags"]["active_avg_sharpe"] == "Below 0.80 target"
+
+    portfolio = snapshot["portfolio_summary"]
+    assert portfolio["approved_n"] == canonical["portfolio_summary"]["approved_n"]
+    assert portfolio["approved_equal_weight"] == canonical["portfolio_summary"]["approved_equal_weight"]
 
 
 def _market_proxy_cache_for_strategy(canonical: dict, strategy_id: str) -> dict:
@@ -826,6 +945,28 @@ def test_spy_beta_and_correlation_require_overlap_and_load_from_cache_when_suffi
     insufficient_row = next(row for row in insufficient["risk_factor_market_proxy_table"] if row["strategy_id"] == strategy_id)
     assert insufficient_row["spy_beta"] == "Insufficient History"
     assert insufficient_row["spy_correlation"] == "Insufficient History"
+
+
+def test_research_beta_corr_and_volatility_use_backtest_evidence_without_overwriting_operational_beta():
+    canonical = _canonical()
+    research = load_strategy_research_artifacts(ROOT, canonical["strategies"])
+    cache = json.loads((ROOT / "dashboard/data/risk_factor_market_proxy_cache.json").read_text(encoding="utf-8"))
+    snapshot = build_operational_snapshot(canonical, market_proxy_cache=cache, strategy_research_details=research)
+
+    research_rows = [
+        row for row in snapshot["risk_factor_market_proxy_table"]
+        if row["strategy_id"] not in {"COMBINED_PORTFOLIO", "WQ_ALPHA_018"}
+    ]
+
+    assert research_rows
+    assert all(row["spy_beta"] == "Insufficient History" for row in research_rows)
+    assert sum(isinstance(row["research_beta"], float) for row in research_rows) >= 1
+    assert sum(isinstance(row["research_correlation"], float) for row in research_rows) >= 1
+    assert sum(isinstance(row["research_volatility"], float) for row in research_rows) >= 1
+    loaded = next(row for row in research_rows if isinstance(row["research_beta"], float))
+    assert loaded["research_overlap_observations"] >= 20
+    assert loaded["research_factor_evidence_class"] == "Research / Backtest Metric"
+    assert loaded["research_factor_source"].startswith("data/research/canonical/")
 
 
 def test_refresh_writes_optional_market_proxy_cache_from_mock_price_history(tmp_path: Path):

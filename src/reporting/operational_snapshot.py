@@ -25,6 +25,7 @@ MARKET_PROXY_DISCLOSURE = (
     "Not a validated Barra / institutional factor model; Not live brokerage; "
     "Not live real-time market data."
 )
+REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS = {"WQ_ALPHA_018"}
 INTRADAY_OVERLAY_SCHEMA_VERSION = "intraday_overlay_v1"
 INTRADAY_OVERLAY_STALE_AFTER_SECONDS = 10 * 60
 REFRESH_INTERVAL_SECONDS = 300
@@ -82,11 +83,54 @@ def _paths(root: Path) -> dict[str, Path]:
         "canonical": root / "dashboard/data/canonical_operational.json",
         "source_bundle": root / "dashboard/data/shadow_live_bundle.json",
         "market_proxy_cache": root / "dashboard/data/risk_factor_market_proxy_cache.json",
+        "sp500_reference_universe": root / "dashboard/data/universes/sp500_current.json",
         "snapshot": root / "output/operational_snapshot.json",
         "intraday_overlay": root / "output/operational_intraday_overlay.json",
         "status": root / "output/operational_refresh_status.json",
         "lock": root / "output/operational_snapshot.lock",
         "decisions": root / "output/command_center_decisions.json",
+    }
+
+
+def _sp500_reference_universe_payload(universe: dict[str, Any] | None) -> dict[str, Any]:
+    if not universe:
+        return {
+            "status": "NOT_LOADED",
+            "artifact_path": "dashboard/data/universes/sp500_current.json",
+            "description": "Current S&P 500 reference universe, not historical constituent-corrected.",
+            "provider": None,
+            "as_of_date": None,
+            "constituent_count": 0,
+            "current_constituent": True,
+            "fields": ["ticker", "company_name", "sector", "industry", "market_cap", "source", "as_of_date", "provider", "current_constituent"],
+            "constituents": [],
+        }
+    constituents = deepcopy(universe.get("constituents") or universe.get("rows") or [])
+    normalized = []
+    for row in constituents:
+        normalized.append(
+            {
+                "ticker": row.get("ticker"),
+                "company_name": row.get("company_name") or row.get("name"),
+                "sector": row.get("sector"),
+                "industry": row.get("industry"),
+                "market_cap": row.get("market_cap"),
+                "source": row.get("source") or universe.get("source"),
+                "as_of_date": row.get("as_of_date") or universe.get("as_of_date"),
+                "provider": row.get("provider") or universe.get("provider"),
+                "current_constituent": row.get("current_constituent", True),
+            }
+        )
+    return {
+        "status": "LOADED",
+        "artifact_path": "dashboard/data/universes/sp500_current.json",
+        "description": "Current S&P 500 reference universe, not historical constituent-corrected.",
+        "provider": universe.get("provider"),
+        "as_of_date": universe.get("as_of_date"),
+        "constituent_count": len(normalized),
+        "current_constituent": True,
+        "fields": ["ticker", "company_name", "sector", "industry", "market_cap", "source", "as_of_date", "provider", "current_constituent"],
+        "constituents": normalized,
     }
 
 
@@ -712,6 +756,157 @@ def _benchmark_returns_by_date(canonical: dict[str, Any], market_proxy_cache: di
     return output
 
 
+def _compounded_return(values: list[float], window: int) -> float | None:
+    if len(values) < window:
+        return None
+    compounded = 1.0
+    for value in values[-window:]:
+        compounded *= 1.0 + value
+    return compounded - 1.0
+
+
+def _annualized_return_volatility(values: list[float], window: int) -> float | None:
+    if len(values) < window:
+        return None
+    sample = values[-window:]
+    if len(sample) < 2:
+        return None
+    mean = sum(sample) / len(sample)
+    variance = sum((value - mean) ** 2 for value in sample) / (len(sample) - 1)
+    return math.sqrt(variance) * math.sqrt(252)
+
+
+def _current_drawdown_from_returns(values: list[float]) -> float | None:
+    if not values:
+        return None
+    equity = 1.0
+    peak = 1.0
+    for value in values:
+        equity *= 1.0 + value
+        peak = max(peak, equity)
+    return equity / peak - 1.0 if peak else None
+
+
+def _benchmark_reference_payload(
+    canonical: dict[str, Any],
+    market_proxy_cache: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    cache = _market_proxy_cache(canonical, market_proxy_cache)
+    benchmark = cache.get("benchmark") or {}
+    metadata = cache.get("metadata") or {}
+    returns_by_date = _benchmark_returns_by_date(canonical, cache)
+    ordered = [
+        {"date": date, "return": returns_by_date[date]}
+        for date in sorted(returns_by_date)
+    ]
+    values = [row["return"] for row in ordered]
+    latest_date = ordered[-1]["date"] if ordered else benchmark.get("latest_date")
+    return {
+        "benchmark_symbol": benchmark.get("symbol") or metadata.get("benchmark_symbol") or "SPY",
+        "delayed_market_data": bool(metadata.get("delayed_market_data", True)),
+        "not_live_market_data": bool(metadata.get("not_live_market_data", True)),
+        "not_validated_institutional_factor_model": True,
+        "observations": len(values),
+        "return_20d": _compounded_return(values, 20),
+        "return_63d": _compounded_return(values, 63),
+        "volatility_20d": _annualized_return_volatility(values, 20),
+        "volatility_63d": _annualized_return_volatility(values, 63),
+        "current_drawdown": _current_drawdown_from_returns(values),
+        "latest_date": latest_date,
+        "source": "dashboard/data/risk_factor_market_proxy_cache.json" if cache else "Not Loaded",
+        "provider": metadata.get("provider"),
+        "status": "LOADED" if len(values) >= MARKET_PROXY_MIN_OBSERVATIONS else "NOT_LOADED",
+        "description": "Delayed SPY benchmark proxy from cached market data; not live market data.",
+    }
+
+
+def _risk_factor_contract_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    visible = [
+        row for row in rows
+        if row.get("primary_status") != "APPROVED_PENDING / PRE_OPERATIONAL"
+        and row.get("strategy_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+    ]
+    pending = [
+        row for row in rows
+        if row.get("primary_status") == "APPROVED_PENDING / PRE_OPERATIONAL"
+        and row.get("strategy_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+    ]
+    return {
+        "visible_active_strategy_count": len(visible),
+        "pending_excluded_count": len(pending),
+        "default_matrix_excludes": [],
+        "pending_excluded_strategy_ids": [row.get("strategy_id") for row in pending if row.get("strategy_id")],
+        "removed_from_current_workstation_strategy_ids": sorted(REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS),
+        "default_matrix_columns": [
+            "Strategy",
+            "Status",
+            "Weight",
+            "Sharpe",
+            "Ann Ret",
+            "Max DD",
+            "Beta",
+            "Corr",
+            "Vol",
+            "Curr DD",
+            "Mom20",
+            "Mom63",
+            "Liquidity",
+            "Top Hold",
+            "Top5",
+            "Family",
+            "Quality",
+        ],
+        "basis": (
+            "Default Risk Factors matrix renders active rows from risk_factor_market_proxy_table; "
+            "removed non-operating research candidates are not displayed as active, pending, or excluded."
+        ),
+    }
+
+
+def _research_summary_payload(strategies: list[dict[str, Any]]) -> dict[str, Any]:
+    combined = next((row for row in strategies if row.get("internal_id") == "COMBINED_PORTFOLIO"), {})
+    combined_metrics = (combined.get("research_evidence") or {}).get("research_metrics") or {}
+    active_metrics = []
+    for strategy in strategies:
+        if strategy.get("internal_id") in {"COMBINED_PORTFOLIO", "WQ_ALPHA_018"}:
+            continue
+        if strategy.get("operational_state") == "PRE_OPERATIONAL":
+            continue
+        metrics = (strategy.get("research_evidence") or {}).get("research_metrics") or {}
+        if metrics:
+            active_metrics.append(metrics)
+    sharpes = [value for value in (_safe_number(row.get("net_sharpe")) for row in active_metrics) if value is not None]
+    drawdowns = [value for value in (_safe_number(row.get("max_drawdown")) for row in active_metrics) if value is not None]
+    active_avg_sharpe = sum(sharpes) / len(sharpes) if sharpes else None
+    active_median_sharpe = None
+    if sharpes:
+        ordered = sorted(sharpes)
+        middle = len(ordered) // 2
+        active_median_sharpe = ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2
+    return {
+        "combined_sharpe_available": _safe_number(combined_metrics.get("net_sharpe")) is not None,
+        "combined_mdd_available": _safe_number(combined_metrics.get("max_drawdown")) is not None,
+        "combined_sharpe": _safe_number(combined_metrics.get("net_sharpe")),
+        "combined_max_drawdown": _safe_number(combined_metrics.get("max_drawdown")),
+        "active_strategy_metrics_count": len(active_metrics),
+        "active_avg_sharpe": active_avg_sharpe,
+        "active_median_sharpe": active_median_sharpe,
+        "worst_active_mdd": min(drawdowns) if drawdowns else None,
+        "labels": {
+            "active_avg_sharpe": "Active Avg / Research",
+            "active_median_sharpe": "Active Median / Research",
+            "worst_active_mdd": "Worst Active / Research",
+        },
+        "quality_flags": {
+            "active_avg_sharpe": "Below 0.80 target" if active_avg_sharpe is not None and active_avg_sharpe < 0.80 else None,
+        },
+        "basis": (
+            "Active strategy research fallback metrics are derived from active ordinary strategy research artifacts; "
+            "they are not Combined Portfolio metrics and are not live performance."
+        ),
+    }
+
+
 def _cache_ticker_metrics(market_proxy_cache: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     cache = market_proxy_cache or {}
     payload = cache.get("holdings_market_proxy") or cache.get("ticker_market_proxy") or {}
@@ -749,6 +944,50 @@ def _spy_beta_correlation(
     beta = covariance / spy_variance
     correlation = covariance / math.sqrt(strategy_variance * spy_variance)
     return beta, correlation
+
+
+def _research_return_rows(strategy: dict[str, Any]) -> list[dict[str, Any]]:
+    series = (strategy.get("research_evidence") or {}).get("research_series") or {}
+    dates = series.get("dates") or []
+    returns = series.get("return_distribution") or []
+    rows = []
+    for date, value in zip(dates, returns):
+        numeric = _safe_number(value)
+        if date and numeric is not None:
+            rows.append({"date": str(date), "return": numeric})
+    return sorted(rows, key=lambda row: row["date"])
+
+
+def _research_overlap_count(
+    return_rows: list[dict[str, Any]],
+    benchmark_returns: dict[str, float],
+) -> int:
+    return sum(1 for row in return_rows if row.get("date") in benchmark_returns)
+
+
+def _research_factor_metrics(
+    strategy: dict[str, Any],
+    benchmark_returns: dict[str, float],
+) -> dict[str, Any]:
+    evidence = strategy.get("research_evidence") or {}
+    metrics = evidence.get("research_metrics") or {}
+    return_rows = _research_return_rows(strategy)
+    beta, corr = _spy_beta_correlation(return_rows, benchmark_returns)
+    vol = _safe_number(metrics.get("annualized_volatility"))
+    if vol is None and len(return_rows) >= MARKET_PROXY_MIN_OBSERVATIONS:
+        values = [row["return"] for row in return_rows]
+        mean = sum(values) / len(values)
+        variance = sum((value - mean) ** 2 for value in values) / (len(values) - 1)
+        vol = math.sqrt(variance) * math.sqrt(252)
+    has_research = bool(return_rows) or vol is not None
+    return {
+        "research_beta": beta if has_research else "Insufficient History",
+        "research_correlation": corr if has_research else "Insufficient History",
+        "research_volatility": vol if vol is not None else "Insufficient History",
+        "research_overlap_observations": _research_overlap_count(return_rows, benchmark_returns),
+        "research_factor_evidence_class": "Research / Backtest Metric" if has_research else "Insufficient History",
+        "research_factor_source": evidence.get("evidence_artifact") or "Not Available",
+    }
 
 
 def _holding_weight(row: dict[str, Any]) -> float | None:
@@ -1008,12 +1247,15 @@ def _risk_factor_market_proxy_table(
     rows = []
     for strategy in strategies:
         strategy_id = strategy.get("internal_id")
+        if strategy_id in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS:
+            continue
         strategy_history = history_by_id.get(strategy_id, [])
         current_holdings = holdings_by_id.get(strategy_id, [])
         return_rows = _strategy_return_rows(strategy_history)
-        pending = strategy.get("membership_state") == "approved_pending" or strategy_id == "WQ_ALPHA_018"
+        pending = strategy.get("membership_state") == "approved_pending"
         combined = strategy_id == "COMBINED_PORTFOLIO"
         spy_beta, spy_correlation = _spy_beta_correlation(return_rows, benchmark_returns)
+        research_factors = _research_factor_metrics(strategy, benchmark_returns)
         weighted_adv = _weighted_avg_dollar_volume(current_holdings, ticker_metrics)
         top_holding, top_5 = _concentration(current_holdings)
         price_coverage = _price_coverage(current_holdings, strategy, ticker_metrics)
@@ -1068,6 +1310,12 @@ def _risk_factor_market_proxy_table(
                 "spy_correlation": null_or_pending or spy_correlation,
                 "realized_vol_20d": null_or_pending or _annualized_realized_vol(return_rows, 20),
                 "realized_vol_60d": null_or_pending or _annualized_realized_vol(return_rows, 60),
+                "research_beta": null_or_pending or research_factors["research_beta"],
+                "research_correlation": null_or_pending or research_factors["research_correlation"],
+                "research_volatility": null_or_pending or research_factors["research_volatility"],
+                "research_overlap_observations": 0 if pending else research_factors["research_overlap_observations"],
+                "research_factor_evidence_class": "Not Applicable" if pending else research_factors["research_factor_evidence_class"],
+                "research_factor_source": "Not Applicable" if pending else research_factors["research_factor_source"],
                 "current_drawdown": current_drawdown,
                 "momentum_20d": null_or_pending or _weighted_holding_metric(current_holdings, ("momentum_20d", "return_20d", "price_return_20d"), ticker_metrics),
                 "momentum_63d": null_or_pending or _weighted_holding_metric(current_holdings, ("momentum_63d", "return_63d", "price_return_63d"), ticker_metrics),
@@ -1151,6 +1399,7 @@ def build_operational_snapshot(
     decisions: list[dict[str, Any]] | None = None,
     operational_pricing_universe_size: int | None = None,
     strategy_research_details: dict[str, Any] | None = None,
+    sp500_reference_universe: dict[str, Any] | None = None,
     generated_at: str | None = None,
     refresh_status: str = "BASELINE",
     snapshot_id: str | None = None,
@@ -1531,6 +1780,10 @@ def build_operational_snapshot(
         published_holdings,
         market_proxy_cache,
     )
+    sp500_reference_payload = _sp500_reference_universe_payload(sp500_reference_universe)
+    benchmark_reference_payload = _benchmark_reference_payload(canonical, market_proxy_cache)
+    risk_factor_contract_summary = _risk_factor_contract_summary(risk_factor_market_proxy_table)
+    research_summary = _research_summary_payload(strategies)
     return {
         "snapshot_version": SNAPSHOT_VERSION,
         "snapshot_id": snapshot_id or f"ops-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}",
@@ -1560,6 +1813,10 @@ def build_operational_snapshot(
         "strategy_display_metadata": metadata,
         "risk_factor_big_table": risk_factor_big_table,
         "risk_factor_market_proxy_table": risk_factor_market_proxy_table,
+        "risk_factors": risk_factor_contract_summary,
+        "research_summary": research_summary,
+        "benchmark_reference": benchmark_reference_payload,
+        "sp500_reference_universe": sp500_reference_payload,
         "holdings": published_holdings,
         "strategy_contribution": [
             {
@@ -1628,12 +1885,13 @@ def build_operational_snapshot(
             "pending_post_admission_sleeve_weight": 1 / PENDING_POST_ADMISSION_SLEEVES,
             "portfolio_ending_nav": official["nav"],
             "portfolio_residual": None,
-            "basis": "Top-level strategy analytics use the 17 current active sleeves: 16 ordinary active strategies plus the active Combined strategy. WQ_ALPHA_018 remains pending #000018.",
+            "basis": "Top-level strategy analytics use the 17 current active sleeves: 16 ordinary active strategies plus the active Combined strategy. Removed non-operating research candidates are not part of the current workstation operating set.",
         },
         "strategy_entity_inventory": entity_inventory,
         "strategy_cost_reconciliation": strategy_cost_reconciliation,
         "operational_status": deepcopy(canonical["operational_status"]),
-        "pending_membership": deepcopy(canonical["pending_membership"][0]) if canonical["pending_membership"] else None,
+        "pending_membership": None,
+        "removed_from_current_workstation_strategy_ids": sorted(REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS),
         "operational_universe": {
             "held_ticker_count": len(held_tickers),
             "current_price_covered_ticker_count": intraday_estimate["covered_tickers"],
@@ -1683,18 +1941,29 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
             and existing.get("official_promotion_readiness")
             and existing.get("risk_factor_big_table")
             and existing.get("risk_factor_market_proxy_table")
+            and existing.get("benchmark_reference")
+            and existing.get("sp500_reference_universe")
+            and isinstance(existing.get("risk_factors"), dict)
+            and isinstance(existing.get("research_summary"), dict)
+            and isinstance(existing.get("removed_from_current_workstation_strategy_ids"), list)
+            and (
+                not paths["sp500_reference_universe"].exists()
+                or existing.get("sp500_reference_universe", {}).get("status") == "LOADED"
+            )
             and not existing.get("intraday_estimate", {}).get("provider")
             and (not _research_mapping_available(root) or _snapshot_research_evidence(existing))
         ):
             return existing
     canonical = _read_json(paths["canonical"], {})
     market_proxy_cache = _read_json(paths["market_proxy_cache"], {})
+    sp500_reference_universe = _read_json(paths["sp500_reference_universe"], None)
     source = _read_json(paths["source_bundle"], {}).get("shadow_live", {})
     research = load_strategy_research_artifacts(root, canonical["strategies"])
     snapshot = build_operational_snapshot(
         canonical,
         intraday=None,
         market_proxy_cache=market_proxy_cache,
+        sp500_reference_universe=sp500_reference_universe,
         decisions=read_decisions(root),
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=research,
@@ -1860,11 +2129,13 @@ def load_operational_snapshot_for_response(
         )
     canonical = _read_json(_paths(root)["canonical"], {})
     market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
+    sp500_reference_universe = _read_json(_paths(root)["sp500_reference_universe"], None)
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     merged = build_operational_snapshot(
         canonical,
         intraday=intraday,
         market_proxy_cache=market_proxy_cache or overlay.get("risk_factor_market_proxy_cache"),
+        sp500_reference_universe=sp500_reference_universe,
         decisions=read_decisions(root),
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=_snapshot_research_evidence(base),
@@ -1970,6 +2241,7 @@ def refresh_operational_snapshot(
                 canonical,
                 intraday=intraday,
                 market_proxy_cache=market_proxy_cache,
+                sp500_reference_universe=_read_json(paths["sp500_reference_universe"], None),
                 decisions=read_decisions(root),
                 operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
                 strategy_research_details=_snapshot_research_evidence(base),
@@ -2121,6 +2393,7 @@ def persist_decision(root: Path, payload: dict[str, Any]) -> dict[str, Any]:
     snapshot = build_operational_snapshot(
         canonical,
         intraday=None,
+        sp500_reference_universe=_read_json(_paths(root)["sp500_reference_universe"], None),
         decisions=decisions,
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=_snapshot_research_evidence(prior),

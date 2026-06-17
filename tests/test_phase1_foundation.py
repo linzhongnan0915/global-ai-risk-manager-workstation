@@ -610,7 +610,7 @@ def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count(
         "Strategy Family Mix - Proxy Only, Not a Validated Factor Model",
         "Metadata / expected, not quantitative beta",
         "Combined Portfolio is displayed as Active Composite / Composite, separate from ordinary alpha strategies.",
-        "#000018 / WQ_ALPHA_018 remains APPROVED_PENDING / PRE_OPERATIONAL with N/A operating metrics.",
+        "Removed research candidates are not active, pending, or excluded current Risk Factors rows.",
         "legacy artifact estimate not authoritative",
         "position_source = committed_shadow_holdings",
         "legacy_artifact_position_estimate_authoritative = false",
@@ -656,17 +656,63 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "function riskHeatmapSourceRows(c)",
         "function riskHeatmapNumeric(v)",
         "function riskHeatmapLargestConcentrationValue(r)",
+        "function riskAllDecisionRows(c)",
+        "function riskExcludedRows(c)",
+        "function riskDecisionRows(c)",
+        "function riskResearchMetrics(s)",
+        "function riskPortfolioExposureCard(c)",
+        "function riskResearchSharpeCard(c)",
+        "function riskDrawdownCard(c)",
+        "function riskSpyBenchmarkCard(c)",
+        "function riskBenchmarkStrip(c)",
+        "function riskResearchSummary(c)",
         "function riskHeatmapSummaryCards(c)",
         "function riskHeatmapRows(c)",
-        "function riskHeatmapRow(r,columns)",
+        "function riskHeatmapRow(d,columns)",
+        "function riskDecisionCell(d,col)",
+        "function riskResearchFactorCell(kind,value,type)",
+        "function riskExcludedPendingSection(c)",
+        "function riskFutureLayersSection()",
         "function riskFactorHeatmap(c)",
-        "Risk Factor Heatmap",
+        "function riskReferenceUniverseNote(c)",
+        "function riskRemovedStrategyIds(c)",
+        "Risk Factor Exposure Matrix",
         "Heatmap-first market-data proxy view with data-derived rows and no hard-coded strategy count",
-        "Market Proxy Coverage",
-        "Largest Concentration",
-        "SPY Beta Readiness",
-        "canonical_operational.json -> committed_shadow_holdings -> risk_factor_market_proxy_cache.json -> /api/operational-snapshot -> Risk Factor Heatmap",
-        "Columns are fixed factor definitions; rows and values are loaded from the operational snapshot. Missing values stay status labels, not zero.",
+        "Net Exposure",
+        "Research Sharpe",
+        "Drawdown",
+        "SPY Benchmark",
+        "Active Avg / Research",
+        "Worst Active / Research",
+        "Below 0.80 target",
+        "Excluded / Pending Research",
+        "Future Institutional Factor Layers",
+        "Refresh status only",
+        "Export Heatmap",
+        "Default matrix excludes pending research and future institutional layers; missing values remain explicit labels, not zero.",
+        "Paper-only shadow-live portfolio. Real funded brokerage capital = $0. No live brokerage fills. Delayed yfinance market-data proxy. Research metrics are historical/backtest evidence. Not a validated Barra / institutional factor model.",
+        "Current S&P 500 reference universe, not historical constituent-corrected.",
+        'label:"Strategy"',
+        'label:"Status"',
+        'label:"Weight"',
+        'label:"Sharpe"',
+        'label:"Ann Ret"',
+        'label:"Max DD"',
+        'label:"Beta"',
+        'label:"Corr"',
+        'label:"Vol"',
+        'label:"Curr DD"',
+        'label:"Mom20"',
+        'label:"Mom63"',
+        'label:"Liquidity"',
+        'label:"Top Hold"',
+        'label:"Top5"',
+        'label:"Family"',
+        'label:"Quality"',
+        "Loaded Numeric Market Proxy",
+        "Research / Backtest Metric",
+        "Paper Allocation / Ledger Metric",
+        "Design Proxy",
         "Future Layer",
         "function riskSecondaryPanels(c,p)",
         "Heatmap-first market-data proxy view with data-derived rows and no hard-coded strategy count",
@@ -679,19 +725,34 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "<details class=\"risk-governance-disclosure\"><summary>Refresh Scheme B disclosure</summary>",
         "<details class=\"risk-matrix-secondary\"><summary>Show metadata fallback table</summary>",
         "Rows come from risk_factor_market_proxy_table in /api/operational-snapshot when available; rendering does not hard-code strategy count.",
+        "Research beta vs SPY",
+        "Research corr vs SPY",
+        "Research annualized vol",
+        "Research beta vs SPY; operational beta insufficient history",
+        "Research corr vs SPY; operational corr insufficient history",
+        "Research annualized vol; operational vol insufficient history",
     ):
         assert marker in app
     for marker in (
         ".market-proxy-panel",
         ".market-proxy-table{min-width:1180px}",
         ".market-readiness-strip",
-        ".risk-heatmap-summary",
-        ".risk-factor-heatmap-v1",
+        ".risk-workstation-cards",
+        ".risk-benchmark-strip",
+        ".risk-factor-heatmap-v3",
         ".risk-heatmap-table",
         ".risk-heat-cell.loaded.positive",
         ".risk-heat-cell.loaded.negative",
+        ".risk-heatmap-toolbar",
+        ".risk-heat-cell.benchmark.positive",
+        ".risk-heat-cell.design",
+        ".risk-heat-cell.paper",
+        ".risk-heat-cell.research",
         ".risk-heat-cell.future",
+        ".risk-exposure-scale",
+        ".risk-scale-bar",
         ".risk-heatmap-legend",
+        ".risk-reference-note",
         ".risk-factor-page{overflow-x:hidden}",
         ".market-proxy-table{width:100%;min-width:1040px;table-layout:fixed}",
         ".risk-matrix-secondary summary",
@@ -703,6 +764,9 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         ".risk-model-tags",
         ".risk-governance-disclosure",
         ".risk-matrix-secondary",
+        ".risk-compact-detail",
+        ".risk-excluded-table",
+        ".risk-future-table",
     ):
         assert marker in css
     table_function = app.split("function marketProxyRows(c)", 1)[1].split("function marketReadinessPanel", 1)[0]
@@ -717,26 +781,82 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
     assert "Hide Full Factor Heatmap" not in app
     assert "function fullFactorHeatmap(c)" not in app
     assert ".full-factor-heatmap" not in css
+    all_rows_function = app.split("function riskAllDecisionRows(c)", 1)[1].split("function riskExcludedRows", 1)[0]
+    assert "riskHeatmapSourceRows(c)" in all_rows_function
+    assert 'strategy_id==="COMBINED_PORTFOLIO"?0' in all_rows_function
+    assert 'strategy_id==="WQ_ALPHA_018"?2' not in all_rows_function
+    assert "riskResearchMetrics" in all_rows_function
+    excluded_rows_function = app.split("function riskExcludedRows(c)", 1)[1].split("function riskDecisionRows", 1)[0]
+    assert 'primary_status==="APPROVED_PENDING / PRE_OPERATIONAL"' in excluded_rows_function
+    assert 'strategy_id==="WQ_ALPHA_018"' not in excluded_rows_function
+    decision_rows_function = app.split("function riskDecisionRows(c)", 1)[1].split("function riskHeatmapFallbackValue", 1)[0]
+    assert 'primary_status!=="APPROVED_PENDING / PRE_OPERATIONAL"' in decision_rows_function
+    assert 'strategy_id!=="WQ_ALPHA_018"' not in decision_rows_function
+    source_rows_function = app.split("function riskHeatmapSourceRows(c)", 1)[1].split("function riskStrategiesById", 1)[0]
+    assert "riskRemovedStrategyIds(c)" in source_rows_function
+    assert "!removed.has(r.strategy_id)" in source_rows_function
     main_heatmap_function = app.split("function riskHeatmapRows(c)", 1)[1].split("function riskHeatmapRow", 1)[0]
-    assert "riskHeatmapSourceRows(c)" in main_heatmap_function
+    assert "riskDecisionRows(c)" in main_heatmap_function
     assert "rows.map(r=>riskHeatmapRow(r,columns)).join(\"\")" in main_heatmap_function
     assert "slice(0" not in main_heatmap_function
     assert "18" not in main_heatmap_function
     assert "Data Pending" in main_heatmap_function
-    heatmap_row_function = app.split("function riskHeatmapRow(r,columns)", 1)[1].split("function riskHeatmapLegend", 1)[0]
+    heatmap_row_function = app.split("function riskHeatmapRow(d,columns)", 1)[1].split("function riskHeatmapLegend", 1)[0]
     assert "columns.map(col=>" in heatmap_row_function
-    assert "marketProxyStateLabel(r)" in heatmap_row_function
     assert "strategy_id===\"WQ_ALPHA_018\"" not in heatmap_row_function
     assert "display_id===\"#000018\"" not in heatmap_row_function
+    decision_cell_function = app.split("function riskDecisionCell(d,col)", 1)[1].split("function riskHeatmapRows", 1)[0]
+    assert "research_evidence" not in decision_cell_function
+    assert "riskResearchMetrics" not in decision_cell_function
+    assert "Research Metric Missing" in decision_cell_function
+    assert "No Paper Weight" in decision_cell_function
+    assert "marketProxyStateLabel(r)" in decision_cell_function
+    assert "Future Layer" in decision_cell_function
+    assert '["Beta","Corr","Vol"].includes(col.label)' in decision_cell_function
+    assert "riskResearchFactorCell(col.label,value,col.type)" in decision_cell_function
+    column_definitions = app.split("const RISK_HEATMAP_COLUMNS=", 1)[1].split("function riskHeatmapSourceRows", 1)[0]
+    assert 'label:"Beta",kind:"market",keys:["research_beta","spy_beta"]' in column_definitions
+    assert 'label:"Corr",kind:"market",keys:["research_correlation","spy_correlation"]' in column_definitions
+    assert 'label:"Vol",kind:"market",keys:["research_volatility","realized_vol_20d","realized_vol_60d"]' in column_definitions
+    research_factor_cell = app.split("function riskResearchFactorCell(kind,value,type)", 1)[1].split("function riskDecisionCell", 1)[0]
+    assert "Research / Backtest Metric" in research_factor_cell
+    assert "UI.percent(value,1)" in research_factor_cell
+    assert "operational beta insufficient history" in research_factor_cell
+    assert "operational corr insufficient history" in research_factor_cell
+    assert "operational vol insufficient history" in research_factor_cell
     fallback_function = app.split("function riskHeatmapFallbackValue(r,key)", 1)[1].split("function riskHeatmapCell", 1)[0]
     assert "Object.prototype.hasOwnProperty.call(r,key)" in fallback_function
     assert "Data Pending" in fallback_function
-    assert "Not Loaded" in fallback_function
+    assert "Current S&P 500 reference universe Not Loaded" in fallback_function
     assert "Future Layer" in fallback_function
     assert "||0" not in fallback_function
     summary_function = app.split("function riskHeatmapSummaryCards(c)", 1)[1].split("function riskHeatmapRows", 1)[0]
-    assert "riskHeatmapLargestConcentrationValue" in summary_function
     assert "||0" not in summary_function
+    assert "riskPortfolioExposureCard(c)" in summary_function
+    assert "riskResearchSharpeCard(c)" in summary_function
+    assert "riskDrawdownCard(c)" in summary_function
+    assert "riskSpyBenchmarkCard(c)" in summary_function
+    assert "riskCoverageCard(c)" not in summary_function
+    exposure_card_function = app.split("function riskPortfolioExposureCard(c)", 1)[1].split("function riskActiveResearchMetrics", 1)[0]
+    assert "Net Exposure" in exposure_card_function
+    research_card_function = app.split("function riskResearchSharpeCard(c)", 1)[1].split("function riskDrawdownCard", 1)[0]
+    assert "riskResearchSummary(c)" in research_card_function
+    assert "summary.active_avg_sharpe" in research_card_function
+    assert "Combined / Research" in research_card_function
+    assert "Active Avg / Research" in research_card_function
+    drawdown_card_function = app.split("function riskDrawdownCard(c)", 1)[1].split("function riskSpyBenchmarkCard", 1)[0]
+    assert "riskResearchSummary(c)" in drawdown_card_function
+    assert "summary.worst_active_mdd" in drawdown_card_function
+    assert "Worst Active / Research" in drawdown_card_function
+    benchmark_card_function = app.split("function riskSpyBenchmarkCard(c)", 1)[1].split("function riskHeatmapSummaryCards", 1)[0]
+    assert "SPY Benchmark" in benchmark_card_function
+    assert "c.benchmark_reference" in benchmark_card_function
+    assert "return_20d" in benchmark_card_function
+    assert "return_63d" in benchmark_card_function
+    assert "function riskBetaReadinessCard(c)" not in app
+    assert "function riskConcentrationCard(c)" not in app
+    assert "Momentum Tilt / Coverage" not in summary_function
+    assert "Liquidity Risk / Coverage" not in summary_function
 
 
 def test_left_rail_navigation_maps_to_current_top_tabs():

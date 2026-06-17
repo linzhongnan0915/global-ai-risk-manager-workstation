@@ -1,0 +1,5049 @@
+{
+  "as_of_date": "2026-06-17",
+  "constituents": [
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Agilent Technologies",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "A"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Apple Inc.",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AAPL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AbbVie",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ABBV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Airbnb",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ABNB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Abbott Laboratories",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ABT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Arch Capital Group",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ACGL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Accenture",
+      "current_constituent": true,
+      "industry": "IT Consulting & Other Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ACN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Adobe Inc.",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ADBE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Analog Devices",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ADI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Archer Daniels Midland",
+      "current_constituent": true,
+      "industry": "Agricultural Products & Services",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ADM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Automatic Data Processing",
+      "current_constituent": true,
+      "industry": "Human Resource & Employment Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ADP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Autodesk",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ADSK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ameren",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AEE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "American Electric Power",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AEP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AES Corporation",
+      "current_constituent": true,
+      "industry": "Independent Power Producers & Energy Traders",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AES"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Aflac",
+      "current_constituent": true,
+      "industry": "Life & Health Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AFL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "American International Group",
+      "current_constituent": true,
+      "industry": "Multi-line Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AIG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Assurant",
+      "current_constituent": true,
+      "industry": "Multi-line Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AIZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Arthur J. Gallagher & Co.",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AJG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Akamai Technologies",
+      "current_constituent": true,
+      "industry": "Internet Services & Infrastructure",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AKAM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Albemarle Corporation",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ALB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Align Technology",
+      "current_constituent": true,
+      "industry": "Health Care Supplies",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ALGN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Allstate",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ALL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Allegion",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ALLE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Applied Materials",
+      "current_constituent": true,
+      "industry": "Semiconductor Materials & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMAT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Amcor",
+      "current_constituent": true,
+      "industry": "Paper & Plastic Packaging Products & Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMCR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Advanced Micro Devices",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ametek",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AME"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Amgen",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMGN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ameriprise Financial",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "American Tower",
+      "current_constituent": true,
+      "industry": "Telecom Tower REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Amazon",
+      "current_constituent": true,
+      "industry": "Broadline Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AMZN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Arista Networks",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ANET"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Aon plc",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AON"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "A. O. Smith",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AOS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "APA Corporation",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Air Products",
+      "current_constituent": true,
+      "industry": "Industrial Gases",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Amphenol",
+      "current_constituent": true,
+      "industry": "Electronic Components",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Apollo Global Management",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AppLovin",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Aptiv",
+      "current_constituent": true,
+      "industry": "Automotive Parts & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "APTV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Alexandria Real Estate Equities",
+      "current_constituent": true,
+      "industry": "Office REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ARE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ares Management",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ARES"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Atmos Energy",
+      "current_constituent": true,
+      "industry": "Gas Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ATO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AvalonBay Communities",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AVB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Broadcom",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AVGO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Avery Dennison",
+      "current_constituent": true,
+      "industry": "Paper & Plastic Packaging Products & Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AVY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "American Water Works",
+      "current_constituent": true,
+      "industry": "Water Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AWK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Axon Enterprise",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AXON"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "American Express",
+      "current_constituent": true,
+      "industry": "Consumer Finance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AXP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AutoZone",
+      "current_constituent": true,
+      "industry": "Automotive Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "AZO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Boeing",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Bank of America",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BAC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ball Corporation",
+      "current_constituent": true,
+      "industry": "Metal, Glass & Plastic Containers",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BALL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Baxter International",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BAX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Best Buy",
+      "current_constituent": true,
+      "industry": "Computer & Electronics Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BBY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Becton Dickinson",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BDX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Franklin Resources",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BEN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Brown\u2013Forman",
+      "current_constituent": true,
+      "industry": "Distillers & Vintners",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BF-B"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Bunge Global",
+      "current_constituent": true,
+      "industry": "Agricultural Products & Services",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Biogen",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BIIB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Booking Holdings",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BKNG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Baker Hughes",
+      "current_constituent": true,
+      "industry": "Oil & Gas Equipment & Services",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BKR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Builders FirstSource",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BLDR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "BlackRock",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BLK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Bristol Myers Squibb",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BMY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "BNY Mellon",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BNY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Broadridge Financial Solutions",
+      "current_constituent": true,
+      "industry": "Data Processing & Outsourced Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Berkshire Hathaway",
+      "current_constituent": true,
+      "industry": "Multi-Sector Holdings",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BRK-B"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Brown & Brown",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BRO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Boston Scientific",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BSX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Blackstone Inc.",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "BXP, Inc.",
+      "current_constituent": true,
+      "industry": "Office REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "BXP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Citigroup",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "C"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Conagra Brands",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CAG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cardinal Health",
+      "current_constituent": true,
+      "industry": "Health Care Distributors",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CAH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Carrier Global",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CARR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Casey's",
+      "current_constituent": true,
+      "industry": "Food Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CASY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Caterpillar Inc.",
+      "current_constituent": true,
+      "industry": "Construction Machinery & Heavy Transportation Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CAT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Chubb Limited",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cboe Global Markets",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CBOE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CBRE Group",
+      "current_constituent": true,
+      "industry": "Real Estate Services",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CBRE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Crown Castle",
+      "current_constituent": true,
+      "industry": "Telecom Tower REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CCI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Carnival Corporation",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CCL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cadence Design Systems",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CDNS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CDW Corporation",
+      "current_constituent": true,
+      "industry": "Technology Distributors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CDW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Constellation Energy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CEG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CF Industries",
+      "current_constituent": true,
+      "industry": "Fertilizers & Agricultural Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Citizens Financial Group",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CFG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Church & Dwight",
+      "current_constituent": true,
+      "industry": "Household Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CHD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "C.H. Robinson",
+      "current_constituent": true,
+      "industry": "Air Freight & Logistics",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CHRW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Charter Communications",
+      "current_constituent": true,
+      "industry": "Cable & Satellite",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CHTR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cigna",
+      "current_constituent": true,
+      "industry": "Health Care Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ciena",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CIEN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cincinnati Financial",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CINF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Colgate-Palmolive",
+      "current_constituent": true,
+      "industry": "Household Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Clorox",
+      "current_constituent": true,
+      "industry": "Household Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CLX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Comcast",
+      "current_constituent": true,
+      "industry": "Cable & Satellite",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CMCSA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CME Group",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CME"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Chipotle Mexican Grill",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CMG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cummins",
+      "current_constituent": true,
+      "industry": "Construction Machinery & Heavy Transportation Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CMI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CMS Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CMS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Centene Corporation",
+      "current_constituent": true,
+      "industry": "Managed Health Care",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CNC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CenterPoint Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CNP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Capital One",
+      "current_constituent": true,
+      "industry": "Consumer Finance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Coherent Corp.",
+      "current_constituent": true,
+      "industry": "Electronic Components",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COHR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Coinbase",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COIN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cooper Companies (The)",
+      "current_constituent": true,
+      "industry": "Health Care Supplies",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "ConocoPhillips",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cencora",
+      "current_constituent": true,
+      "industry": "Health Care Distributors",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Costco",
+      "current_constituent": true,
+      "industry": "Consumer Staples Merchandise Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "COST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Corpay",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CPAY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Campbell's Company (The)",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CPB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Copart",
+      "current_constituent": true,
+      "industry": "Diversified Support Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CPRT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Camden Property Trust",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CPT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CRH plc",
+      "current_constituent": true,
+      "industry": "Construction Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CRH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Charles River Laboratories",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CRL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Salesforce",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CRM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CrowdStrike",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CRWD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cisco",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CSCO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CoStar Group",
+      "current_constituent": true,
+      "industry": "Real Estate Services",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CSGP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CSX Corporation",
+      "current_constituent": true,
+      "industry": "Rail Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CSX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cintas",
+      "current_constituent": true,
+      "industry": "Diversified Support Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CTAS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Cognizant",
+      "current_constituent": true,
+      "industry": "IT Consulting & Other Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CTSH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Corteva",
+      "current_constituent": true,
+      "industry": "Fertilizers & Agricultural Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CTVA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Carvana",
+      "current_constituent": true,
+      "industry": "Automotive Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CVNA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "CVS Health",
+      "current_constituent": true,
+      "industry": "Health Care Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CVS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Chevron Corporation",
+      "current_constituent": true,
+      "industry": "Integrated Oil & Gas",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "CVX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dominion Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "D"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Delta Air Lines",
+      "current_constituent": true,
+      "industry": "Passenger Airlines",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DAL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "DoorDash",
+      "current_constituent": true,
+      "industry": "Specialized Consumer Services",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DASH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "DuPont",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Datadog",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DDOG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Deere & Company",
+      "current_constituent": true,
+      "industry": "Agricultural & Farm Machinery",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Deckers Brands",
+      "current_constituent": true,
+      "industry": "Footwear",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DECK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dell Technologies",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DELL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dollar General",
+      "current_constituent": true,
+      "industry": "Consumer Staples Merchandise Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Quest Diagnostics",
+      "current_constituent": true,
+      "industry": "Health Care Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DGX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "D. R. Horton",
+      "current_constituent": true,
+      "industry": "Homebuilding",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DHI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Danaher Corporation",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DHR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Walt Disney Company (The)",
+      "current_constituent": true,
+      "industry": "Movies & Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DIS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Digital Realty",
+      "current_constituent": true,
+      "industry": "Data Center REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DLR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dollar Tree",
+      "current_constituent": true,
+      "industry": "Consumer Staples Merchandise Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DLTR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Healthpeak Properties",
+      "current_constituent": true,
+      "industry": "Health Care REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DOC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dover Corporation",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DOV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dow Inc.",
+      "current_constituent": true,
+      "industry": "Commodity Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DOW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Domino's",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DPZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Darden Restaurants",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DRI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "DTE Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DTE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Duke Energy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DUK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "DaVita",
+      "current_constituent": true,
+      "industry": "Health Care Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DVA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Devon Energy",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DVN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Dexcom",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "DXCM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Electronic Arts",
+      "current_constituent": true,
+      "industry": "Interactive Home Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "eBay Inc.",
+      "current_constituent": true,
+      "industry": "Broadline Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EBAY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ecolab",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ECL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Consolidated Edison",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ED"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Equifax",
+      "current_constituent": true,
+      "industry": "Research & Consulting Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EFX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Everest Group",
+      "current_constituent": true,
+      "industry": "Reinsurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Edison International",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EIX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Est\u00e9e Lauder Companies (The)",
+      "current_constituent": true,
+      "industry": "Personal Care Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Elevance Health",
+      "current_constituent": true,
+      "industry": "Managed Health Care",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ELV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Emcor",
+      "current_constituent": true,
+      "industry": "Construction & Engineering",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EME"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Emerson Electric",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EMR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "EOG Resources",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EOG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Equinix",
+      "current_constituent": true,
+      "industry": "Data Center REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EQIX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Equity Residential",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EQR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "EQT Corporation",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EQT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Erie Indemnity",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ERIE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Eversource Energy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ES"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Essex Property Trust",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ESS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Eaton Corporation",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ETN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Entergy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ETR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Evergy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EVRG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Edwards Lifesciences",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Exelon",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EXC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Expand Energy",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EXE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Expeditors International",
+      "current_constituent": true,
+      "industry": "Air Freight & Logistics",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EXPD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Expedia Group",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EXPE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Extra Space Storage",
+      "current_constituent": true,
+      "industry": "Self-Storage REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "EXR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ford Motor Company",
+      "current_constituent": true,
+      "industry": "Automobile Manufacturers",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "F"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Diamondback Energy",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FANG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fastenal",
+      "current_constituent": true,
+      "industry": "Trading Companies & Distributors",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FAST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Freeport-McMoRan",
+      "current_constituent": true,
+      "industry": "Copper",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FCX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "FactSet",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FDS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "FedEx",
+      "current_constituent": true,
+      "industry": "Air Freight & Logistics",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FDX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "FedEx Freight",
+      "current_constituent": true,
+      "industry": "Cargo Ground Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FDXF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "FirstEnergy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "F5, Inc.",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FFIV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fair Isaac",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FICO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fidelity National Information Services",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FIS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fiserv",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FISV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fifth Third Bancorp",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FITB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Comfort Systems USA",
+      "current_constituent": true,
+      "industry": "Construction & Engineering",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FIX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fox Corporation (Class B)",
+      "current_constituent": true,
+      "industry": "Broadcasting",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FOX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fox Corporation (Class A)",
+      "current_constituent": true,
+      "industry": "Broadcasting",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FOXA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Federal Realty Investment Trust",
+      "current_constituent": true,
+      "industry": "Retail REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FRT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "First Solar",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FSLR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fortinet",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FTNT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Fortive",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "FTV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "General Dynamics",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "GoDaddy",
+      "current_constituent": true,
+      "industry": "Internet Services & Infrastructure",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GDDY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "GE Aerospace",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "GE HealthCare",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GEHC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Gen Digital",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GEN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "GE Vernova",
+      "current_constituent": true,
+      "industry": "Heavy Electrical Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GEV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Gilead Sciences",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GILD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "General Mills",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GIS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Globe Life",
+      "current_constituent": true,
+      "industry": "Life & Health Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Corning Inc.",
+      "current_constituent": true,
+      "industry": "Electronic Components",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GLW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "General Motors",
+      "current_constituent": true,
+      "industry": "Automobile Manufacturers",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Generac",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GNRC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Alphabet Inc. (Class C)",
+      "current_constituent": true,
+      "industry": "Interactive Media & Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GOOG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Alphabet Inc. (Class A)",
+      "current_constituent": true,
+      "industry": "Interactive Media & Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GOOGL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Genuine Parts Company",
+      "current_constituent": true,
+      "industry": "Distributors",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GPC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Global Payments",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GPN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Garmin",
+      "current_constituent": true,
+      "industry": "Consumer Electronics",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GRMN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Goldman Sachs",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "W. W. Grainger",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "GWW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Halliburton",
+      "current_constituent": true,
+      "industry": "Oil & Gas Equipment & Services",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HAL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hasbro",
+      "current_constituent": true,
+      "industry": "Leisure Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HAS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Huntington Bancshares",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HBAN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "HCA Healthcare",
+      "current_constituent": true,
+      "industry": "Health Care Facilities",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HCA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Home Depot (The)",
+      "current_constituent": true,
+      "industry": "Home Improvement Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hartford (The)",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HIG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Huntington Ingalls Industries",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HII"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hilton Worldwide",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HLT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Honeywell",
+      "current_constituent": true,
+      "industry": "Industrial Conglomerates",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HON"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Robinhood Markets",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HOOD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hewlett Packard Enterprise",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HPE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "HP Inc.",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HPQ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hormel Foods",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HRL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Henry Schein",
+      "current_constituent": true,
+      "industry": "Health Care Distributors",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HSIC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Host Hotels & Resorts",
+      "current_constituent": true,
+      "industry": "Hotel & Resort REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hershey Company (The)",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HSY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Hubbell Incorporated",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HUBB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Humana",
+      "current_constituent": true,
+      "industry": "Managed Health Care",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HUM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Howmet Aerospace",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "HWM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Interactive Brokers",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IBKR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "IBM",
+      "current_constituent": true,
+      "industry": "IT Consulting & Other Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IBM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Intercontinental Exchange",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ICE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Idexx Laboratories",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IDXX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "IDEX Corporation",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IEX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "International Flavors & Fragrances",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IFF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Incyte",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "INCY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Intel",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "INTC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Intuit",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "INTU"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Invitation Homes",
+      "current_constituent": true,
+      "industry": "Single-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "INVH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "International Paper",
+      "current_constituent": true,
+      "industry": "Paper & Plastic Packaging Products & Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "IQVIA",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IQV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ingersoll Rand",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Iron Mountain",
+      "current_constituent": true,
+      "industry": "Other Specialized REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IRM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Intuitive Surgical",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ISRG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Gartner",
+      "current_constituent": true,
+      "industry": "IT Consulting & Other Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Illinois Tool Works",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ITW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Invesco",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "IVZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Jacobs Solutions",
+      "current_constituent": true,
+      "industry": "Construction & Engineering",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "J"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "J.B. Hunt",
+      "current_constituent": true,
+      "industry": "Cargo Ground Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JBHT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Jabil",
+      "current_constituent": true,
+      "industry": "Electronic Manufacturing Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JBL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Johnson Controls",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JCI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Jack Henry & Associates",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JKHY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Johnson & Johnson",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JNJ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "JPMorgan Chase",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "JPM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Keurig Dr Pepper",
+      "current_constituent": true,
+      "industry": "Soft Drinks & Non-alcoholic Beverages",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KDP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "KeyCorp",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KEY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Keysight Technologies",
+      "current_constituent": true,
+      "industry": "Electronic Equipment & Instruments",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KEYS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kraft Heinz",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KHC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kimco Realty",
+      "current_constituent": true,
+      "industry": "Retail REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KIM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "KKR & Co.",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KKR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "KLA Corporation",
+      "current_constituent": true,
+      "industry": "Semiconductor Materials & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KLAC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kimberly-Clark",
+      "current_constituent": true,
+      "industry": "Household Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KMB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kinder Morgan",
+      "current_constituent": true,
+      "industry": "Oil & Gas Storage & Transportation",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KMI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Coca-Cola Company (The)",
+      "current_constituent": true,
+      "industry": "Soft Drinks & Non-alcoholic Beverages",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kroger",
+      "current_constituent": true,
+      "industry": "Food Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Kenvue",
+      "current_constituent": true,
+      "industry": "Personal Care Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "KVUE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Loews Corporation",
+      "current_constituent": true,
+      "industry": "Multi-line Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "L"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Leidos",
+      "current_constituent": true,
+      "industry": "Diversified Support Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LDOS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lennar",
+      "current_constituent": true,
+      "industry": "Homebuilding",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LEN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Labcorp",
+      "current_constituent": true,
+      "industry": "Health Care Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "L3Harris",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LHX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lennox International",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LII"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Linde plc",
+      "current_constituent": true,
+      "industry": "Industrial Gases",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LIN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lumentum",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LITE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lilly (Eli)",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LLY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lockheed Martin",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LMT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Alliant Energy",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LNT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lowe's",
+      "current_constituent": true,
+      "industry": "Home Improvement Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LOW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lam Research",
+      "current_constituent": true,
+      "industry": "Semiconductor Materials & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LRCX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Lululemon Athletica",
+      "current_constituent": true,
+      "industry": "Apparel, Accessories & Luxury Goods",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LULU"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Southwest Airlines",
+      "current_constituent": true,
+      "industry": "Passenger Airlines",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LUV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Las Vegas Sands",
+      "current_constituent": true,
+      "industry": "Casinos & Gaming",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LVS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "LyondellBasell",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LYB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Live Nation Entertainment",
+      "current_constituent": true,
+      "industry": "Movies & Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "LYV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Mastercard",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Mid-America Apartment Communities",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MAA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Marriott International",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MAR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Masco",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MAS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "McDonald's",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MCD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Microchip Technology",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MCHP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "McKesson Corporation",
+      "current_constituent": true,
+      "industry": "Health Care Distributors",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MCK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Moody's Corporation",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MCO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Mondelez International",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MDLZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Medtronic",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MDT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "MetLife",
+      "current_constituent": true,
+      "industry": "Life & Health Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MET"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Meta Platforms",
+      "current_constituent": true,
+      "industry": "Interactive Media & Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "META"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "MGM Resorts",
+      "current_constituent": true,
+      "industry": "Casinos & Gaming",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MGM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "McCormick & Company",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MKC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Martin Marietta Materials",
+      "current_constituent": true,
+      "industry": "Construction Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MLM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "3M",
+      "current_constituent": true,
+      "industry": "Industrial Conglomerates",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MMM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Monster Beverage",
+      "current_constituent": true,
+      "industry": "Soft Drinks & Non-alcoholic Beverages",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MNST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Altria",
+      "current_constituent": true,
+      "industry": "Tobacco",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Mosaic Company (The)",
+      "current_constituent": true,
+      "industry": "Fertilizers & Agricultural Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MOS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Marathon Petroleum",
+      "current_constituent": true,
+      "industry": "Oil & Gas Refining & Marketing",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MPC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Monolithic Power Systems",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MPWR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Merck & Co.",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MRK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Moderna",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MRNA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Marsh McLennan",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MRSH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Morgan Stanley",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "MSCI Inc.",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MSCI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Microsoft",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MSFT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Motorola Solutions",
+      "current_constituent": true,
+      "industry": "Communications Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MSI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "M&T Bank",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MTB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Mettler Toledo",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MTD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Micron Technology",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "MU"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Norwegian Cruise Line Holdings",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NCLH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Nasdaq, Inc.",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NDAQ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Nordson Corporation",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NDSN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NextEra Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NEE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Newmont",
+      "current_constituent": true,
+      "industry": "Gold",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NEM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Netflix",
+      "current_constituent": true,
+      "industry": "Movies & Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NFLX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NiSource",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Nike, Inc.",
+      "current_constituent": true,
+      "industry": "Apparel, Accessories & Luxury Goods",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NKE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Northrop Grumman",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NOC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "ServiceNow",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NOW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NRG Energy",
+      "current_constituent": true,
+      "industry": "Independent Power Producers & Energy Traders",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NRG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Norfolk Southern",
+      "current_constituent": true,
+      "industry": "Rail Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NSC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NetApp",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NTAP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Northern Trust",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NTRS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Nucor",
+      "current_constituent": true,
+      "industry": "Steel",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NUE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Nvidia",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NVDA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NVR, Inc.",
+      "current_constituent": true,
+      "industry": "Homebuilding",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NVR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "News Corp (Class B)",
+      "current_constituent": true,
+      "industry": "Publishing",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NWS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "News Corp (Class A)",
+      "current_constituent": true,
+      "industry": "Publishing",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NWSA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "NXP Semiconductors",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "NXPI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Realty Income",
+      "current_constituent": true,
+      "industry": "Retail REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "O"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Old Dominion",
+      "current_constituent": true,
+      "industry": "Cargo Ground Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ODFL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Oneok",
+      "current_constituent": true,
+      "industry": "Oil & Gas Storage & Transportation",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "OKE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Omnicom Group",
+      "current_constituent": true,
+      "industry": "Advertising",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "OMC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "ON Semiconductor",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ON"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Oracle Corporation",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ORCL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "O\u2019Reilly Automotive",
+      "current_constituent": true,
+      "industry": "Automotive Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ORLY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Otis Worldwide",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "OTIS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Occidental Petroleum",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "OXY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Palo Alto Networks",
+      "current_constituent": true,
+      "industry": "Systems Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PANW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Paychex",
+      "current_constituent": true,
+      "industry": "Human Resource & Employment Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PAYX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Paccar",
+      "current_constituent": true,
+      "industry": "Construction Machinery & Heavy Transportation Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PCAR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PG&E Corporation",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PCG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Public Service Enterprise Group",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PEG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PepsiCo",
+      "current_constituent": true,
+      "industry": "Soft Drinks & Non-alcoholic Beverages",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PEP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Pfizer",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PFE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Principal Financial Group",
+      "current_constituent": true,
+      "industry": "Life & Health Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PFG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Procter & Gamble",
+      "current_constituent": true,
+      "industry": "Personal Care Products",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Progressive Corporation",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PGR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Parker Hannifin",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PulteGroup",
+      "current_constituent": true,
+      "industry": "Homebuilding",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PHM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Packaging Corporation of America",
+      "current_constituent": true,
+      "industry": "Paper & Plastic Packaging Products & Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PKG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Prologis",
+      "current_constituent": true,
+      "industry": "Industrial REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PLD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Palantir Technologies",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PLTR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Philip Morris International",
+      "current_constituent": true,
+      "industry": "Tobacco",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PNC Financial Services",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PNC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Pentair",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PNR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Pinnacle West Capital",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PNW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Insulet Corporation",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PODD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Pool Corporation",
+      "current_constituent": true,
+      "industry": "Distributors",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "POOL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PPG Industries",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PPG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PPL Corporation",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PPL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Prudential Financial",
+      "current_constituent": true,
+      "industry": "Life & Health Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PRU"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Public Storage",
+      "current_constituent": true,
+      "industry": "Self-Storage REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PSA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Paramount Skydance Corporation",
+      "current_constituent": true,
+      "industry": "Movies & Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PSKY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Phillips 66",
+      "current_constituent": true,
+      "industry": "Oil & Gas Refining & Marketing",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PSX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PTC Inc.",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PTC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Quanta Services",
+      "current_constituent": true,
+      "industry": "Construction & Engineering",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PWR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "PayPal",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "PYPL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Qnity Electronics",
+      "current_constituent": true,
+      "industry": "Semiconductor Materials & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "Q"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Qualcomm",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "QCOM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Royal Caribbean Group",
+      "current_constituent": true,
+      "industry": "Hotels, Resorts & Cruise Lines",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RCL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Regency Centers",
+      "current_constituent": true,
+      "industry": "Retail REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "REG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Regeneron Pharmaceuticals",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "REGN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Regions Financial Corporation",
+      "current_constituent": true,
+      "industry": "Regional Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Raymond James Financial",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RJF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ralph Lauren Corporation",
+      "current_constituent": true,
+      "industry": "Apparel, Accessories & Luxury Goods",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "ResMed",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RMD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Rockwell Automation",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ROK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Rollins, Inc.",
+      "current_constituent": true,
+      "industry": "Environmental & Facilities Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ROL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Roper Technologies",
+      "current_constituent": true,
+      "industry": "Electronic Equipment & Instruments",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ROP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ross Stores",
+      "current_constituent": true,
+      "industry": "Apparel Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ROST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Republic Services",
+      "current_constituent": true,
+      "industry": "Environmental & Facilities Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RSG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "RTX Corporation",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RTX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Revvity",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "RVTY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "EchoStar",
+      "current_constituent": true,
+      "industry": "Wireless Telecommunication Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SATS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "SBA Communications",
+      "current_constituent": true,
+      "industry": "Telecom Tower REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SBAC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Starbucks",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SBUX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Charles Schwab Corporation",
+      "current_constituent": true,
+      "industry": "Investment Banking & Brokerage",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SCHW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Sherwin-Williams",
+      "current_constituent": true,
+      "industry": "Specialty Chemicals",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SHW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "J.M. Smucker Company (The)",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SJM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Schlumberger",
+      "current_constituent": true,
+      "industry": "Oil & Gas Equipment & Services",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SLB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Supermicro",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SMCI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Snap-on",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SNA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Sandisk",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SNDK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Synopsys",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SNPS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Southern Company",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Solventum",
+      "current_constituent": true,
+      "industry": "Health Care Technology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SOLV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Simon Property Group",
+      "current_constituent": true,
+      "industry": "Retail REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SPG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "S&P Global",
+      "current_constituent": true,
+      "industry": "Financial Exchanges & Data",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SPGI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Sempra",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SRE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Steris",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "STE"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Steel Dynamics",
+      "current_constituent": true,
+      "industry": "Steel",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "STLD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "State Street Corporation",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "STT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Seagate Technology",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "STX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Constellation Brands",
+      "current_constituent": true,
+      "industry": "Distillers & Vintners",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "STZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Smurfit Westrock",
+      "current_constituent": true,
+      "industry": "Paper & Plastic Packaging Products & Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Stanley Black & Decker",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SWK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Skyworks Solutions",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SWKS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Synchrony Financial",
+      "current_constituent": true,
+      "industry": "Consumer Finance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SYF"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Stryker Corporation",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SYK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Sysco",
+      "current_constituent": true,
+      "industry": "Food Distributors",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "SYY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "AT&T",
+      "current_constituent": true,
+      "industry": "Integrated Telecommunication Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "T"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Molson Coors Beverage Company",
+      "current_constituent": true,
+      "industry": "Brewers",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TAP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "TransDigm Group",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TDG"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Teledyne Technologies",
+      "current_constituent": true,
+      "industry": "Electronic Equipment & Instruments",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TDY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Bio-Techne",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TECH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "TE Connectivity",
+      "current_constituent": true,
+      "industry": "Electronic Manufacturing Services",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TEL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Teradyne",
+      "current_constituent": true,
+      "industry": "Semiconductor Materials & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TER"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Truist Financial",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TFC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Target Corporation",
+      "current_constituent": true,
+      "industry": "Consumer Staples Merchandise Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TGT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "TJX Companies",
+      "current_constituent": true,
+      "industry": "Apparel Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TJX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "TKO Group Holdings",
+      "current_constituent": true,
+      "industry": "Movies & Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TKO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Thermo Fisher Scientific",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TMO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "T-Mobile US",
+      "current_constituent": true,
+      "industry": "Wireless Telecommunication Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TMUS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Texas Pacific Land Corporation",
+      "current_constituent": true,
+      "industry": "Oil & Gas Exploration & Production",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TPL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Tapestry, Inc.",
+      "current_constituent": true,
+      "industry": "Apparel, Accessories & Luxury Goods",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TPR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Targa Resources",
+      "current_constituent": true,
+      "industry": "Oil & Gas Storage & Transportation",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TRGP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Trimble Inc.",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TRMB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "T. Rowe Price",
+      "current_constituent": true,
+      "industry": "Asset Management & Custody Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TROW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Travelers Companies (The)",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TRV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Tractor Supply",
+      "current_constituent": true,
+      "industry": "Other Specialty Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TSCO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Tesla, Inc.",
+      "current_constituent": true,
+      "industry": "Automobile Manufacturers",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TSLA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Tyson Foods",
+      "current_constituent": true,
+      "industry": "Packaged Foods & Meats",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TSN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Trane Technologies",
+      "current_constituent": true,
+      "industry": "Building Products",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Trade Desk (The)",
+      "current_constituent": true,
+      "industry": "Advertising",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TTD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Take-Two Interactive",
+      "current_constituent": true,
+      "industry": "Interactive Home Entertainment",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TTWO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Texas Instruments",
+      "current_constituent": true,
+      "industry": "Semiconductors",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TXN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Textron",
+      "current_constituent": true,
+      "industry": "Aerospace & Defense",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TXT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Tyler Technologies",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "TYL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "United Airlines Holdings",
+      "current_constituent": true,
+      "industry": "Passenger Airlines",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UAL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Uber",
+      "current_constituent": true,
+      "industry": "Passenger Ground Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UBER"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "UDR, Inc.",
+      "current_constituent": true,
+      "industry": "Multi-Family Residential REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UDR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Universal Health Services",
+      "current_constituent": true,
+      "industry": "Health Care Facilities",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UHS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ulta Beauty",
+      "current_constituent": true,
+      "industry": "Other Specialty Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ULTA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "UnitedHealth Group",
+      "current_constituent": true,
+      "industry": "Managed Health Care",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UNH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Union Pacific Corporation",
+      "current_constituent": true,
+      "industry": "Rail Transportation",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UNP"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "United Parcel Service",
+      "current_constituent": true,
+      "industry": "Air Freight & Logistics",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "UPS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "United Rentals",
+      "current_constituent": true,
+      "industry": "Trading Companies & Distributors",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "URI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "U.S. Bancorp",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "USB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Visa Inc.",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "V"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Veeva Systems",
+      "current_constituent": true,
+      "industry": "Health Care Technology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VEEV"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Vici Properties",
+      "current_constituent": true,
+      "industry": "Hotel & Resort REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VICI"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Valero Energy",
+      "current_constituent": true,
+      "industry": "Oil & Gas Refining & Marketing",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VLO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Veralto",
+      "current_constituent": true,
+      "industry": "Environmental & Facilities Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VLTO"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Vulcan Materials Company",
+      "current_constituent": true,
+      "industry": "Construction Materials",
+      "provider": "Wikipedia",
+      "sector": "Materials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VMC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Verisk Analytics",
+      "current_constituent": true,
+      "industry": "Research & Consulting Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VRSK"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Verisign",
+      "current_constituent": true,
+      "industry": "Internet Services & Infrastructure",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VRSN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Vertiv",
+      "current_constituent": true,
+      "industry": "Electrical Components & Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VRT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Vertex Pharmaceuticals",
+      "current_constituent": true,
+      "industry": "Biotechnology",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VRTX"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Vistra Corp.",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Ventas",
+      "current_constituent": true,
+      "industry": "Health Care REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VTR"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Viatris",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VTRS"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Verizon",
+      "current_constituent": true,
+      "industry": "Integrated Telecommunication Services",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "VZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Wabtec",
+      "current_constituent": true,
+      "industry": "Construction Machinery & Heavy Transportation Equipment",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WAB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Waters Corporation",
+      "current_constituent": true,
+      "industry": "Life Sciences Tools & Services",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WAT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Warner Bros. Discovery",
+      "current_constituent": true,
+      "industry": "Broadcasting",
+      "provider": "Wikipedia",
+      "sector": "Communication Services",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WBD"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Workday, Inc.",
+      "current_constituent": true,
+      "industry": "Application Software",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WDAY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Western Digital",
+      "current_constituent": true,
+      "industry": "Technology Hardware, Storage & Peripherals",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WDC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "WEC Energy Group",
+      "current_constituent": true,
+      "industry": "Electric Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WEC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Welltower",
+      "current_constituent": true,
+      "industry": "Health Care REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WELL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Wells Fargo",
+      "current_constituent": true,
+      "industry": "Diversified Banks",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WFC"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Waste Management",
+      "current_constituent": true,
+      "industry": "Environmental & Facilities Services",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Williams Companies",
+      "current_constituent": true,
+      "industry": "Oil & Gas Storage & Transportation",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WMB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Walmart",
+      "current_constituent": true,
+      "industry": "Consumer Staples Merchandise Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Staples",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WMT"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "W. R. Berkley Corporation",
+      "current_constituent": true,
+      "industry": "Property & Casualty Insurance",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WRB"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Williams-Sonoma, Inc.",
+      "current_constituent": true,
+      "industry": "Homefurnishing Retail",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WSM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "West Pharmaceutical Services",
+      "current_constituent": true,
+      "industry": "Health Care Supplies",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WST"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Willis Towers Watson",
+      "current_constituent": true,
+      "industry": "Insurance Brokers",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WTW"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Weyerhaeuser",
+      "current_constituent": true,
+      "industry": "Timber REITs",
+      "provider": "Wikipedia",
+      "sector": "Real Estate",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WY"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Wynn Resorts",
+      "current_constituent": true,
+      "industry": "Casinos & Gaming",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "WYNN"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Xcel Energy",
+      "current_constituent": true,
+      "industry": "Multi-Utilities",
+      "provider": "Wikipedia",
+      "sector": "Utilities",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "XEL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "ExxonMobil",
+      "current_constituent": true,
+      "industry": "Integrated Oil & Gas",
+      "provider": "Wikipedia",
+      "sector": "Energy",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "XOM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Xylem Inc.",
+      "current_constituent": true,
+      "industry": "Industrial Machinery & Supplies & Components",
+      "provider": "Wikipedia",
+      "sector": "Industrials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "XYL"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Block, Inc.",
+      "current_constituent": true,
+      "industry": "Transaction & Payment Processing Services",
+      "provider": "Wikipedia",
+      "sector": "Financials",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "XYZ"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Yum! Brands",
+      "current_constituent": true,
+      "industry": "Restaurants",
+      "provider": "Wikipedia",
+      "sector": "Consumer Discretionary",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "YUM"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Zimmer Biomet",
+      "current_constituent": true,
+      "industry": "Health Care Equipment",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ZBH"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Zebra Technologies",
+      "current_constituent": true,
+      "industry": "Electronic Equipment & Instruments",
+      "provider": "Wikipedia",
+      "sector": "Information Technology",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ZBRA"
+    },
+    {
+      "as_of_date": "2026-06-17",
+      "company_name": "Zoetis",
+      "current_constituent": true,
+      "industry": "Pharmaceuticals",
+      "provider": "Wikipedia",
+      "sector": "Health Care",
+      "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+      "ticker": "ZTS"
+    }
+  ],
+  "generated_at": "2026-06-17T16:30:42.424695+00:00",
+  "metadata": {
+    "as_of_date": "2026-06-17",
+    "current_constituent_count": 503,
+    "generated_at": "2026-06-17T16:30:42.424695+00:00",
+    "provider": "Wikipedia",
+    "source_name": "Wikipedia: List of S&P 500 companies",
+    "source_url": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+    "survivorship_bias_warning": "Current S&P 500 reference universe only; not historical constituent-corrected and not valid for strict historical backtests without survivorship-bias controls."
+  },
+  "provider": "Wikipedia",
+  "source": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+  "source_url": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+  "survivorship_bias_warning": "Current S&P 500 reference universe only; not historical constituent-corrected and not valid for strict historical backtests without survivorship-bias controls."
+}

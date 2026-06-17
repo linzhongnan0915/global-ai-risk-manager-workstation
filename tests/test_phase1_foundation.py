@@ -98,18 +98,22 @@ def test_membership_timeline_supports_combined_as_17th_then_wq_as_18th_sleeve():
 
 def test_strategy_monitor_binds_explicit_summary_and_intraday_row_fields():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
-    assert "Total Registry Entities" in app
+    assert "Current Rows" in app
     assert "Ordinary Active" in app
-    assert "Current Top-Level Active" in app
-    assert "Pending Candidates" in app
-    assert "Combined Constituents" in app
-    assert "Top-Level Equal Sleeve" in app
-    assert "Combined Internal Weight" in app
+    assert "Top-Level Active" in app
+    assert '"Pending",pending.length,pending?"Review needed":"No pending candidate"' in app
+    assert "Combined" in app
+    assert "Internal constituents" in app
+    assert "Equal Sleeve" in app
     assert "intraday_estimated_pnl" in app
     assert "intraday_estimated_nav" in app
     assert "intraday_estimate_unavailable_reason" in app
     assert "data_state||r.data_status" in app
     assert app.count("function strategyMonitorPage()") == 1
+    assert "function currentStrategyRows(c)" in app
+    assert "removed_from_current_workstation_strategy_ids" in app
+    assert "monitorEntities(){return currentStrategyRows(state.contract)" in app
+    assert "current operating rows: 16 ordinary active + active Combined" in app
 
 
 def test_complete_strategy_history_is_published_without_mixing_research():
@@ -137,7 +141,7 @@ def test_performance_analytics_layer_is_data_bound_and_separates_research():
         "function performanceRows(c)",
         "MASTER_PORTFOLIO",
         "PORTFOLIO & STRATEGY PERFORMANCE ANALYTICS",
-        "Master Portfolio, 16 ordinary active, Combined, and #000018 pending",
+        "current operating sleeves",
         "Insufficient Official History",
         "Minimum official observations required",
         "Official Ledger: portfolio_daily only; delayed estimates excluded",
@@ -145,7 +149,7 @@ def test_performance_analytics_layer_is_data_bound_and_separates_research():
         "Operational paper-ledger metrics and research/backtest metrics remain separate",
         "Missing research artifacts are shown as Not loaded rather than estimated",
         "Derived from ordinary strategy net returns; no separate Combined paper fills; no cost double count",
-        "APPROVED_PENDING / PRE_OPERATIONAL. Current sleeve N/A; Operational NAV N/A; Operational P&L N/A; No Paper Fill; No Live Brokerage Fill.",
+        "Pending / Pre-operational; not part of current operating rows.",
         "Research vs Operational Performance",
         "Portfolio performance analytics",
     ):
@@ -167,8 +171,35 @@ def test_strategy_monitor_status_hierarchy_keeps_provenance_secondary():
         assert marker in app
     status_cell = app.split("function strategyPanel()", 1)[1].split("function alerts", 1)[0]
     assert "strategyPrimaryState(r)" in status_cell
-    assert "strategySecondaryState(r)" in status_cell
+    assert "statusLine(r)" not in status_cell
+    assert "strategySecondaryState(r)" not in status_cell
     assert "operationalDisplayLabel(r)" not in status_cell
+    assert "performanceAnalyticsPanel(state.contract)" not in status_cell
+
+
+def test_current_operating_ui_excludes_removed_research_candidate():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    data = contract()
+    removed = set(data.get("removed_from_current_workstation_strategy_ids") or ["WQ_ALPHA_018"])
+    current_rows = [row for row in data["strategies"] if row["internal_id"] not in removed]
+    active_rows = [row for row in current_rows if row["membership_state"] == "executed"]
+    pending_rows = [
+        row
+        for row in current_rows
+        if row["membership_state"] == "approved_pending"
+        or row.get("current_operational_status") == "PRE_OPERATIONAL"
+    ]
+
+    assert "WQ_ALPHA_018" in removed
+    assert len(current_rows) == 17
+    assert len(active_rows) == 17
+    assert len(pending_rows) == 0
+    assert current_rows[0]["internal_id"] == "COMBINED_PORTFOLIO"
+    assert "currentStrategyRows(c).map" in app
+    assert "currentPendingRows(c).length" in app
+    assert "No pending candidate in current operating set" in app
+    assert "Removed research candidates stay out of current operating rows" in app
+    assert "PENDING ADMISSION</span><strong>N=${c.portfolio_summary.current_n}" not in app
 
 
 def test_invalid_legacy_contract_is_rejected():
@@ -223,7 +254,7 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert "posMax=Math.max" in app
     assert "negMax=Math.max" in app
     assert "Math.abs(r[basis])/sectionMax*100" in app
-    assert "contributors and detractors scale independently" in app
+    assert "sections scale independently" in app
     assert "/api/operational-snapshot?ts=" in app
     assert '"Cache-Control":"no-store"' in app
     for blocked in ("sec.gov", "/api/live-summary", "dashboard_artifact.json", "news"):
@@ -279,7 +310,7 @@ def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
     assert "Array.isArray(values)&&values.length>1?commandSpark(values,tone)" in app
     assert "flat=[1,1,1,1,1]" not in app
     assert "Operational Records" in app
-    assert "Official Promotion" in app
+    assert "Official promotion review" in app
     assert "Execution Provenance Review" in app
     assert "Shadow-Live / Operational" not in app
     assert "Historical Research" in app
@@ -294,7 +325,7 @@ def test_shared_kpi_cards_do_not_render_decorative_sparklines():
     components = (ROOT / "dashboard/foundation-components.js").read_text(encoding="utf-8")
     assert "Array.isArray(values) && values.length > 1 ? spark" in components
     assert "variant:i" not in app
-    assert "Current cross-section, not a time series" in app
+    assert "Visible operating rows" in app
     assert "Array.isArray(values)&&values.length>1?commandSpark(values,tone)" in app
 
 
@@ -312,12 +343,35 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert data["portfolio_daily"][-1]["date"] != data["portfolio_daily"][-1]["data_as_of"]
     assert "Visible ledger date uses portfolio_daily.date" in app
     assert "function latestPortfolioLedgerDate(c)" in app
+    assert "const COMMAND_CHART_OFFICIAL_WINDOW=20" in app
+    assert "function officialChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
+    assert "function paperChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
+    assert "function commandChartSeries(c)" in app
+    assert "paper.length>=2" in app
+    assert "Paper Performance" in app
+    assert "official ledger markers shown where available" in app
+    assert "COMMAND_CHART_PAPER_KEYS" not in app
+    assert ".sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-limit)" in app
+    assert "const paper=paperChartRows(c),official=officialChartRows(c)" in app
+    assert "function drawCommandChart(canvas,c){const series=commandChartSeries(c)" in app
+    assert "function bindCommandChartTooltip()" in app
+    assert "const series=commandChartSeries(state.contract),rows=series.rows" in app
+    assert "chartDetailMarkup({date:sessionLabel(c),source:\"Delayed Estimate\",nav:intr.estimated_nav,pnl:intr.estimated_pnl,drawdown:null})" in app
     assert "Official portfolio ledger through ${latestPortfolioLedgerDate(c)}" in app
-    assert "Official close/as-of" in app
-    assert "Official Daily Ledger records + Delayed Estimate" in app
+    assert "function chartDetailMarkup" in app
+    assert "<b>Date</b>" in app
+    assert "<b>Source</b>" in app
+    assert "<b>NAV</b>" in app
+    assert "<b>Daily P&L</b>" in app
+    assert "<b>Drawdown</b>" in app
+    assert "${series.rows.length} official ledger rows loaded; ${COMMAND_CHART_OFFICIAL_WINDOW}-day target pending paper performance ledger. Delayed estimate shown separately" in app
+    assert "paper portfolio daily rows loaded" in app
+    assert "officialDates=new Set((series.official||[]).map(r=>r.date))" in app
+    assert "strategy_daily_performance" not in app
+    assert "drawdownComplete=dd.length===rows.length&&dd.length>1" in app
     assert "function lifecycle(c)" in app
     assert "function showIntradayPoint(c)" in app
-    assert "Official Promotion" in app
+    assert "Official promotion review" in app
     assert "function promotionReadiness(c)" in app
     assert "Ready for promotion" in app
     assert "EOD pending promotion" in app
@@ -326,17 +380,19 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "Official ledger promotion blocked" in app
     assert "Manual dry-run only" in app
     assert "Execute disabled" in app
-    assert "Intraday Runtime" in app
+    assert '["Refresh",intradayRuntimeValue(c),intradayRuntimeDetail(c)' in app
     assert "function intradayRuntimeValue(c)" in app
-    assert "Delayed Estimate Loaded" in app
+    assert 'if(s==="LOADED")return "Loaded"' in app
     assert "Not Running / Not Loaded" in app
     assert "official ledger remains separate" in app
     assert "EOD estimate pending official ledger promotion" in app
     assert "Delayed estimate / not official ledger" in app
     assert "sessionLabel(c)" in app
     assert "Official Daily Ledger through" not in app
-    assert '<span>${r.date}</span>' in app
-    assert "ctx.fillText(rows[i].date.slice(5),q.x,h-13)" in app
+    assert "chart-detail-strip" in app
+    assert "data-portfolio-point" not in app
+    assert "const tickEvery=4" in app
+    assert "ctx.fillText(chartDateLabel(rows[i].date).replace(\" 0\",\" \"),q.x,h-12)" in app
     assert "official_close_date||rows[i].date" not in app
     assert "r.official_close_date||r.date" not in app
 
@@ -723,7 +779,7 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "Model Readiness",
         "Proxy metrics do not substitute for Barra, VaR, ES, scenario, macro regime, or stress analytics.",
         "<details class=\"risk-governance-disclosure\"><summary>Refresh Scheme B disclosure</summary>",
-        "<details class=\"risk-matrix-secondary\"><summary>Show metadata fallback table</summary>",
+        "function riskFactorBigTable(c)",
         "Rows come from risk_factor_market_proxy_table in /api/operational-snapshot when available; rendering does not hard-code strategy count.",
         "Research beta vs SPY",
         "Research corr vs SPY",

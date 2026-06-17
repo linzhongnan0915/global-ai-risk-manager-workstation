@@ -24,6 +24,7 @@ from src.market.market_hours import (
     next_scheduled_refresh,
     should_run_scheduled_refresh,
 )
+from src.market.paper_portfolio_ledger import build_paper_portfolio_daily_row, upsert_paper_portfolio_daily
 from src.market.snapshot_store import (
     new_snapshot_id,
     publish_snapshot,
@@ -332,6 +333,11 @@ def run_intraday_refresh(
 ) -> dict[str, Any]:
     """Execute intraday proxy refresh. Manual and scheduled jobs share this path."""
     cfg = config or load_intraday_config()
+    no_paper_update = {
+        "portfolio_row_updated": False,
+        "strategy_rows_updated": 0,
+        "reason": "not_attempted",
+    }
     status = read_refresh_status(cfg)
     interval = resolve_refresh_interval_minutes(
         cfg,
@@ -362,6 +368,7 @@ def run_intraday_refresh(
                 "skipped": True,
                 "reason": f"market_{session.status.lower().replace('-', '_')}",
                 "message": "Scheduled intraday refresh skipped outside regular session.",
+                "paper_performance_update": {**no_paper_update, "reason": "refresh_skipped"},
             }
         )
         return payload
@@ -377,6 +384,7 @@ def run_intraday_refresh(
                 "in_progress": True,
                 "snapshot_id": read_latest_pointer(cfg).get("snapshot_id") if read_latest_pointer(cfg) else None,
                 "started_at": current.get("started_at"),
+                "paper_performance_update": {**no_paper_update, "reason": "refresh_already_in_progress"},
             }
 
         started = datetime.now(timezone.utc)
@@ -436,7 +444,12 @@ def run_intraday_refresh(
                     cfg,
                 )
                 payload = build_refresh_status_payload(cfg, interval_minutes=interval)
-                payload.update({"ok": True, "skipped": True, "reason": "stale_response_preserved_newer_snapshot"})
+                payload.update({
+                    "ok": True,
+                    "skipped": True,
+                    "reason": "stale_response_preserved_newer_snapshot",
+                    "paper_performance_update": {**no_paper_update, "reason": "stale_response_preserved_newer_snapshot"},
+                })
                 return payload
 
             requested = int(fetch_result.get("ticker_count_requested") or len(tickers))
@@ -450,6 +463,7 @@ def run_intraday_refresh(
                 refresh_warnings.append(
                     f"partial ticker coverage ({successful}/{requested}, below {min_ratio:.0%}); stale/missing ticker labels preserved"
                 )
+            refresh_coverage_status = "partial" if refresh_warnings or fetch_result.get("missing_tickers") or fetch_result.get("stale_tickers") else "fresh"
 
             marks = revalue_mark_sensitive_outputs(artifact, fetch_result, load_market_universe())
             shadow_intraday = build_shadow_intraday_estimates(
@@ -479,6 +493,35 @@ def run_intraday_refresh(
             marks["live_brokerage_execution"] = False
             marks["delayed_market_data"] = True
             marks["not_live_market_data"] = True
+            paper_row = build_paper_portfolio_daily_row(
+                artifact,
+                fetch_result,
+                refresh_status=refresh_coverage_status,
+                warnings=refresh_warnings,
+                position_source=position_source,
+            )
+            if paper_row:
+                paper_payload = upsert_paper_portfolio_daily(refresh_root, paper_row)
+                paper_update = {
+                    "portfolio_row_updated": True,
+                    "strategy_rows_updated": 0,
+                    "trading_date": paper_row.get("date"),
+                    "nav": paper_row.get("ending_nav"),
+                    "daily_pnl": paper_row.get("daily_pnl"),
+                    "daily_return": paper_row.get("daily_return"),
+                    "refresh_status": refresh_coverage_status,
+                    "row_count": len(paper_payload.get("rows") or []),
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "is_official_ledger": False,
+                }
+            else:
+                paper_update = {
+                    **no_paper_update,
+                    "reason": "no_priced_committed_shadow_holdings",
+                    "refresh_status": refresh_coverage_status,
+                }
             daily_finalization = finalize_daily_shadow_returns(
                 shadow_database,
                 shadow_intraday,
@@ -513,6 +556,7 @@ def run_intraday_refresh(
                 "shadow_intraday": shadow_intraday,
                 "latest_usable_prices": shadow_intraday.get("latest_usable_prices") or {},
                 "daily_finalization": daily_finalization,
+                "paper_performance_update": paper_update,
                 "governance_preserved": {
                     "allocation_weights_unchanged": baseline_allocation,
                     "signals_as_of_unchanged": baseline_signals_as_of,
@@ -550,6 +594,7 @@ def run_intraday_refresh(
                     "not_live_market_data": True,
                     "latest_market_observation_at": snapshot["latest_observation_ts_et"],
                     "last_successful_refresh_at": completed.isoformat(),
+                    "paper_performance_update": paper_update,
                 }
             )
             return result
@@ -583,6 +628,7 @@ def run_intraday_refresh(
                         "data_freshness": "Stale",
                         "stale_usable": True,
                         "warnings": ["Delayed market-data provider rate-limited; previous valid snapshot preserved."],
+                        "paper_performance_update": {**no_paper_update, "reason": "provider_rate_limited_stale_snapshot_preserved"},
                     }
                 )
                 return payload
@@ -606,6 +652,7 @@ def run_intraday_refresh(
                     "snapshot_id": last_valid.get("snapshot_id") if last_valid else None,
                     "previous_valid_snapshot_id": last_valid.get("previous_valid_snapshot_id") if last_valid else None,
                     "data_freshness": "Failed" if not last_valid else "Stale",
+                    "paper_performance_update": {**no_paper_update, "reason": "refresh_failed"},
                 }
             )
             return payload

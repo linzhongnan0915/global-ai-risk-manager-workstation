@@ -206,3 +206,78 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 /* Risk Factors sticky header correction: Status scrolls vertically with the header row, not horizontally with Strategy. */
 .risk-factor-heatmap-v3 .risk-heatmap-table th:nth-child(2){position:sticky;top:0;left:auto;z-index:8;background:#081d22;box-shadow:none}.risk-factor-heatmap-v3 .risk-heatmap-table td:nth-child(2){position:static;left:auto;z-index:auto;background:#061113;box-shadow:none}
 .risk-benchmark-strip{min-height:30px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;border:1px solid #234854;background:#061315}.risk-benchmark-strip span{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px;padding:5px 9px;border-right:1px solid #17343a}.risk-benchmark-strip span:last-child{border-right:0}.risk-benchmark-strip em{overflow:hidden;color:#8fa6a9;font-size:8px;font-style:normal;text-transform:uppercase;text-overflow:ellipsis;white-space:nowrap}.risk-benchmark-strip b{overflow:hidden;color:#e0eef0;font-size:11px;text-align:right;text-overflow:ellipsis;white-space:nowrap}.risk-workstation-cards article.benchmark-card{border-color:#31516b;background:linear-gradient(180deg,#0a1925,#040d12)}.risk-workstation-cards article.drawdown-card{border-color:#5f3b34}@media(max-width:1500px){.risk-benchmark-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Command Center targeted cleanup: value-first cards, shorter chart legend, contained text. */
+.command-center{min-width:0;overflow-x:hidden}
+.command-kpi-groups{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.command-center .kpi-group .metric-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.command-center .metric-card{height:72px;min-width:0;padding:6px 8px;grid-template-rows:auto minmax(25px,1fr) auto;gap:3px}
+.command-center .metric-head{min-width:0;gap:4px}
+.command-center .metric-label,.command-center .metric-status{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-center .metric-status{font-size:7px}
+.command-center .metric-main{min-height:25px}
+.command-center .metric-value{font-size:18px;line-height:1.05;letter-spacing:0;overflow:visible;text-overflow:clip}
+.command-center .metric-detail{font-size:8px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.command-board{grid-template-rows:236px 214px 148px 148px;gap:6px}
+.command-board .chart-body{height:152px}
+.cmd-chart .section-header{min-height:31px}
+.cmd-chart .section-header>div{grid-template-columns:minmax(0,1fr);gap:1px}
+.cmd-chart .section-header strong{font-size:11px}
+.cmd-chart .section-header span{font-size:8px}
+.cmd-chart .section-header .chart-legend{justify-content:flex-end}
+.chart-legend{flex-wrap:wrap;gap:5px;line-height:1.2;white-space:normal}
+.chart-legend .official-dot{width:7px;height:7px;display:inline-block;margin-left:5px;border-radius:50%;background:#f6fbff;border:1px solid #fff}
+.chart-legend .est-dot{width:7px;height:7px;display:inline-block;margin-left:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 4px #e6b94f66}
+.daily-records{height:43px;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))}
+.daily-record{padding:4px 6px;gap:1px 4px}
+.daily-record span,.daily-record b,.daily-record em{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daily-record span{font-size:7px}.daily-record b{font-size:9px}.daily-record em{font-size:7px}
+.command-board .work-table{table-layout:fixed;width:100%}
+.command-board .work-table th,.command-board .work-table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-board .work-table td:first-child strong,.command-board .work-table td:first-child small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-board .work-table td small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-board .dual-tables{height:200px}
+.dual-tables td{height:31px}
+.contributors-panel .dual-tables td:first-child{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rebalance-center .work-table-wrap{height:176px}
+.rebalance-subgrid{grid-template-columns:.78fr 1.22fr}
+.action-tiles button{min-height:46px}
+.pending-card.compact{min-height:46px;padding:6px 8px;align-items:center}
+.pending-card.compact span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:1550px){
+  .command-center .kpi-group .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .command-center .metric-card{height:68px}
+  .command-board{grid-template-rows:218px 198px 140px 136px}
+  .command-board .chart-body{height:134px}
+  .daily-records{height:39px;grid-template-columns:repeat(auto-fit,minmax(72px,1fr))}
+  .rebalance-center .work-table-wrap{height:154px}
+}
+
+/* Command/Strategy polish follow-up: no clipped KPI values, no two-line Strategy KPI deck. */
+.command-center .metric-card{height:84px;grid-template-rows:auto minmax(34px,1fr) auto}
+.command-center .metric-main{min-height:34px;align-items:center}
+.command-center .metric-value{max-width:100%;font-size:21px;white-space:nowrap}
+.command-center .metric-detail{max-width:100%;white-space:nowrap}
+.strategy-monitor-kpis{grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.strategy-monitor-kpis .metric-card{height:68px;padding:6px 8px}
+.strategy-monitor-kpis .metric-main{height:28px}
+.strategy-monitor-kpis .metric-value{font-size:18px;line-height:1.05;white-space:nowrap}
+.strategy-monitor-kpis .metric-detail{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strategy-monitor-panel{height:calc(100vh - var(--head) - var(--tabs) - 118px);min-height:620px}
+.monitor-table td:nth-child(4) small{display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.performance-analytics-panel{display:none}
+.risk-matrix-secondary,.market-proxy-detail,.risk-compact-detail{display:none!important}
+.cmd-chart .chart-panel{display:grid;grid-template-rows:auto minmax(0,1fr) 34px;overflow:hidden}
+.cmd-chart .chart-panel .chart-body{height:auto;min-height:0}
+.cmd-chart .chart-tooltip{display:none!important}
+.chart-detail-strip{min-height:34px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;border-top:1px solid var(--line);background:#051012}
+.chart-detail-strip span{min-width:0;padding:0 8px;border-right:1px solid var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d2e0e2;font-size:9px}
+.chart-detail-strip span:last-child{border-right:0}
+.chart-detail-strip b{display:block;color:#7f969a;font-size:7px;text-transform:uppercase}
+@media(max-width:1550px){
+  .strategy-monitor-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .strategy-monitor-panel{height:calc(100vh - var(--head) - var(--tabs) - 168px);min-height:540px}
+  .cmd-chart .chart-panel{grid-template-rows:auto minmax(0,1fr) 32px}
+  .chart-detail-strip{min-height:32px}
+  .chart-detail-strip span{padding:0 6px;font-size:8px}
+}

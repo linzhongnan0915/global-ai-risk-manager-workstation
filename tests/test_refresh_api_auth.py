@@ -17,6 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts.run_workstation_server import WorkstationHandler, resolve_server_bind
 from src.market.refresh_auth import classify_refresh_request, parse_bearer_token
 from src.market.intraday_refresh_service import run_intraday_refresh
+from src.market.paper_portfolio_ledger import paper_portfolio_daily_path
 from src.market.snapshot_store import read_latest_pointer, read_latest_snapshot
 
 
@@ -216,6 +217,10 @@ def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cf
         "src.market.intraday_refresh_service.should_run_scheduled_refresh",
         lambda *args, **kwargs: False,
     )
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.daily_shadow_return_exists",
+        lambda *args, **kwargs: True,
+    )
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
     result = run_intraday_refresh(force=False, artifact_path=artifact_path, config=intraday_cfg)
@@ -404,6 +409,62 @@ def test_refresh_uses_committed_holdings_without_creating_legacy_artifact(intrad
     assert artifact_path.exists() is False
 
 
+def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledger(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch_success(tickers, **kwargs):
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": ticker,
+                    "observation_ts_et": "2026-06-17T15:50:00-04:00",
+                    "session_date": "2026-06-17",
+                    "open": 100.0,
+                    "high": 102.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+                for ticker in tickers
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": "2026-06-17T15:50:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-17T15:50:00-04:00",
+        }
+
+    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
+
+    update = result["paper_performance_update"]
+    assert update["portfolio_row_updated"] is True
+    assert update["strategy_rows_updated"] == 0
+    assert update["trading_date"] == "2026-06-17"
+    assert update["refresh_status"] == "fresh"
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert ledger["metadata"]["is_official_ledger"] is False
+    assert ledger["metadata"]["paper_only"] is True
+    assert ledger["metadata"]["delayed_market_data"] is True
+    assert len(ledger["rows"]) == 1
+    row = ledger["rows"][0]
+    assert row["date"] == "2026-06-17"
+    assert row["position_source"] == "committed_shadow_holdings"
+    assert row["daily_return"] == pytest.approx(0.01)
+    assert row["daily_pnl"] == pytest.approx(10_000)
+    assert row["is_official_ledger"] is False
+    assert (tmp_path / "dashboard/data/performance/strategy_daily_performance.json").exists() is False
+
+
 def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal_artifact, tmp_path: Path):
     _write_canonical_holdings(tmp_path)
     artifact_path = tmp_path / "artifact.json"
@@ -446,6 +507,7 @@ def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal
 
     assert result["ok"] is True
     assert result["warnings"]
+    assert result["paper_performance_update"]["refresh_status"] == "partial"
     snapshot = read_latest_snapshot(intraday_cfg)
     assert snapshot["warnings"]
 
@@ -501,6 +563,7 @@ def test_refresh_rate_limit_returns_stale_cooldown_with_previous_snapshot(intrad
     assert stale["refresh_status"] == "stale_cooldown"
     assert stale["provider_cooldown"] is True
     assert stale["snapshot_id"] == first_id
+    assert stale["paper_performance_update"]["portfolio_row_updated"] is False
 
 
 @pytest.fixture

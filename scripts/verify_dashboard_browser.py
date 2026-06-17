@@ -277,22 +277,89 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         latest_ledger_date = (served_snapshot.get("portfolio_daily") or [{}])[-1].get("date")
         official_close_date = (served_snapshot.get("official_daily") or {}).get("latest_official_close_date")
         initial_body_text = page.locator("body").inner_text()
+        initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
-            "Workflow & Shadow-Live Testing" in initial_body_text
-            and "Strategy Library & Governance" in initial_body_text
-            and "STYLE / FAMILY EXPOSURE PROXY" in initial_body_text
-            and "Market & Macro Monitor" not in initial_body_text
-            and "Strategy Library & Workflow" not in initial_body_text
-            and "Combined Family Mix" not in initial_body_text
-            and "INVALID_EXECUTION_RECORD" not in initial_body_text
+            "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
+            and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
+            and "STRATEGY FAMILY MIX" in initial_body_upper
+            and "PROXY ONLY" in initial_body_upper
+            and "MARKET & MACRO MONITOR" not in initial_body_upper
+            and "STRATEGY LIBRARY & WORKFLOW" not in initial_body_upper
+            and "COMBINED FAMILY MIX" not in initial_body_upper
+            and "INVALID_EXECUTION_RECORD" not in initial_body_upper
         )
         report["checks"]["official_date_label_precision"] = (
-            f"Official portfolio ledger through {latest_ledger_date}" in initial_body_text
+            (
+                "Official ledger through" in initial_body_text
+                or "official ledger rows loaded" in initial_body_text
+            )
+            and "20-day target pending paper performance ledger" in initial_body_text
+            and latest_ledger_date is not None
             and (
                 latest_ledger_date == official_close_date
                 or f"Official Daily Ledger through {official_close_date}" not in initial_body_text
             )
         )
+        chart_state = page.evaluate(
+            """
+            (officialRowsAvailable) => {
+              const panel = document.querySelector('.primary-chart');
+              const canvas = panel?.querySelector('#navChart');
+              const legend = panel?.querySelector('.chart-legend');
+              const detail = panel?.querySelector('#navChartDetail');
+              const tooltip = panel?.querySelector('#navChartTooltip');
+              const rect = (el) => {
+                const r = el.getBoundingClientRect();
+                return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};
+              };
+              const overlap = (a,b) => !(a.bottom <= b.top || a.top >= b.bottom || a.right <= b.left || a.left >= b.right);
+              const cr = canvas ? rect(canvas) : null;
+              const lr = legend ? rect(legend) : null;
+              const dr = detail ? rect(detail) : null;
+              const tr = tooltip ? rect(tooltip) : null;
+              const expectedOfficialRows = Math.min(20, officialRowsAvailable);
+              canvas?.dispatchEvent(new MouseEvent('mousemove', {
+                bubbles: true,
+                clientX: cr ? cr.left + cr.width * 0.5 : 0,
+                clientY: cr ? cr.top + cr.height * 0.5 : 0,
+              }));
+              const hoverText = detail?.innerText || '';
+              return {
+                expectedOfficialRows,
+                headerMentionsWindow: (
+                  (/official ledger rows loaded/i.test(panel?.innerText || '') && /pending paper performance ledger/i.test(panel?.innerText || ''))
+                  || (/paper portfolio daily rows loaded/i.test(panel?.innerText || '') && /official ledger markers shown/i.test(panel?.innerText || ''))
+                ),
+                detailStripPresent: Boolean(detail),
+                detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
+                hoverUpdatesDetail: /Official Ledger|Delayed Est\\./i.test(hoverText),
+                floatingTooltipVisible: tooltip ? getComputedStyle(tooltip).display !== 'none' && tooltip.classList.contains('visible') : false,
+                legendOverlapsCanvas: Boolean(cr && lr && overlap(lr, cr)),
+                detailOverlapsCanvas: Boolean(cr && dr && overlap(dr, cr)),
+                detailInsidePanel: Boolean(panel && dr && dr.top >= rect(panel).top - 1 && dr.bottom <= rect(panel).bottom + 1),
+                legacyDateTiles: panel?.querySelectorAll('.daily-record').length || 0,
+                bodyOverflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+              };
+            }
+            """,
+            len(served_snapshot.get("portfolio_daily") or []),
+        )
+        report["checks"]["master_chart_window_and_detail"] = (
+            chart_state["expectedOfficialRows"] <= 20
+            and chart_state["headerMentionsWindow"] is True
+            and chart_state["detailStripPresent"] is True
+            and chart_state["detailFieldsPresent"] is True
+            and chart_state["hoverUpdatesDetail"] is True
+        )
+        report["checks"]["master_chart_no_overlap"] = (
+            chart_state["floatingTooltipVisible"] is False
+            and chart_state["legendOverlapsCanvas"] is False
+            and chart_state["detailOverlapsCanvas"] is False
+            and chart_state["detailInsidePanel"] is True
+            and chart_state["legacyDateTiles"] == 0
+            and chart_state["bodyOverflowX"] is False
+        )
+        report["api_checks"]["master_portfolio_chart"] = chart_state
         for _ in range(20):
             if page.locator(".workflow-tabs").count() > 0 or page.locator("button[data-page]").count() > 0 or page.locator("button[data-tab]").count() > 0:
                 break
@@ -348,16 +415,51 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             page.get_by_role("button", name="2. Strategy Monitor", exact=True).click()
             page.wait_for_timeout(500)
             strategy_monitor_text = page.locator("body").inner_text()
+            strategy_monitor_state = page.evaluate(
+                """
+                () => {
+                  const rows = [...document.querySelectorAll('.monitor-table tbody tr')];
+                  const statusCells = rows.map((row) => row.querySelector('td:nth-child(4)')?.innerText || '');
+                  const forbiddenStatusText = /Execution Mode|Provenance|Live Fill|Paper only|Derived \\/ no live fills|Paper only \\/ no live fills/i;
+                  const pageOverflow = document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+                  const kpiOverflow = [...document.querySelectorAll('.strategy-monitor-kpis .metric-card')].filter(
+                    (el) => el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2
+                  ).length;
+                  return {
+                    visibleRows: rows.length,
+                    wqRows: rows.filter((row) => row.dataset.rowId === 'WQ_ALPHA_018' || row.innerText.includes('#000018')).length,
+                    pendingRows: rows.filter((row) => /APPROVED_PENDING|PRE_OPERATIONAL|PRE-OPERATIONAL|PENDING/i.test(row.innerText)).length,
+                    statusExtraTextCount: statusCells.filter((text) => forbiddenStatusText.test(text)).length,
+                    statusTexts: statusCells.slice(0, 6),
+                    repeatedPerformancePanel: document.querySelectorAll('.performance-analytics-panel:not([style*="display: none"])').length,
+                    kpiOverflow,
+                    pageOverflow,
+                  };
+                }
+                """
+            )
             report["checks"]["final_counts_visible"] = (
-                "TOTAL REGISTRY ENTITIES" in strategy_monitor_text.upper()
-                and "ORDINARY ACTIVE" in strategy_monitor_text.upper()
-                and "CURRENT TOP-LEVEL ACTIVE" in strategy_monitor_text.upper()
-                and "COMBINED CONSTITUENTS" in strategy_monitor_text.upper()
+                "STRATEGY OPERATIONAL REGISTRY" in strategy_monitor_text.upper()
+                and "17 VISIBLE CURRENT ROWS" in strategy_monitor_text.upper()
+                and "NO PENDING CANDIDATE" in strategy_monitor_text.upper()
             )
-            report["checks"]["paper_provenance_boss_label"] = (
-                "Paper Provenance Pending" in strategy_monitor_text
-                and "INVALID_EXECUTION_RECORD" not in strategy_monitor_text
+            report["checks"]["strategy_monitor_current_rows"] = strategy_monitor_state["visibleRows"] == 17
+            report["checks"]["strategy_monitor_excludes_wq_pending"] = (
+                strategy_monitor_state["wqRows"] == 0
+                and strategy_monitor_state["pendingRows"] == 0
             )
+            report["checks"]["strategy_status_column_compact"] = (
+                strategy_monitor_state["statusExtraTextCount"] == 0
+                and all("ACTIVE" in text.upper() for text in strategy_monitor_state["statusTexts"] if text)
+            )
+            report["checks"]["strategy_repeated_performance_panel_removed"] = (
+                strategy_monitor_state["repeatedPerformancePanel"] == 0
+            )
+            report["checks"]["strategy_monitor_no_overflow"] = (
+                strategy_monitor_state["kpiOverflow"] == 0
+                and strategy_monitor_state["pageOverflow"] is False
+            )
+            report["api_checks"]["strategy_monitor_current_state"] = strategy_monitor_state
             page.locator('[data-view-id="COMBINED_PORTFOLIO"]').click()
             page.wait_for_timeout(400)
             drawer_text = page.locator("#detailDrawer").inner_text()
@@ -370,28 +472,19 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             page.get_by_role("button", name="Close strategy detail", exact=True).click()
             page.wait_for_timeout(200)
-            if not report["checks"]["paper_provenance_boss_label"]:
-                page.locator('[data-view-id="C3A1_002"]').click()
-                page.wait_for_timeout(400)
-                provenance_drawer_text = page.locator("#detailDrawer").inner_text()
-                report["checks"]["paper_provenance_boss_label"] = (
-                    "Paper Provenance Pending" in provenance_drawer_text
-                    and "INVALID_EXECUTION_RECORD" not in provenance_drawer_text
-                )
-                page.get_by_role("button", name="Close strategy detail", exact=True).click()
-                page.wait_for_timeout(200)
-            page.locator('[data-view-id="WQ_ALPHA_018"]').click()
-            page.wait_for_timeout(400)
-            wq_text = page.locator("#detailDrawer").inner_text()
-            wq_upper = wq_text.upper()
-            report["checks"]["wq_pending_blocker"] = (
-                (
-                    "PRE_OPERATIONAL" in wq_upper
-                    or "PRE-OPERATIONAL" in wq_upper
-                    or "PRE OPERATIONAL" in wq_upper
-                )
-                and "Missing canonical signal date" in wq_text
+            page.get_by_role("button", name="4. Risk Factors & Exposure", exact=True).click()
+            page.wait_for_timeout(500)
+            risk_state = page.evaluate(
+                """
+                () => ({
+                  rows: document.querySelectorAll('.risk-heatmap-table tbody tr').length,
+                  pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+                })
+                """
             )
+            report["checks"]["risk_factors_current_rows"] = risk_state["rows"] == 17
+            report["checks"]["risk_factors_no_page_overflow"] = risk_state["pageOverflow"] is False
+            report["api_checks"]["risk_factors_current_state"] = risk_state
             report["checks"]["no_console_errors"] = len(report["console_errors"]) == 0
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
             report["checks"]["geometry_pass"] = geometry_pass

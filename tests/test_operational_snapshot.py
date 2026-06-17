@@ -22,6 +22,7 @@ from src.reporting.operational_snapshot import (
     snapshot_refresh_lock,
 )
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
+from src.market.paper_portfolio_ledger import upsert_paper_portfolio_daily
 from scripts.generate_risk_factor_market_proxy_cache import (
     BENCHMARK_SYMBOL,
     build_cache as build_market_proxy_cache_artifact,
@@ -769,6 +770,43 @@ def test_sp500_reference_universe_artifact_loads_as_reference_only():
     assert all(row["current_constituent"] is True for row in universe["constituents"])
     canonical_tickers = {row.get("internal_id") for row in _canonical()["strategies"]}
     assert "AAPL" not in canonical_tickers
+
+
+def test_operational_snapshot_attaches_paper_portfolio_daily_separately(tmp_path):
+    root = _copy_root(tmp_path)
+    upsert_paper_portfolio_daily(
+        root,
+        {
+            "date": "2026-06-17",
+            "trading_date": "2026-06-17",
+            "source": "Paper Portfolio Daily Ledger",
+            "position_source": "committed_shadow_holdings",
+            "paper_only": True,
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "live_brokerage_execution": False,
+            "is_official_ledger": False,
+            "provider": "yfinance",
+            "prior_nav": 1_004_431,
+            "beginning_nav": 1_004_431,
+            "nav": 1_005_000,
+            "ending_nav": 1_005_000,
+            "daily_pnl": 569,
+            "net_pnl": 569,
+            "daily_return": 569 / 1_004_431,
+            "refresh_status": "fresh",
+        },
+    )
+
+    snapshot = load_operational_snapshot_for_response(root)
+
+    assert snapshot["official_ledger_daily"] == snapshot["portfolio_daily"]
+    assert snapshot["portfolio_daily"][-1]["date"] == "2026-06-11"
+    assert snapshot["paper_performance_daily"][-1]["date"] == "2026-06-17"
+    assert snapshot["paper_performance_daily"][-1]["is_official_ledger"] is False
+    assert snapshot["paper_performance_daily_metadata"]["paper_only"] is True
+    assert snapshot["paper_performance_daily_metadata"]["delayed_market_data"] is True
+    assert "strategy_daily_performance" not in snapshot
 
 
 def test_cached_snapshot_missing_risk_factor_contract_fields_is_rebuilt(tmp_path):

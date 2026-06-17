@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
 from src.market.market_hours import market_session_status
+from src.market.paper_portfolio_ledger import paper_portfolio_snapshot_payload
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.strategies.display_metadata import strategy_display_metadata
 
@@ -1953,7 +1954,7 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
             and not existing.get("intraday_estimate", {}).get("provider")
             and (not _research_mapping_available(root) or _snapshot_research_evidence(existing))
         ):
-            return existing
+            return _attach_paper_portfolio_daily_fields(root, existing)
     canonical = _read_json(paths["canonical"], {})
     market_proxy_cache = _read_json(paths["market_proxy_cache"], {})
     sp500_reference_universe = _read_json(paths["sp500_reference_universe"], None)
@@ -1968,8 +1969,18 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=research,
     )
+    snapshot = _attach_paper_portfolio_daily_fields(root, snapshot)
     _atomic_write_json(paths["snapshot"], snapshot)
     return snapshot
+
+
+def _attach_paper_portfolio_daily_fields(root: Path, snapshot: dict[str, Any]) -> dict[str, Any]:
+    enriched = deepcopy(snapshot)
+    payload = paper_portfolio_snapshot_payload(root)
+    enriched["official_ledger_daily"] = deepcopy(enriched.get("portfolio_daily") or [])
+    enriched["paper_performance_daily"] = payload["rows"]
+    enriched["paper_performance_daily_metadata"] = payload["metadata"]
+    return enriched
 
 
 def _research_mapping_available(root: Path) -> bool:
@@ -2141,6 +2152,7 @@ def load_operational_snapshot_for_response(
         strategy_research_details=_snapshot_research_evidence(base),
         refresh_status="SUCCESS",
     )
+    merged = _attach_paper_portfolio_daily_fields(root, merged)
     return _attach_intraday_runtime_fields(
         merged,
         status="LOADED",

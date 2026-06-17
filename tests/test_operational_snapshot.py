@@ -21,6 +21,11 @@ from src.reporting.operational_snapshot import (
     snapshot_refresh_lock,
 )
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
+from scripts.generate_risk_factor_market_proxy_cache import (
+    BENCHMARK_SYMBOL,
+    build_cache as build_market_proxy_cache_artifact,
+    current_holding_universe,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -870,3 +875,50 @@ def test_refresh_writes_optional_market_proxy_cache_from_mock_price_history(tmp_
     assert cache["metadata"]["not_live_market_data"] is True
     assert cache["benchmark"]["symbol"] == "SPY"
     assert cache["benchmark"]["return_count"] >= 20
+
+
+def test_market_proxy_cache_generator_uses_committed_holdings_and_mocked_history():
+    canonical = _canonical()
+    universe = current_holding_universe(canonical)
+    selected = universe[:2]
+    dates = [(datetime(2026, 4, 1) + timedelta(days=i)).date().isoformat() for i in range(70)]
+
+    def fake_history(requested):
+        assert requested == universe
+        rows = []
+        for item in [*selected, {"ticker": BENCHMARK_SYMBOL, "source_ticker": BENCHMARK_SYMBOL}]:
+            for offset, date in enumerate(dates):
+                rows.append(
+                    {
+                        "date": date,
+                        "ticker": item["ticker"],
+                        "source_ticker": item["source_ticker"],
+                        "close": 100 + offset,
+                        "adj_close": 100 + offset,
+                        "volume": 1_000_000 + offset,
+                        "sector": "Technology",
+                    }
+                )
+        return rows, [universe[-1]["ticker"]]
+
+    cache = build_market_proxy_cache_artifact(
+        canonical,
+        fetch_history=fake_history,
+        generated_at="2026-06-16T20:00:00+00:00",
+    )
+
+    metadata = cache["metadata"]
+    assert metadata["provider"] == "yfinance"
+    assert metadata["delayed_market_data"] is True
+    assert metadata["not_live_market_data"] is True
+    assert metadata["source"] == "committed_shadow_holdings"
+    assert metadata["benchmark_symbol"] == "SPY"
+    assert metadata["ticker_count_requested"] == len(universe)
+    assert metadata["ticker_count_successful"] == 2
+    assert universe[-1]["ticker"] in metadata["failed_tickers"]
+    assert cache["benchmark"]["return_count"] >= 20
+    by_ticker = {row["ticker"]: row for row in cache["holdings_market_proxy"]}
+    assert by_ticker[selected[0]["ticker"]]["momentum_20d"] is not None
+    assert by_ticker[selected[0]["ticker"]]["avg_dollar_volume_20d"] is not None
+    assert by_ticker[selected[0]["ticker"]]["sector"] == "Technology"
+    assert by_ticker[universe[-1]["ticker"]]["status"] == "Coverage Missing"

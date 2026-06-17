@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from contextlib import contextmanager
 from copy import deepcopy
@@ -18,6 +19,12 @@ from src.strategies.display_metadata import strategy_display_metadata
 
 
 SNAPSHOT_VERSION = "3.6.7"
+MARKET_PROXY_MIN_OBSERVATIONS = 20
+MARKET_PROXY_DISCLOSURE = (
+    "Market Data Proxy; Delayed yfinance overlay where cached in operational artifacts; "
+    "Not a validated Barra / institutional factor model; Not live brokerage; "
+    "Not live real-time market data."
+)
 INTRADAY_OVERLAY_SCHEMA_VERSION = "intraday_overlay_v1"
 INTRADAY_OVERLAY_STALE_AFTER_SECONDS = 10 * 60
 REFRESH_INTERVAL_SECONDS = 300
@@ -74,6 +81,7 @@ def _paths(root: Path) -> dict[str, Path]:
     return {
         "canonical": root / "dashboard/data/canonical_operational.json",
         "source_bundle": root / "dashboard/data/shadow_live_bundle.json",
+        "market_proxy_cache": root / "dashboard/data/risk_factor_market_proxy_cache.json",
         "snapshot": root / "output/operational_snapshot.json",
         "intraday_overlay": root / "output/operational_intraday_overlay.json",
         "status": root / "output/operational_refresh_status.json",
@@ -639,6 +647,444 @@ def _missing_warning(strategy: dict[str, Any], factor_summary: dict[str, Any]) -
     return " | ".join(warnings) if warnings else "N/A"
 
 
+def _safe_number(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _strategy_return_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    output = []
+    for row in sorted(rows, key=lambda item: item.get("date") or ""):
+        value = _safe_number(row.get("net_return") if row.get("net_return") is not None else row.get("daily_return"))
+        if value is not None:
+            output.append({"date": row.get("date"), "return": value})
+    return output
+
+
+def _annualized_realized_vol(return_rows: list[dict[str, Any]], window: int) -> float | str:
+    if len(return_rows) < window:
+        return "Insufficient History"
+    values = [row["return"] for row in return_rows[-window:]]
+    mean = sum(values) / len(values)
+    variance = sum((value - mean) ** 2 for value in values) / (len(values) - 1)
+    return math.sqrt(variance) * math.sqrt(252)
+
+
+def _market_proxy_cache(canonical: dict[str, Any], market_proxy_cache: dict[str, Any] | None) -> dict[str, Any]:
+    return deepcopy(market_proxy_cache or canonical.get("risk_factor_market_proxy_cache") or {})
+
+
+def _benchmark_returns_by_date(canonical: dict[str, Any], market_proxy_cache: dict[str, Any] | None = None) -> dict[str, float]:
+    candidates = []
+    cache = _market_proxy_cache(canonical, market_proxy_cache)
+    benchmark = cache.get("benchmark") or {}
+    if isinstance(benchmark.get("return_series"), list):
+        candidates.extend(benchmark["return_series"])
+    if isinstance(benchmark.get("daily_returns"), list):
+        candidates.extend(benchmark["daily_returns"])
+    if isinstance(benchmark.get("daily_returns"), dict):
+        for date, value in benchmark["daily_returns"].items():
+            candidates.append({"date": date, "return": value, "ticker": benchmark.get("symbol") or "SPY"})
+    for key in (
+        "benchmark_daily",
+        "market_benchmark_daily",
+        "spy_daily",
+        "spy_price_history",
+        "market_price_history",
+    ):
+        value = canonical.get(key)
+        if isinstance(value, list):
+            candidates.extend(value)
+    output: dict[str, float] = {}
+    for row in candidates:
+        ticker = str(row.get("ticker") or row.get("symbol") or row.get("benchmark") or "SPY").upper()
+        if ticker != "SPY":
+            continue
+        date = row.get("date")
+        value = _safe_number(row.get("return") if row.get("return") is not None else row.get("daily_return"))
+        if date and value is not None:
+            output[date] = value
+    return output
+
+
+def _cache_ticker_metrics(market_proxy_cache: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    cache = market_proxy_cache or {}
+    payload = cache.get("holdings_market_proxy") or cache.get("ticker_market_proxy") or {}
+    if isinstance(payload, dict):
+        return {str(ticker): deepcopy(value) for ticker, value in payload.items() if isinstance(value, dict)}
+    if isinstance(payload, list):
+        return {
+            str(row["ticker"]): deepcopy(row)
+            for row in payload
+            if isinstance(row, dict) and row.get("ticker")
+        }
+    return {}
+
+
+def _spy_beta_correlation(
+    return_rows: list[dict[str, Any]],
+    benchmark_returns: dict[str, float],
+) -> tuple[float | str, float | str]:
+    overlaps = [
+        (row["return"], benchmark_returns[row["date"]])
+        for row in return_rows
+        if row.get("date") in benchmark_returns
+    ]
+    if len(overlaps) < MARKET_PROXY_MIN_OBSERVATIONS:
+        return "Insufficient History", "Insufficient History"
+    strategy_returns = [pair[0] for pair in overlaps]
+    spy_returns = [pair[1] for pair in overlaps]
+    strategy_mean = sum(strategy_returns) / len(strategy_returns)
+    spy_mean = sum(spy_returns) / len(spy_returns)
+    covariance = sum((s - strategy_mean) * (b - spy_mean) for s, b in overlaps) / (len(overlaps) - 1)
+    spy_variance = sum((value - spy_mean) ** 2 for value in spy_returns) / (len(spy_returns) - 1)
+    strategy_variance = sum((value - strategy_mean) ** 2 for value in strategy_returns) / (len(strategy_returns) - 1)
+    if spy_variance == 0 or strategy_variance == 0:
+        return "Not Available", "Not Available"
+    beta = covariance / spy_variance
+    correlation = covariance / math.sqrt(strategy_variance * spy_variance)
+    return beta, correlation
+
+
+def _holding_weight(row: dict[str, Any]) -> float | None:
+    return _safe_number(
+        row.get("current_weight")
+        if row.get("current_weight") is not None
+        else row.get("target_weight")
+    )
+
+
+def _weighted_holding_metric(
+    holdings: list[dict[str, Any]],
+    keys: tuple[str, ...],
+    ticker_metrics: dict[str, dict[str, Any]] | None = None,
+) -> float | str:
+    weighted_total = 0.0
+    weight_total = 0.0
+    metrics = ticker_metrics or {}
+    for row in holdings:
+        weight = _holding_weight(row)
+        if weight is None:
+            continue
+        ticker_payload = metrics.get(str(row.get("ticker"))) or {}
+        value = next(
+            (
+                _safe_number(source.get(key))
+                for source in (row, ticker_payload)
+                for key in keys
+                if _safe_number(source.get(key)) is not None
+            ),
+            None,
+        )
+        if value is None:
+            continue
+        weighted_total += abs(weight) * value
+        weight_total += abs(weight)
+    return weighted_total / weight_total if weight_total else "Coverage Missing"
+
+
+def _weighted_avg_dollar_volume(
+    holdings: list[dict[str, Any]],
+    ticker_metrics: dict[str, dict[str, Any]] | None = None,
+) -> float | str:
+    return _weighted_holding_metric(
+        holdings,
+        ("dollar_volume", "avg_dollar_volume", "average_dollar_volume", "avg_daily_dollar_volume", "avg_dollar_volume_20d", "avg_dollar_volume_30d"),
+        ticker_metrics,
+    )
+
+
+def _liquidity_score(weighted_adv: float | str) -> str:
+    if not isinstance(weighted_adv, (int, float)):
+        return "Not Available"
+    if weighted_adv >= 50_000_000:
+        return "High"
+    if weighted_adv >= 5_000_000:
+        return "Medium"
+    return "Low"
+
+
+def _concentration(holdings: list[dict[str, Any]]) -> tuple[float | str, float | str]:
+    weights = sorted(
+        (abs(weight) for weight in (_holding_weight(row) for row in holdings) if weight is not None),
+        reverse=True,
+    )
+    if not weights:
+        return "Not Available", "Not Available"
+    return weights[0], sum(weights[:5])
+
+
+def _sector_top_exposure(
+    holdings: list[dict[str, Any]],
+    ticker_metrics: dict[str, dict[str, Any]] | None = None,
+) -> str:
+    sector_weights: dict[str, float] = {}
+    metrics = ticker_metrics or {}
+    for row in holdings:
+        ticker_payload = metrics.get(str(row.get("ticker"))) or {}
+        sector = row.get("sector") or row.get("industry") or ticker_payload.get("sector") or ticker_payload.get("industry")
+        weight = _holding_weight(row)
+        if not sector or weight is None:
+            continue
+        sector_weights[str(sector)] = sector_weights.get(str(sector), 0.0) + abs(weight)
+    if not sector_weights:
+        return "Not Available"
+    sector, exposure = max(sector_weights.items(), key=lambda item: item[1])
+    return f"{sector}: {exposure:.2%}"
+
+
+def _price_coverage(
+    holdings: list[dict[str, Any]],
+    strategy: dict[str, Any],
+    ticker_metrics: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    coverage = strategy.get("price_coverage")
+    if isinstance(coverage, dict):
+        return deepcopy(coverage)
+    if not holdings:
+        return {"priced": 0, "total": 0, "status": "Data Pending" if strategy.get("membership_state") == "approved_pending" else "Not Available"}
+    priced = sum(
+        1
+        for row in holdings
+        if any(row.get(key) is not None for key in ("latest_price", "simulated_price", "market_price", "close"))
+        or any((ticker_metrics or {}).get(str(row.get("ticker")), {}).get(key) is not None for key in ("latest_price", "close"))
+    )
+    return {
+        "priced": priced,
+        "total": len(holdings),
+        "status": "COMPLETE" if priced == len(holdings) else ("PARTIAL" if priced else "Coverage Missing"),
+    }
+
+
+def _market_proxy_price_rows(fetch_result: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = (
+        fetch_result.get("daily_price_history")
+        or fetch_result.get("price_history")
+        or fetch_result.get("market_proxy_price_history")
+        or []
+    )
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def _return_series_from_prices(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    ordered = sorted(rows, key=lambda row: row.get("date") or row.get("timestamp") or "")
+    output = []
+    previous_close: float | None = None
+    for row in ordered:
+        close = _safe_number(row.get("adj_close") if row.get("adj_close") is not None else row.get("close"))
+        date = row.get("date") or row.get("timestamp")
+        if close is None or not date:
+            continue
+        if previous_close not in {None, 0}:
+            output.append({"date": str(date)[:10], "return": close / previous_close - 1.0})
+        previous_close = close
+    return output
+
+
+def _build_market_proxy_cache_from_price_history(
+    price_history: list[dict[str, Any]],
+    *,
+    generated_at: str,
+    provider: str,
+    requested_tickers: list[str],
+    failed_tickers: list[str],
+) -> dict[str, Any]:
+    by_ticker: dict[str, list[dict[str, Any]]] = {}
+    for row in price_history:
+        ticker = row.get("ticker") or row.get("symbol")
+        if ticker:
+            by_ticker.setdefault(str(ticker), []).append(row)
+    benchmark_rows = by_ticker.get("SPY", [])
+    benchmark_returns = _return_series_from_prices(benchmark_rows)
+    holdings_market_proxy = []
+    for ticker in sorted(set(requested_tickers) | (set(by_ticker) - {"SPY"})):
+        rows = sorted(by_ticker.get(ticker, []), key=lambda row: row.get("date") or row.get("timestamp") or "")
+        closes = [
+            _safe_number(row.get("adj_close") if row.get("adj_close") is not None else row.get("close"))
+            for row in rows
+        ]
+        closes = [value for value in closes if value is not None]
+        latest = closes[-1] if closes else None
+        volumes = [_safe_number(row.get("volume")) for row in rows]
+        dollar_volumes = [
+            close * volume
+            for close, volume in zip(closes[-30:], [value for value in volumes if value is not None][-30:])
+            if close is not None and volume is not None
+        ]
+        latest_row = rows[-1] if rows else {}
+        momentum_20d = latest / closes[-21] - 1.0 if latest is not None and len(closes) >= 21 and closes[-21] else None
+        momentum_63d = latest / closes[-64] - 1.0 if latest is not None and len(closes) >= 64 and closes[-64] else None
+        status = "LOADED" if rows else "Coverage Missing"
+        holdings_market_proxy.append(
+            {
+                "ticker": ticker,
+                "price_history_coverage": len(rows),
+                "latest_price": latest,
+                "latest_date": str(latest_row.get("date") or latest_row.get("timestamp") or "")[:10] or None,
+                "avg_dollar_volume_20d": (
+                    sum(dollar_volumes[-20:]) / len(dollar_volumes[-20:])
+                    if len(dollar_volumes) >= 20 else None
+                ),
+                "avg_dollar_volume_30d": (
+                    sum(dollar_volumes[-30:]) / len(dollar_volumes[-30:])
+                    if len(dollar_volumes) >= 30 else None
+                ),
+                "momentum_20d": momentum_20d,
+                "momentum_63d": momentum_63d,
+                "sector": latest_row.get("sector"),
+                "status": status,
+                "warning": None if status == "LOADED" else "Ticker history missing from cached delayed yfinance overlay",
+            }
+        )
+    loaded = sum(1 for row in holdings_market_proxy if row["status"] == "LOADED")
+    return {
+        "metadata": {
+            "generated_at": generated_at,
+            "provider": provider,
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "not_validated_institutional_factor_model": True,
+            "requested_ticker_count": len(requested_tickers),
+            "loaded_ticker_count": loaded,
+            "failed_ticker_count": len(failed_tickers),
+            "failed_tickers": sorted(failed_tickers),
+        },
+        "benchmark": {
+            "symbol": "SPY",
+            "return_series": benchmark_returns,
+            "return_series_dates": [row["date"] for row in benchmark_returns],
+            "return_count": len(benchmark_returns),
+            "latest_date": benchmark_returns[-1]["date"] if benchmark_returns else None,
+            "status": "LOADED" if len(benchmark_returns) >= MARKET_PROXY_MIN_OBSERVATIONS else "Insufficient History",
+        },
+        "holdings_market_proxy": holdings_market_proxy,
+    }
+
+
+def _market_proxy_cache_from_fetch_result(
+    fetch_result: dict[str, Any],
+    *,
+    generated_at: str,
+    requested_tickers: list[str],
+) -> dict[str, Any] | None:
+    supplied = fetch_result.get("risk_factor_market_proxy_cache")
+    if isinstance(supplied, dict):
+        return deepcopy(supplied)
+    price_history = _market_proxy_price_rows(fetch_result)
+    if not price_history:
+        return None
+    failed = list(fetch_result.get("missing_tickers") or [])
+    return _build_market_proxy_cache_from_price_history(
+        price_history,
+        generated_at=generated_at,
+        provider=fetch_result.get("provider") or "yfinance",
+        requested_tickers=requested_tickers,
+        failed_tickers=failed,
+    )
+
+
+def _risk_factor_market_proxy_table(
+    strategies: list[dict[str, Any]],
+    canonical: dict[str, Any],
+    strategy_daily: list[dict[str, Any]],
+    holdings: list[dict[str, Any]],
+    market_proxy_cache: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    history_by_id: dict[str, list[dict[str, Any]]] = {}
+    holdings_by_id: dict[str, list[dict[str, Any]]] = {}
+    cache = _market_proxy_cache(canonical, market_proxy_cache)
+    ticker_metrics = _cache_ticker_metrics(cache)
+    benchmark_returns = _benchmark_returns_by_date(canonical, cache)
+    position_source = canonical.get("position_source") or "committed_shadow_holdings"
+    for row in strategy_daily:
+        history_by_id.setdefault(row.get("strategy_id"), []).append(row)
+    for row in holdings:
+        holdings_by_id.setdefault(row.get("strategy_id"), []).append(row)
+    rows = []
+    for strategy in strategies:
+        strategy_id = strategy.get("internal_id")
+        strategy_history = history_by_id.get(strategy_id, [])
+        current_holdings = holdings_by_id.get(strategy_id, [])
+        return_rows = _strategy_return_rows(strategy_history)
+        pending = strategy.get("membership_state") == "approved_pending" or strategy_id == "WQ_ALPHA_018"
+        combined = strategy_id == "COMBINED_PORTFOLIO"
+        spy_beta, spy_correlation = _spy_beta_correlation(return_rows, benchmark_returns)
+        weighted_adv = _weighted_avg_dollar_volume(current_holdings, ticker_metrics)
+        top_holding, top_5 = _concentration(current_holdings)
+        price_coverage = _price_coverage(current_holdings, strategy, ticker_metrics)
+        warnings = [
+            "Not a validated Barra / institutional factor model",
+            "Not live brokerage",
+            "Not live real-time market data",
+        ]
+        if pending:
+            proxy_status = "Pending / Pre-operational"
+            data_status = "Data Pending"
+            warnings.append("Operational rows pending admission")
+        elif combined:
+            proxy_status = "Constituent-Derived Pending" if len(return_rows) < MARKET_PROXY_MIN_OBSERVATIONS else "Market Data Proxy"
+            data_status = "Derived from ordinary strategy operational ledgers"
+        elif len(return_rows) < MARKET_PROXY_MIN_OBSERVATIONS:
+            proxy_status = "Insufficient History"
+            data_status = "Operational returns loaded; insufficient market proxy history"
+        else:
+            proxy_status = "Market Data Proxy"
+            data_status = "Operational returns loaded"
+        if not benchmark_returns:
+            warnings.append("SPY benchmark return history not loaded in operational artifacts")
+        if price_coverage["total"] and price_coverage["priced"] < price_coverage["total"]:
+            warnings.append("Delayed yfinance price coverage incomplete")
+        elif not price_coverage["total"] and not pending and not combined:
+            warnings.append("Holdings coverage missing")
+        if pending:
+            null_or_pending: float | str | None = "Not Applicable"
+            current_drawdown: float | str | None = "Not Applicable"
+        else:
+            null_or_pending = None
+            current_drawdown = (
+                strategy.get("current_drawdown")
+                if strategy.get("current_drawdown") is not None
+                else (strategy_history[-1].get("current_drawdown") if strategy_history else "Not Available")
+            )
+        rows.append(
+            {
+                "strategy_id": strategy_id,
+                "display_id": strategy.get("display_id"),
+                "display_name": strategy.get("display_name") or strategy.get("name") or "N/A",
+                "sleeve_type": _sleeve_type(strategy),
+                "primary_status": _primary_status(strategy),
+                "current_weight": None if pending else strategy.get("current_weight"),
+                "capital": None if pending else strategy.get("ending_nav"),
+                "position_source": position_source,
+                "history_observation_count": len(return_rows),
+                "holdings_count": len(current_holdings),
+                "price_coverage": price_coverage,
+                "spy_beta": null_or_pending or spy_beta,
+                "spy_correlation": null_or_pending or spy_correlation,
+                "realized_vol_20d": null_or_pending or _annualized_realized_vol(return_rows, 20),
+                "realized_vol_60d": null_or_pending or _annualized_realized_vol(return_rows, 60),
+                "current_drawdown": current_drawdown,
+                "momentum_20d": null_or_pending or _weighted_holding_metric(current_holdings, ("momentum_20d", "return_20d", "price_return_20d"), ticker_metrics),
+                "momentum_63d": null_or_pending or _weighted_holding_metric(current_holdings, ("momentum_63d", "return_63d", "price_return_63d"), ticker_metrics),
+                "liquidity_score": null_or_pending or _liquidity_score(weighted_adv),
+                "weighted_avg_dollar_volume": null_or_pending or weighted_adv,
+                "top_holding_concentration": null_or_pending or top_holding,
+                "top_5_concentration": null_or_pending or top_5,
+                "sector_top_exposure": null_or_pending or _sector_top_exposure(current_holdings, ticker_metrics),
+                "data_status": data_status,
+                "proxy_status": proxy_status,
+                "warnings": warnings,
+                "evidence_source": MARKET_PROXY_DISCLOSURE,
+            }
+        )
+    return rows
+
+
 def _risk_factor_big_table(strategies: list[dict[str, Any]], canonical: dict[str, Any]) -> list[dict[str, Any]]:
     """Build strategy/sleeve risk-factor rows from loaded snapshot records only."""
     status = canonical.get("operational_status") or {}
@@ -701,6 +1147,7 @@ def build_operational_snapshot(
     canonical: dict[str, Any],
     *,
     intraday: dict[str, Any] | None = None,
+    market_proxy_cache: dict[str, Any] | None = None,
     decisions: list[dict[str, Any]] | None = None,
     operational_pricing_universe_size: int | None = None,
     strategy_research_details: dict[str, Any] | None = None,
@@ -1077,6 +1524,13 @@ def build_operational_snapshot(
             "reconciliation_residual": trade_total - ledger_total,
         }
     risk_factor_big_table = _risk_factor_big_table(strategies, canonical)
+    risk_factor_market_proxy_table = _risk_factor_market_proxy_table(
+        strategies,
+        canonical,
+        strategy_daily,
+        published_holdings,
+        market_proxy_cache,
+    )
     return {
         "snapshot_version": SNAPSHOT_VERSION,
         "snapshot_id": snapshot_id or f"ops-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}",
@@ -1105,6 +1559,7 @@ def build_operational_snapshot(
         "strategies": strategies,
         "strategy_display_metadata": metadata,
         "risk_factor_big_table": risk_factor_big_table,
+        "risk_factor_market_proxy_table": risk_factor_market_proxy_table,
         "holdings": published_holdings,
         "strategy_contribution": [
             {
@@ -1227,16 +1682,19 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
             and existing.get("capital_reconciliation")
             and existing.get("official_promotion_readiness")
             and existing.get("risk_factor_big_table")
+            and existing.get("risk_factor_market_proxy_table")
             and not existing.get("intraday_estimate", {}).get("provider")
             and (not _research_mapping_available(root) or _snapshot_research_evidence(existing))
         ):
             return existing
     canonical = _read_json(paths["canonical"], {})
+    market_proxy_cache = _read_json(paths["market_proxy_cache"], {})
     source = _read_json(paths["source_bundle"], {}).get("shadow_live", {})
     research = load_strategy_research_artifacts(root, canonical["strategies"])
     snapshot = build_operational_snapshot(
         canonical,
         intraday=None,
+        market_proxy_cache=market_proxy_cache,
         decisions=read_decisions(root),
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=research,
@@ -1313,6 +1771,7 @@ def _intraday_from_overlay(overlay: dict[str, Any]) -> dict[str, Any] | None:
             "last_successful_refresh": overlay.get("generated_at"),
             "next_refresh": overlay.get("next_refresh"),
         },
+        "risk_factor_market_proxy_cache": overlay.get("risk_factor_market_proxy_cache"),
     }
 
 
@@ -1400,10 +1859,12 @@ def load_operational_snapshot_for_response(
             available=False,
         )
     canonical = _read_json(_paths(root)["canonical"], {})
+    market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     merged = build_operational_snapshot(
         canonical,
         intraday=intraday,
+        market_proxy_cache=market_proxy_cache or overlay.get("risk_factor_market_proxy_cache"),
         decisions=read_decisions(root),
         operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
         strategy_research_details=_snapshot_research_evidence(base),
@@ -1473,6 +1934,11 @@ def refresh_operational_snapshot(
             estimated_pnl = sum(strategy_contribution.values()) if strategy_contribution else None
             official_nav = canonical["portfolio_summary"].get("nav")
             now = datetime.now(timezone.utc)
+            market_proxy_cache = _market_proxy_cache_from_fetch_result(
+                fetched,
+                generated_at=now.isoformat(),
+                requested_tickers=tickers,
+            )
             session = market_session_status(interval_minutes=5)
             priced_tickers = len(bars)
             freshness = "STALE" if missing or stale or priced_tickers < len(tickers) else "DELAYED"
@@ -1503,6 +1969,7 @@ def refresh_operational_snapshot(
             merged = build_operational_snapshot(
                 canonical,
                 intraday=intraday,
+                market_proxy_cache=market_proxy_cache,
                 decisions=read_decisions(root),
                 operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
                 strategy_research_details=_snapshot_research_evidence(base),
@@ -1545,12 +2012,15 @@ def refresh_operational_snapshot(
                 "missing_tickers": sorted(missing),
                 "stale_tickers": sorted(stale),
                 "residual_pnl": intraday["residual_pnl"],
+                "risk_factor_market_proxy_cache": market_proxy_cache,
                 "errors": [],
                 "stale_after_seconds": INTRADAY_OVERLAY_STALE_AFTER_SECONDS,
                 "next_refresh": intraday["refresh_meta"]["next_refresh"],
                 "official_ledger_unchanged": True,
             }
             _atomic_write_json(paths["intraday_overlay"], overlay)
+            if market_proxy_cache:
+                _atomic_write_json(paths["market_proxy_cache"], market_proxy_cache)
             _atomic_write_json(
                 paths["status"],
                 {

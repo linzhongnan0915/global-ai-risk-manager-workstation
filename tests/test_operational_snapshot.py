@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
+from copy import deepcopy
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -657,3 +658,215 @@ def test_risk_factor_big_table_missing_factor_metadata_is_not_zero_filled():
         assert row["position_source"] == "committed_shadow_holdings"
         assert row["legacy_artifact_position_estimate_authoritative"] is False
         assert "no live brokerage positions or fills" in row["position_source_disclosure"]
+
+
+def test_risk_factor_market_proxy_table_is_snapshot_bound_without_live_market_fetch():
+    snapshot = build_operational_snapshot(_canonical())
+    rows = snapshot["risk_factor_market_proxy_table"]
+    by_id = {row["strategy_id"]: row for row in rows}
+
+    assert len(rows) == len(snapshot["strategies"])
+    assert {row["strategy_id"] for row in rows} == {row["internal_id"] for row in snapshot["strategies"]}
+    assert by_id["COMBINED_PORTFOLIO"]["sleeve_type"] == "Composite"
+    assert by_id["COMBINED_PORTFOLIO"]["primary_status"] == "Active Composite"
+    assert by_id["COMBINED_PORTFOLIO"]["proxy_status"] == "Constituent-Derived Pending"
+    assert by_id["WQ_ALPHA_018"]["sleeve_type"] == "Pending"
+    assert by_id["WQ_ALPHA_018"]["primary_status"] == "APPROVED_PENDING / PRE_OPERATIONAL"
+    assert by_id["WQ_ALPHA_018"]["spy_beta"] == "Not Applicable"
+    assert by_id["WQ_ALPHA_018"]["realized_vol_20d"] == "Not Applicable"
+    assert by_id["WQ_ALPHA_018"]["current_weight"] is None
+    assert "Delayed yfinance overlay" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
+    assert "Not live brokerage" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
+    assert "Not live real-time market data" in by_id["COMBINED_PORTFOLIO"]["evidence_source"]
+
+
+def test_market_proxy_missing_values_are_statuses_not_zeroes():
+    snapshot = build_operational_snapshot(_canonical())
+
+    for row in snapshot["risk_factor_market_proxy_table"]:
+        assert row["spy_beta"] != 0
+        assert row["spy_correlation"] != 0
+        assert row["realized_vol_20d"] != 0
+        assert row["realized_vol_60d"] != 0
+        assert row["spy_beta"] in {"Insufficient History", "Not Applicable"}
+        assert row["spy_correlation"] in {"Insufficient History", "Not Applicable"}
+        assert "Not a validated Barra / institutional factor model" in row["warnings"]
+
+
+def test_new_strategy_gets_market_proxy_row_with_pending_data_without_frontend_hardcode():
+    canonical = _canonical()
+    new_strategy = deepcopy(canonical["strategies"][1])
+    new_strategy.update(
+        {
+            "internal_id": "MOCK_NEW_STRATEGY",
+            "display_id": "#009999",
+            "name": "Mock New Strategy",
+            "membership_state": "executed",
+            "data_status": "DATA_PENDING",
+            "current_weight": None,
+        }
+    )
+    canonical["strategies"].append(new_strategy)
+
+    snapshot = build_operational_snapshot(canonical)
+    row = next(row for row in snapshot["risk_factor_market_proxy_table"] if row["strategy_id"] == "MOCK_NEW_STRATEGY")
+
+    assert row["display_id"] == "#009999"
+    assert row["history_observation_count"] == 0
+    assert row["holdings_count"] == 0
+    assert row["spy_beta"] == "Insufficient History"
+    assert row["realized_vol_20d"] == "Insufficient History"
+    assert row["top_holding_concentration"] == "Not Available"
+    assert row["proxy_status"] == "Insufficient History"
+
+
+def _market_proxy_cache_for_strategy(canonical: dict, strategy_id: str) -> dict:
+    holdings = [
+        row
+        for row in canonical["holdings"]
+        if row["strategy_id"] == strategy_id and row["date"] == max(item["date"] for item in canonical["holdings"])
+    ]
+    tickers = [row["ticker"] for row in holdings[:3]]
+    return {
+        "metadata": {
+            "generated_at": "2026-06-16T20:00:00+00:00",
+            "provider": "yfinance",
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "failed_tickers": [],
+        },
+        "benchmark": {
+            "symbol": "SPY",
+            "return_series": [
+                {"date": (datetime(2026, 6, 1) + timedelta(days=i)).date().isoformat(), "return": 0.001 + i * 0.0001}
+                for i in range(24)
+            ],
+            "return_count": 24,
+            "latest_date": "2026-06-24",
+            "status": "LOADED",
+        },
+        "holdings_market_proxy": [
+            {
+                "ticker": ticker,
+                "price_history_coverage": 64,
+                "latest_price": 100 + index,
+                "avg_dollar_volume_20d": 25_000_000 + index * 1_000_000,
+                "momentum_20d": 0.02 + index * 0.01,
+                "momentum_63d": 0.05 + index * 0.01,
+                "sector": "Technology" if index < 2 else "Industrials",
+                "status": "LOADED",
+            }
+            for index, ticker in enumerate(tickers)
+        ],
+    }
+
+
+def test_market_proxy_cache_populates_real_holding_metrics_without_live_yfinance():
+    canonical = _canonical()
+    strategy_id = next(
+        row["internal_id"]
+        for row in canonical["strategies"]
+        if row["membership_state"] == "executed" and row["internal_id"] != "COMBINED_PORTFOLIO"
+    )
+    cache = _market_proxy_cache_for_strategy(canonical, strategy_id)
+
+    snapshot = build_operational_snapshot(canonical, market_proxy_cache=cache)
+    row = next(row for row in snapshot["risk_factor_market_proxy_table"] if row["strategy_id"] == strategy_id)
+
+    assert row["momentum_20d"] is not None
+    assert row["momentum_20d"] != "Coverage Missing"
+    assert row["momentum_63d"] is not None
+    assert row["liquidity_score"] == "Medium"
+    assert row["weighted_avg_dollar_volume"] is not None
+    assert row["sector_top_exposure"].startswith("Technology:")
+    assert row["top_holding_concentration"] is not None
+
+
+def test_spy_beta_and_correlation_require_overlap_and_load_from_cache_when_sufficient():
+    canonical = _canonical()
+    strategy_id = next(
+        row["internal_id"]
+        for row in canonical["strategies"]
+        if row["membership_state"] == "executed" and row["internal_id"] != "COMBINED_PORTFOLIO"
+    )
+    canonical["strategy_daily"] = [row for row in canonical["strategy_daily"] if row["strategy_id"] != strategy_id]
+    start = datetime(2026, 6, 1)
+    for i in range(24):
+        spy_return = 0.001 + i * 0.0001
+        canonical["strategy_daily"].append(
+            {
+                "date": (start + timedelta(days=i)).date().isoformat(),
+                "return_end_date": (start + timedelta(days=i)).date().isoformat(),
+                "strategy_id": strategy_id,
+                "strategy_name": strategy_id,
+                "gross_return": spy_return * 1.5,
+                "transaction_cost": 0.0,
+                "turnover": 0.0,
+                "record_label": "RETROSPECTIVE_PAPER_BACKFILL",
+                "validation_status": "VALIDATED",
+                "execution_enabled": False,
+                "live_allocation_approved": False,
+            }
+        )
+    cache = _market_proxy_cache_for_strategy(canonical, strategy_id)
+
+    loaded = build_operational_snapshot(canonical, market_proxy_cache=cache)
+    loaded_row = next(row for row in loaded["risk_factor_market_proxy_table"] if row["strategy_id"] == strategy_id)
+    assert loaded_row["spy_beta"] == pytest.approx(1.5)
+    assert loaded_row["spy_correlation"] == pytest.approx(1.0)
+    assert loaded_row["realized_vol_20d"] != "Insufficient History"
+
+    cache["benchmark"]["return_series"] = cache["benchmark"]["return_series"][:5]
+    insufficient = build_operational_snapshot(canonical, market_proxy_cache=cache)
+    insufficient_row = next(row for row in insufficient["risk_factor_market_proxy_table"] if row["strategy_id"] == strategy_id)
+    assert insufficient_row["spy_beta"] == "Insufficient History"
+    assert insufficient_row["spy_correlation"] == "Insufficient History"
+
+
+def test_refresh_writes_optional_market_proxy_cache_from_mock_price_history(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    price_dates = [(datetime(2026, 4, 1) + timedelta(days=i)).date().isoformat() for i in range(70)]
+
+    def fake_fetch(tickers, **kwargs):
+        history = [
+            {
+                "date": date,
+                "ticker": ticker,
+                "close": 100 + index + offset,
+                "volume": 1_000_000 + offset,
+                "sector": "Technology",
+            }
+            for ticker in [*tickers[:2], "SPY"]
+            for offset, date in enumerate(price_dates)
+            for index in [0 if ticker == "SPY" else 1]
+        ]
+        return {
+            "provider": "yfinance",
+            "rows": [
+                {
+                    "ticker": ticker,
+                    "source_ticker": ticker,
+                    "close": 101.0,
+                    "intraday_return_from_open": 0.01,
+                    "observation_ts_et": "2026-06-16T12:00:00-04:00",
+                }
+                for ticker in tickers
+            ],
+            "daily_price_history": history,
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "latest_observation_ts_et": "2026-06-16T12:00:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-16T12:00:00-04:00",
+        }
+
+    result = refresh_operational_snapshot(root, fetch_fn=fake_fetch)
+    cache_path = root / "dashboard/data/risk_factor_market_proxy_cache.json"
+
+    assert result["ok"] is True
+    assert cache_path.exists()
+    cache = json.loads(cache_path.read_text(encoding="utf-8"))
+    assert cache["metadata"]["provider"] == "yfinance"
+    assert cache["metadata"]["delayed_market_data"] is True
+    assert cache["metadata"]["not_live_market_data"] is True
+    assert cache["benchmark"]["symbol"] == "SPY"
+    assert cache["benchmark"]["return_count"] >= 20

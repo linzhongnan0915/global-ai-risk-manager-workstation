@@ -632,6 +632,39 @@ def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count(
     assert "18 registry" not in table_function
 
 
+def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
+
+    for marker in (
+        "risk_factor_market_proxy_table",
+        "Market Data Risk Proxy Matrix",
+        "Market Data Proxy",
+        "Delayed yfinance overlay",
+        "Not a validated Barra / institutional factor model",
+        "Not live brokerage",
+        "Not live real-time market data",
+        "Market-data proxy from cached delayed yfinance overlay. Not a validated institutional factor model.",
+        "function marketProxyRows(c)",
+        "function marketProxyTable(c)",
+        "SPY beta/correlation require sufficient overlapping benchmark history; missing values remain status labels, not zero.",
+        "Rows come from risk_factor_market_proxy_table in /api/operational-snapshot when available; rendering does not hard-code strategy count.",
+    ):
+        assert marker in app
+    for marker in (
+        ".market-proxy-panel",
+        ".market-proxy-table{min-width:2450px}",
+        ".proxy-disclosure",
+        ".proxy-cell.missing",
+        ".proxy-cell.pending",
+        ".risk-matrix-secondary",
+    ):
+        assert marker in css
+    table_function = app.split("function marketProxyRows(c)", 1)[1].split("function marketProxyTable", 1)[0]
+    assert ".map(r=>" in table_function
+    assert "slice(0" not in table_function
+
+
 def test_left_rail_navigation_maps_to_current_top_tabs():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     for marker in (

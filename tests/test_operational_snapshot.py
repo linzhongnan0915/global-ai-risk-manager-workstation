@@ -622,3 +622,38 @@ def test_wq_admission_requires_canonical_execution_evidence_and_keeps_combined_n
     assert wq["daily_pnl"] is None
     assert wq["ending_nav"] is None
     assert combined["constituent_count"] == 16
+
+
+def test_risk_factor_big_table_is_data_driven_and_preserves_status_semantics():
+    snapshot = build_operational_snapshot(_canonical())
+    rows = snapshot["risk_factor_big_table"]
+    by_id = {row["strategy_id"]: row for row in rows}
+
+    assert len(rows) == len(snapshot["strategies"])
+    assert {row["strategy_id"] for row in rows} == {row["internal_id"] for row in snapshot["strategies"]}
+    assert by_id["COMBINED_PORTFOLIO"]["sleeve_type"] == "Composite"
+    assert by_id["COMBINED_PORTFOLIO"]["primary_status"] == "Active Composite"
+    assert by_id["COMBINED_PORTFOLIO"]["evidence_artifact_source"] == "ordinary strategy operational daily ledgers"
+    assert by_id["WQ_ALPHA_018"]["sleeve_type"] == "Pending"
+    assert by_id["WQ_ALPHA_018"]["primary_status"] == "APPROVED_PENDING / PRE_OPERATIONAL"
+    assert by_id["WQ_ALPHA_018"]["nav"] is None
+    assert by_id["WQ_ALPHA_018"]["daily_pnl"] is None
+    assert by_id["WQ_ALPHA_018"]["daily_return"] is None
+
+
+def test_risk_factor_big_table_missing_factor_metadata_is_not_zero_filled():
+    snapshot = build_operational_snapshot(_canonical())
+
+    for row in snapshot["risk_factor_big_table"]:
+        assert row["factor_exposure_summary"] == "Missing Metadata"
+        assert row["market_exposure"] == "Missing Metadata"
+        assert row["size_exposure"] == "Missing Metadata"
+        assert row["value_exposure"] == "Missing Metadata"
+        assert row["momentum_exposure"] == "Missing Metadata"
+        assert row["quality_exposure"] == "Missing Metadata"
+        assert row["volatility_exposure"] == "Missing Metadata"
+        assert row["liquidity_exposure"] == "Missing Metadata"
+        assert "Factor metadata missing" in row["missing_data_warning"]
+        assert row["position_source"] == "committed_shadow_holdings"
+        assert row["legacy_artifact_position_estimate_authoritative"] is False
+        assert "no live brokerage positions or fills" in row["position_source_disclosure"]

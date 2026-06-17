@@ -169,6 +169,7 @@ button:focus-visible,.nav-button:focus-visible,.workflow-tabs button:focus-visib
 /* Phase 2 final density calibration */
 .strategy-monitor-panel .monitor-table td{height:34px;padding-top:5px;padding-bottom:5px}
 .performance-analytics-panel{border-color:#2e6874}.performance-analytics-panel .work-table-wrap{max-height:270px}.performance-table{min-width:1680px}.performance-table td:last-child{max-width:360px;white-space:normal;line-height:1.35}.research-performance-table{min-width:1500px}.command-performance-summary .limit-list div{grid-template-columns:minmax(0,1fr) minmax(70px,auto) 58px}
+.risk-factor-big-table-panel{border-color:#326f7c}.risk-factor-big-table-panel .work-table-wrap{max-height:560px}.risk-factor-big-table{min-width:3900px}.risk-factor-big-table td:nth-child(9),.risk-factor-big-table td:nth-child(10),.risk-factor-big-table td:nth-child(11),.risk-factor-big-table td:nth-child(19),.risk-factor-big-table td:nth-child(20),.risk-factor-big-table td:nth-child(23),.risk-factor-big-table td:nth-child(24){max-width:280px;white-space:normal;line-height:1.35}.risk-factor-big-table .combined-strategy-row td{background:#10232d;border-bottom-color:#2a7284}.risk-factor-big-table .pending-row td{background:#241d12;border-bottom-color:#6f5623}
 .monitor-table .combined-strategy-row td{background:#10232d;border-bottom-color:#2a7284}.monitor-table .combined-strategy-row:hover td{background:#153743}
 @media(max-width:1550px){.strategy-monitor-panel .monitor-table td{height:30px}}
 

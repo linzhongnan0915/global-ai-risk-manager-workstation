@@ -576,6 +576,127 @@ def _wq_admission_gate(canonical: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+FACTOR_COLUMNS = (
+    "market",
+    "size",
+    "value",
+    "momentum",
+    "quality",
+    "volatility",
+    "liquidity",
+)
+
+
+def _missing_factor_value(value: Any) -> Any:
+    if value is None or value == "":
+        return "Missing Metadata"
+    return value
+
+
+def _sleeve_type(strategy: dict[str, Any]) -> str:
+    if strategy.get("internal_id") == "COMBINED_PORTFOLIO":
+        return "Composite"
+    if strategy.get("membership_state") == "approved_pending":
+        return "Pending"
+    if strategy.get("repair_state"):
+        return "Repair"
+    if strategy.get("reference_only"):
+        return "Reference"
+    return "Alpha Strategy"
+
+
+def _primary_status(strategy: dict[str, Any]) -> str:
+    if strategy.get("membership_state") == "approved_pending" or strategy.get("internal_id") == "WQ_ALPHA_018":
+        return "APPROVED_PENDING / PRE_OPERATIONAL"
+    if strategy.get("internal_id") == "COMBINED_PORTFOLIO":
+        return "Active Composite"
+    if strategy.get("membership_state") == "executed":
+        return "Active Paper"
+    return strategy.get("current_operational_label") or strategy.get("current_operational_status") or "N/A"
+
+
+def _evidence_source(strategy: dict[str, Any]) -> str:
+    evidence = strategy.get("research_evidence") or {}
+    return (
+        evidence.get("evidence_artifact")
+        or strategy.get("evidence_reference")
+        or strategy.get("formula_module")
+        or "Not Available"
+    )
+
+
+def _missing_warning(strategy: dict[str, Any], factor_summary: dict[str, Any]) -> str:
+    warnings = []
+    if all(factor_summary.get(column) in {None, "", "Missing Metadata"} for column in FACTOR_COLUMNS):
+        warnings.append("Factor metadata missing")
+    if strategy.get("membership_state") == "approved_pending":
+        warnings.append("Data Pending")
+        blocker = strategy.get("exact_blocker")
+        if blocker:
+            warnings.append(blocker)
+    if strategy.get("observation_count", 0) < 20 and strategy.get("membership_state") != "approved_pending":
+        warnings.append("Insufficient History")
+    return " | ".join(warnings) if warnings else "N/A"
+
+
+def _risk_factor_big_table(strategies: list[dict[str, Any]], canonical: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build strategy/sleeve risk-factor rows from loaded snapshot records only."""
+    status = canonical.get("operational_status") or {}
+    position_source = canonical.get("position_source") or "committed_shadow_holdings"
+    position_disclosure = canonical.get(
+        "position_source_disclosure",
+        "Committed shadow holdings; no live brokerage positions or fills represented.",
+    )
+    rows = []
+    for strategy in strategies:
+        factor_summary = strategy.get("factor_exposure") or strategy.get("factor_metadata") or {}
+        pending = strategy.get("membership_state") == "approved_pending"
+        combined = strategy.get("internal_id") == "COMBINED_PORTFOLIO"
+        source_note = "ordinary strategy operational daily ledgers" if combined else _evidence_source(strategy)
+        rows.append(
+            {
+                "strategy_id": strategy.get("internal_id"),
+                "display_id": strategy.get("display_id"),
+                "display_name": strategy.get("display_name") or strategy.get("name") or "N/A",
+                "sleeve_type": _sleeve_type(strategy),
+                "primary_status": _primary_status(strategy),
+                "capital_weight": strategy.get("sleeve_weight") if not pending else None,
+                "nav": None if pending else strategy.get("ending_nav"),
+                "daily_pnl": None if pending else strategy.get("daily_pnl"),
+                "daily_return": None if pending else strategy.get("daily_return"),
+                "economic_logic": strategy.get("hypothesis_summary") or "Missing Metadata",
+                "primary_risk_driver": strategy.get("primary_risk_driver") or (
+                    f"Strategy family: {strategy.get('family')}" if strategy.get("family") else "Missing Metadata"
+                ),
+                "factor_exposure_summary": factor_summary.get("summary") or "Missing Metadata",
+                "market_exposure": _missing_factor_value(factor_summary.get("market")),
+                "size_exposure": _missing_factor_value(factor_summary.get("size")),
+                "value_exposure": _missing_factor_value(factor_summary.get("value")),
+                "momentum_exposure": _missing_factor_value(factor_summary.get("momentum")),
+                "quality_exposure": _missing_factor_value(factor_summary.get("quality")),
+                "volatility_exposure": _missing_factor_value(factor_summary.get("volatility")),
+                "liquidity_exposure": _missing_factor_value(factor_summary.get("liquidity")),
+                "correlation_diversification_note": (
+                    "Derived composite of ordinary active strategies; pairwise operational correlation remains gated."
+                    if combined else status.get("correlation", {}).get("status") or "Not Available"
+                ),
+                "drawdown_risk_note": (
+                    "Data Pending" if pending
+                    else "N/A" if strategy.get("current_drawdown") is None
+                    else f"Current drawdown loaded from operational ledger: {strategy.get('current_drawdown')}"
+                ),
+                "position_source": position_source,
+                "position_source_disclosure": position_disclosure,
+                "legacy_artifact_position_estimate_authoritative": False,
+                "latest_signal_date": strategy.get("last_signal") or strategy.get("latest_signal_date"),
+                "latest_execution_date": None if pending else strategy.get("last_execution"),
+                "evidence_artifact_source": source_note,
+                "missing_data_warning": _missing_warning(strategy, factor_summary),
+            }
+        )
+    return rows
+
+
 def build_operational_snapshot(
     canonical: dict[str, Any],
     *,
@@ -955,6 +1076,7 @@ def build_operational_snapshot(
             "portfolio_cumulative_cost": official["cumulative_transaction_costs"],
             "reconciliation_residual": trade_total - ledger_total,
         }
+    risk_factor_big_table = _risk_factor_big_table(strategies, canonical)
     return {
         "snapshot_version": SNAPSHOT_VERSION,
         "snapshot_id": snapshot_id or f"ops-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}",
@@ -982,6 +1104,7 @@ def build_operational_snapshot(
         "reconciliation_status": canonical["portfolio_summary"].get("data_status"),
         "strategies": strategies,
         "strategy_display_metadata": metadata,
+        "risk_factor_big_table": risk_factor_big_table,
         "holdings": published_holdings,
         "strategy_contribution": [
             {
@@ -1103,6 +1226,7 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
             existing.get("snapshot_version") == SNAPSHOT_VERSION
             and existing.get("capital_reconciliation")
             and existing.get("official_promotion_readiness")
+            and existing.get("risk_factor_big_table")
             and not existing.get("intraday_estimate", {}).get("provider")
             and (not _research_mapping_available(root) or _snapshot_research_evidence(existing))
         ):

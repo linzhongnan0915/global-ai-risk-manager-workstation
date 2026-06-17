@@ -593,6 +593,35 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "workflow-step-card" in css
 
 
+def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
+
+    for marker in (
+        "Risk Factor Big Table v1",
+        "function riskFactorRows(c)",
+        "function riskFactorBigTable(c)",
+        "c.risk_factor_big_table||[]",
+        "Rows come from risk_factor_big_table in /api/operational-snapshot; rendering does not hard-code strategy count.",
+        "Factor cells show Missing Metadata where validated strategy-level factor metadata is absent; missing values are not converted to zero.",
+        "Combined Portfolio is displayed as Active Composite / Composite, separate from ordinary alpha strategies.",
+        "#000018 / WQ_ALPHA_018 remains APPROVED_PENDING / PRE_OPERATIONAL with N/A operating metrics.",
+        "legacy artifact estimate not authoritative",
+        "position_source = committed_shadow_holdings",
+        "legacy_artifact_position_estimate_authoritative = false",
+        "No live brokerage positions or fills are represented",
+        '"Risk Factors & Exposure":riskPageV1',
+        "risk-factor-big-table",
+    ):
+        assert marker in app
+    assert "risk-factor-big-table{min-width:3900px}" in css
+    table_function = app.split("function riskFactorRows(c)", 1)[1].split("function riskFactorBigTable", 1)[0]
+    assert ".map(r=>" in table_function
+    assert "slice(0" not in table_function
+    assert "16 ordinary" not in table_function
+    assert "18 registry" not in table_function
+
+
 def test_left_rail_navigation_maps_to_current_top_tabs():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     for marker in (

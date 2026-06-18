@@ -266,13 +266,16 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         assert marker in app
 
     for marker in (
-        "Paper Allocation Decision Center / Rebalance Recommendation Matrix",
+        "Paper Allocation Decision Center / Performance Recommendation Matrix",
         "allocation-decision-grid",
         "Reason / Rationale",
-        "Increase toward target",
-        "Reduce overweight sleeve",
+        "Positive return / drawdown profile",
+        "Weaker return / drawdown profile",
         "Dust trade ignored",
         "Data incomplete / review required",
+        "Use Performance Recommendation",
+        "allocationRecommendedWeights",
+        "allocationRecommendationScore",
         "/api/paper-rebalance/plan",
         "/api/paper-rebalance/accept",
         "/api/paper-rebalance/apply",

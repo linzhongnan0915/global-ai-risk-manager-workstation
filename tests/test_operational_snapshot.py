@@ -227,6 +227,7 @@ def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors
                         "close": 100.0 * (1.0 + rate),
                         "intraday_return_from_open": rate,
                         "observation_ts_et": ts,
+                        "session_date": ts[:10],
                     }
                     for ticker in tickers
                 ],
@@ -246,10 +247,31 @@ def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors
     assert second["intraday_estimate"]["written_to_official_ledger"] is False
     assert second["portfolio_daily"] == first["portfolio_daily"]
     assert second["official_daily"]["latest_official_close_date"] == "2026-06-12"
+    assert first["paper_performance_update"]["portfolio_row_updated"] is True
+    first_trading_date = first["paper_performance_update"]["trading_date"]
+    assert first_trading_date
+    assert first["paper_performance_update"]["refresh_status"] == "fresh"
+    assert second["paper_performance_update"]["portfolio_row_updated"] is True
+    assert second["paper_performance_update"]["trading_date"] == first_trading_date
+    merged_same_day = load_operational_snapshot_for_response(root)
+    assert merged_same_day["official_ledger_daily"] == merged_same_day["portfolio_daily"]
+    assert merged_same_day["portfolio_daily"][-1]["date"] == "2026-06-11"
+    assert len(merged_same_day["paper_performance_daily"]) == 1
+    assert merged_same_day["paper_performance_daily"][0]["date"] == first_trading_date
+    assert merged_same_day["paper_performance_daily"][0]["is_official_ledger"] is False
+    assert merged_same_day["paper_performance_daily"][0]["daily_pnl"] == pytest.approx(
+        second["intraday_estimate"]["estimated_pnl"]
+    )
     assert second["intraday_estimate"]["estimated_pnl"] == pytest.approx(first["intraday_estimate"]["estimated_pnl"] * 2)
     assert second["intraday_estimate"]["estimated_nav"] == pytest.approx(
         second["official_daily"]["nav"] + second["intraday_estimate"]["estimated_pnl"]
     )
+    third = refresh_operational_snapshot(root, fetch_fn=fake_fetch(0.003, "2026-06-16T10:05:00-04:00"))
+    assert third["ok"] is True
+    assert third["paper_performance_update"]["trading_date"] == first_trading_date
+    merged_next_day = load_operational_snapshot_for_response(root)
+    assert [row["date"] for row in merged_next_day["paper_performance_daily"]] == [first_trading_date]
+    assert merged_next_day["official_daily"]["latest_official_close_date"] == "2026-06-12"
     ordinary = [
         row for row in second["strategies"]
         if row["membership_state"] == "executed" and row["internal_id"] != "COMBINED_PORTFOLIO"

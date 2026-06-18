@@ -290,10 +290,17 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         )
         report["checks"]["official_date_label_precision"] = (
             (
-                "Official ledger through" in initial_body_text
-                or "official ledger rows loaded" in initial_body_text
+                "official ledger through" in initial_body_text.lower()
+                or "official fallback" in initial_body_text.lower()
+                or "paper history" in initial_body_text.lower()
+                or "showing official fallback" in initial_body_text.lower()
             )
-            and "20-day target pending paper performance ledger" in initial_body_text
+            and "OFFICIAL LEDGER DATE" in initial_body_upper
+            and (
+                "PAPER PERFORMANCE LATEST DATE" in initial_body_upper
+                or "paper ledger pending" in initial_body_text.lower()
+                or "paper history" in initial_body_text.lower()
+            )
             and latest_ledger_date is not None
             and (
                 latest_ledger_date == official_close_date
@@ -308,6 +315,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               const legend = panel?.querySelector('.chart-legend');
               const detail = panel?.querySelector('#navChartDetail');
               const tooltip = panel?.querySelector('#navChartTooltip');
+              const title = panel?.querySelector('.section-header strong');
               const rect = (el) => {
                 const r = el.getBoundingClientRect();
                 return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};
@@ -327,9 +335,11 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               return {
                 expectedOfficialRows,
                 headerMentionsWindow: (
-                  (/official ledger rows loaded/i.test(panel?.innerText || '') && /pending paper performance ledger/i.test(panel?.innerText || ''))
-                  || (/paper portfolio daily rows loaded/i.test(panel?.innerText || '') && /official ledger markers shown/i.test(panel?.innerText || ''))
+                  (/Paper history/i.test(panel?.innerText || ''))
+                  || (/Official fallback/i.test(panel?.innerText || '') && /Paper ledger pending/i.test(panel?.innerText || ''))
+                  || (/Paper ledger pending/i.test(panel?.innerText || '') && /Showing official fallback/i.test(panel?.innerText || ''))
                 ),
+                titleFullVisible: title?.innerText === 'Master Portfolio Daily Performance' && title.scrollWidth <= title.clientWidth + 1,
                 detailStripPresent: Boolean(detail),
                 detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
                 hoverUpdatesDetail: /Official Ledger|Delayed Est\\./i.test(hoverText),
@@ -347,6 +357,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         report["checks"]["master_chart_window_and_detail"] = (
             chart_state["expectedOfficialRows"] <= 20
             and chart_state["headerMentionsWindow"] is True
+            and chart_state["titleFullVisible"] is True
             and chart_state["detailStripPresent"] is True
             and chart_state["detailFieldsPresent"] is True
             and chart_state["hoverUpdatesDetail"] is True

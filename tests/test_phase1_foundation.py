@@ -244,7 +244,7 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     server = (ROOT / "scripts/run_workstation_server.py").read_text(encoding="utf-8")
     assert "fetch(`/api/operational-snapshot?ts=${Date.now()}`" in app
-    assert "fetch(`/api/refresh?ts=${Date.now()}`" in app
+    assert "fetch(`/api/refresh-data?ts=${Date.now()}`" in app
     assert 'fetch("/api/decisions"' in app
     assert "setInterval(()=>refreshOperational(false),POLL_INTERVAL_MS)" in app
     assert "window.__COMMAND_POLL_INTERVAL_MS||300000" in app
@@ -301,7 +301,7 @@ def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
         "Technical Metadata",
     ):
         assert required in app
-    assert "fetch(`/api/refresh?ts=${Date.now()}`" in app
+    assert "fetch(`/api/refresh-data?ts=${Date.now()}`" in app
     assert 'trigger:manual?"manual":"automatic_poll"' in app
     assert "location.reload" not in app
     assert ".monitor-table th{position:sticky" in css
@@ -347,9 +347,16 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "function officialChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function paperChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function commandChartSeries(c)" in app
-    assert "paper.length>=2" in app
+    assert "return paper.length?" in app
+    assert "function latestPaperPerformanceDate(c)" in app
+    assert "Paper Performance Latest Date" in app
+    assert "function paperRowForCurrentSession(c)" in app
+    assert "function chartShowsIntradayEstimate(c)" in app
     assert "Paper Performance" in app
-    assert "official ledger markers shown where available" in app
+    assert "Official fallback · Paper ledger pending · Delayed estimate separate" in app
+    assert "Paper ledger pending · Showing official fallback" in app
+    assert "chart-status-chips" in app
+    assert "Today's delayed estimate shown separately; paper daily record pending" not in app
     assert "COMMAND_CHART_PAPER_KEYS" not in app
     assert ".sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-limit)" in app
     assert "const paper=paperChartRows(c),official=officialChartRows(c)" in app
@@ -364,8 +371,8 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "<b>NAV</b>" in app
     assert "<b>Daily P&L</b>" in app
     assert "<b>Drawdown</b>" in app
-    assert "${series.rows.length} official ledger rows loaded; ${COMMAND_CHART_OFFICIAL_WINDOW}-day target pending paper performance ledger. Delayed estimate shown separately" in app
-    assert "paper portfolio daily rows loaded" in app
+    assert "20-day target pending paper performance ledger" not in app
+    assert "paper portfolio daily rows loaded" not in app
     assert "officialDates=new Set((series.official||[]).map(r=>r.date))" in app
     assert "strategy_daily_performance" not in app
     assert "drawdownComplete=dd.length===rows.length&&dd.length>1" in app
@@ -391,10 +398,13 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "Official Daily Ledger through" not in app
     assert "chart-detail-strip" in app
     assert "data-portfolio-point" not in app
-    assert "const tickEvery=4" in app
+    assert "Math.ceil(rows.length/4)" in app
     assert "ctx.fillText(chartDateLabel(rows[i].date).replace(\" 0\",\" \"),q.x,h-12)" in app
     assert "official_close_date||rows[i].date" not in app
     assert "r.official_close_date||r.date" not in app
+    assert "function chartLegendMarkup()" in app
+    assert "legend-item" in app
+    assert "Delayed Est." in app
 
 
 def test_strategy_detail_tabs_are_data_bound_and_gate_incomplete_wq():

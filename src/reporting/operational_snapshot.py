@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
 from src.market.market_hours import market_session_status
-from src.market.paper_portfolio_ledger import paper_portfolio_snapshot_payload
+from src.market.paper_portfolio_ledger import paper_portfolio_snapshot_payload, upsert_paper_portfolio_daily
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.strategies.display_metadata import strategy_display_metadata
 
@@ -2225,6 +2225,7 @@ def refresh_operational_snapshot(
             session = market_session_status(interval_minutes=5)
             priced_tickers = len(bars)
             freshness = "STALE" if missing or stale or priced_tickers < len(tickers) else "DELAYED"
+            paper_refresh_status = "partial" if missing or stale or priced_tickers < len(tickers) else "fresh"
             intraday = {
                 "provider": fetched.get("provider") or "yfinance",
                 "estimated_nav": official_nav + estimated_pnl if official_nav is not None and estimated_pnl is not None else None,
@@ -2249,6 +2250,61 @@ def refresh_operational_snapshot(
                     "next_refresh": (now + timedelta(seconds=REFRESH_INTERVAL_SECONDS)).isoformat(),
                 },
             }
+            paper_update = {
+                "portfolio_row_updated": False,
+                "strategy_rows_updated": 0,
+                "reason": "no_usable_delayed_estimate",
+            }
+            if estimated_pnl is not None and official_nav not in {None, 0} and priced_tickers > 0:
+                paper_payload = upsert_paper_portfolio_daily(
+                    root,
+                    {
+                        "date": session.session_date,
+                        "trading_date": session.session_date,
+                        "as_of_time": latest_price_as_of,
+                        "source": "Paper Portfolio Daily Ledger",
+                        "source_artifact": "dashboard/data/performance/paper_portfolio_daily.json",
+                        "position_source": "committed_shadow_holdings",
+                        "paper_only": True,
+                        "delayed_market_data": True,
+                        "not_live_market_data": True,
+                        "live_brokerage_execution": False,
+                        "is_official_ledger": False,
+                        "provider": intraday["provider"],
+                        "prior_nav": official_nav,
+                        "beginning_nav": official_nav,
+                        "nav": intraday["estimated_nav"],
+                        "ending_nav": intraday["estimated_nav"],
+                        "daily_pnl": estimated_pnl,
+                        "net_pnl": estimated_pnl,
+                        "daily_return": estimated_pnl / official_nav,
+                        "refresh_status": paper_refresh_status,
+                        "ticker_count_requested": len(tickers),
+                        "ticker_count_successful": priced_tickers,
+                        "covered_weight": None,
+                        "priced_tickers": sorted(bars),
+                        "missing_tickers": sorted(missing),
+                        "stale_tickers": sorted(stale),
+                        "warnings": (
+                            [f"partial delayed market coverage ({priced_tickers}/{len(tickers)})"]
+                            if paper_refresh_status == "partial" else []
+                        ),
+                    },
+                )
+                paper_update = {
+                    "portfolio_row_updated": True,
+                    "strategy_rows_updated": 0,
+                    "trading_date": session.session_date,
+                    "nav": intraday["estimated_nav"],
+                    "daily_pnl": estimated_pnl,
+                    "daily_return": estimated_pnl / official_nav,
+                    "refresh_status": paper_refresh_status,
+                    "row_count": len(paper_payload.get("rows") or []),
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "is_official_ledger": False,
+                }
             merged = build_operational_snapshot(
                 canonical,
                 intraday=intraday,
@@ -2301,6 +2357,7 @@ def refresh_operational_snapshot(
                 "stale_after_seconds": INTRADAY_OVERLAY_STALE_AFTER_SECONDS,
                 "next_refresh": intraday["refresh_meta"]["next_refresh"],
                 "official_ledger_unchanged": True,
+                "paper_performance_update": paper_update,
             }
             _atomic_write_json(paths["intraday_overlay"], overlay)
             if market_proxy_cache:
@@ -2316,7 +2373,7 @@ def refresh_operational_snapshot(
                 },
             )
             response = load_operational_snapshot_for_response(root, scheduler_enabled=False, now=now)
-            return {"ok": True, **response}
+            return {"ok": True, "paper_performance_update": paper_update, **response}
         except Exception as exc:
             failed_at = datetime.now(timezone.utc).isoformat()
             error_overlay = {

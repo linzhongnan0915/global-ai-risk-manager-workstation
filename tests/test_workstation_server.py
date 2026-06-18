@@ -257,6 +257,12 @@ intraday_refresh:
             "refresh_status": "success",
             "position_source": "committed_shadow_holdings",
             "legacy_artifact_position_estimate_authoritative": False,
+            "paper_performance_update": {
+                "portfolio_row_updated": True,
+                "strategy_rows_updated": 0,
+                "trading_date": "2026-06-17",
+                "refresh_status": "fresh",
+            },
         }
 
     monkeypatch.setattr("scripts.run_workstation_server.run_intraday_refresh", _refresh_stub)
@@ -280,6 +286,8 @@ intraday_refresh:
         assert payload["refresh_artifact"]["state"] == "not_required"
         assert payload["refresh_artifact"]["reason"] == "refresh_scheme_b_committed_shadow_holdings"
         assert payload["refresh_artifact"]["legacy_artifact_position_estimate_authoritative"] is False
+        assert payload["paper_performance_update"]["portfolio_row_updated"] is True
+        assert payload["paper_performance_update"]["strategy_rows_updated"] == 0
     finally:
         server.shutdown()
         server.server_close()

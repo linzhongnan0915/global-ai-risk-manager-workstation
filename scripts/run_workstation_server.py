@@ -448,6 +448,11 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     overlay = self._overlay_from_intraday_snapshot(snapshot, artifact)
                     result = {**result, **overlay, "ok": True}
                 result = {**result, "refresh_artifact": artifact_state}
+                if result.get("ok"):
+                    try:
+                        self.warm_operational_snapshot_cache(self.server_root)
+                    except Exception as cache_exc:
+                        logger.warning("refresh-data succeeded but snapshot cache warm failed: %s", cache_exc)
                 status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 503
                 self._send_json(result, status=status)
             except Exception as exc:

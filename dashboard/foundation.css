@@ -220,14 +220,21 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .command-center .metric-detail{font-size:8px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .command-board{grid-template-rows:236px 214px 148px 148px;gap:6px}
 .command-board .chart-body{height:152px}
-.cmd-chart .section-header{min-height:31px}
-.cmd-chart .section-header>div{grid-template-columns:minmax(0,1fr);gap:1px}
-.cmd-chart .section-header strong{font-size:11px}
-.cmd-chart .section-header span{font-size:8px}
-.cmd-chart .section-header .chart-legend{justify-content:flex-end}
-.chart-legend{flex-wrap:wrap;gap:5px;line-height:1.2;white-space:normal}
-.chart-legend .official-dot{width:7px;height:7px;display:inline-block;margin-left:5px;border-radius:50%;background:#f6fbff;border:1px solid #fff}
-.chart-legend .est-dot{width:7px;height:7px;display:inline-block;margin-left:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 4px #e6b94f66}
+.cmd-chart .section-header{min-height:32px}
+.cmd-chart .section-header>div{display:flex;gap:8px;align-items:center;min-width:0}
+.cmd-chart .section-header strong{flex:0 0 auto;overflow:visible;text-overflow:clip;font-size:12px;white-space:nowrap}
+.cmd-chart .section-header span{min-width:0;overflow:hidden;text-overflow:ellipsis;color:#94a9ac;font-size:8px;white-space:nowrap}
+.chart-control-row{min-height:24px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid var(--soft);background:#061315}
+.chart-status-chips{min-width:0;display:flex;align-items:center;gap:5px;overflow:hidden}
+.chart-status-chips span{height:16px;display:inline-flex;align-items:center;padding:0 5px;border:1px solid #28535c;background:#071b1f;color:#a9c1c4;font-size:7px;font-weight:800;text-transform:uppercase;white-space:nowrap}
+.chart-legend{display:flex;align-items:center;justify-content:flex-end;gap:10px;line-height:1.05;white-space:nowrap;color:#a9babc;font-size:7px}
+.chart-legend .legend-item{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.chart-legend .legend-wide{grid-column:auto;justify-self:auto}
+.chart-legend .nav-line,.chart-legend .dd-line{width:16px;height:0;display:inline-block;border-top:2px solid #2bbcff;background:transparent;box-shadow:0 0 3px #19aef544}
+.chart-legend .dd-line{border-top:2px dashed var(--red);box-shadow:none}
+.chart-legend .pnl-bar{width:8px;height:7px;display:inline-block;background:linear-gradient(90deg,var(--green) 50%,var(--red) 50%)}
+.chart-legend .official-dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:#f6fbff;border:1px solid #fff}
+.chart-legend .est-dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:var(--amber);box-shadow:0 0 4px #e6b94f66}
 .daily-records{height:43px;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))}
 .daily-record{padding:4px 6px;gap:1px 4px}
 .daily-record span,.daily-record b,.daily-record em{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -267,7 +274,7 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .monitor-table td:nth-child(4) small{display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .performance-analytics-panel{display:none}
 .risk-matrix-secondary,.market-proxy-detail,.risk-compact-detail{display:none!important}
-.cmd-chart .chart-panel{display:grid;grid-template-rows:auto minmax(0,1fr) 34px;overflow:hidden}
+.cmd-chart .chart-panel{display:grid;grid-template-rows:32px 24px minmax(0,1fr) 34px;overflow:hidden}
 .cmd-chart .chart-panel .chart-body{height:auto;min-height:0}
 .cmd-chart .chart-tooltip{display:none!important}
 .chart-detail-strip{min-height:34px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;border-top:1px solid var(--line);background:#051012}

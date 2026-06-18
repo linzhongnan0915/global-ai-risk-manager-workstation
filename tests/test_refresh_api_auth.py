@@ -414,37 +414,44 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
 
-    def _mock_fetch_success(tickers, **kwargs):
-        return {
-            "provider": "yfinance",
-            "bar_interval": "5m",
-            "requested_tickers": tickers,
-            "rows": [
-                {
-                    "source_ticker": ticker,
-                    "observation_ts_et": "2026-06-17T15:50:00-04:00",
-                    "session_date": "2026-06-17",
-                    "open": 100.0,
-                    "high": 102.0,
-                    "low": 99.0,
-                    "close": 101.0,
-                    "volume": 1000.0,
-                    "bar_interval": "5m",
-                    "bar_completeness": "completed",
-                    "intraday_return_from_open": 0.01,
-                    "timezone": "America/New_York",
-                }
-                for ticker in tickers
-            ],
-            "missing_tickers": [],
-            "stale_tickers": [],
-            "ticker_count_requested": len(tickers),
-            "ticker_count_successful": len(tickers),
-            "latest_observation_ts_et": "2026-06-17T15:50:00-04:00",
-            "latest_completed_bar_ts_et": "2026-06-17T15:50:00-04:00",
-        }
+    def _mock_fetch_success(rate: float, trading_date: str, ts: str):
+        def _fetch(tickers, **kwargs):
+            return {
+                "provider": "yfinance",
+                "bar_interval": "5m",
+                "requested_tickers": tickers,
+                "rows": [
+                    {
+                        "source_ticker": ticker,
+                        "observation_ts_et": ts,
+                        "session_date": trading_date,
+                        "open": 100.0,
+                        "high": 102.0,
+                        "low": 99.0,
+                        "close": 100.0 * (1.0 + rate),
+                        "volume": 1000.0,
+                        "bar_interval": "5m",
+                        "bar_completeness": "completed",
+                        "intraday_return_from_open": rate,
+                        "timezone": "America/New_York",
+                    }
+                    for ticker in tickers
+                ],
+                "missing_tickers": [],
+                "stale_tickers": [],
+                "ticker_count_requested": len(tickers),
+                "ticker_count_successful": len(tickers),
+                "latest_observation_ts_et": ts,
+                "latest_completed_bar_ts_et": ts,
+            }
+        return _fetch
 
-    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
+    result = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success(0.01, "2026-06-17", "2026-06-17T15:50:00-04:00"),
+    )
 
     update = result["paper_performance_update"]
     assert update["portfolio_row_updated"] is True
@@ -462,6 +469,26 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
     assert row["daily_return"] == pytest.approx(0.01)
     assert row["daily_pnl"] == pytest.approx(10_000)
     assert row["is_official_ledger"] is False
+    second = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success(0.02, "2026-06-17", "2026-06-17T15:55:00-04:00"),
+    )
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert second["paper_performance_update"]["trading_date"] == "2026-06-17"
+    assert len(ledger["rows"]) == 1
+    assert ledger["rows"][0]["daily_return"] == pytest.approx(0.02)
+    assert ledger["rows"][0]["daily_pnl"] == pytest.approx(20_000)
+    third = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success(0.03, "2026-06-18", "2026-06-18T15:55:00-04:00"),
+    )
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert third["paper_performance_update"]["trading_date"] == "2026-06-18"
+    assert [row["date"] for row in ledger["rows"]] == ["2026-06-17", "2026-06-18"]
     assert (tmp_path / "dashboard/data/performance/strategy_daily_performance.json").exists() is False
 
 
@@ -552,6 +579,8 @@ def test_refresh_rate_limit_returns_stale_cooldown_with_previous_snapshot(intrad
 
     ok = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success)
     first_id = ok["snapshot_id"]
+    ledger_before = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert len(ledger_before["rows"]) == 1
 
     def _mock_fetch_rate_limited(tickers, **kwargs):
         raise RuntimeError("yfinance 429 Too Many Requests")
@@ -564,6 +593,8 @@ def test_refresh_rate_limit_returns_stale_cooldown_with_previous_snapshot(intrad
     assert stale["provider_cooldown"] is True
     assert stale["snapshot_id"] == first_id
     assert stale["paper_performance_update"]["portfolio_row_updated"] is False
+    ledger_after = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert ledger_after["rows"] == ledger_before["rows"]
 
 
 @pytest.fixture

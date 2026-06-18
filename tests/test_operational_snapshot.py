@@ -324,6 +324,80 @@ def test_clean_base_snapshot_without_overlay_is_official_only_and_does_not_creat
     assert not any(row["date"] == "2026-06-15" for row in snapshot["portfolio_daily"])
 
 
+def test_latest_refresh_snapshot_supplies_delayed_estimate_without_legacy_overlay(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    upsert_paper_portfolio_daily(
+        root,
+        {
+            "date": "2026-06-18",
+            "trading_date": "2026-06-18",
+            "as_of_time": "2026-06-18T10:10:00-04:00",
+            "source": "Paper Portfolio Daily Ledger",
+            "position_source": "committed_shadow_holdings",
+            "paper_only": True,
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "live_brokerage_execution": False,
+            "is_official_ledger": False,
+            "provider": "yfinance",
+            "prior_nav": 1_003_490,
+            "beginning_nav": 1_003_490,
+            "nav": 1_004_250,
+            "ending_nav": 1_004_250,
+            "daily_pnl": 760,
+            "net_pnl": 760,
+            "daily_return": 760 / 1_003_490,
+            "current_drawdown": -0.001,
+            "refresh_status": "partial",
+        },
+    )
+    snapshot_dir = root / "output/intraday_snapshots"
+    snapshot_dir.mkdir(parents=True)
+    latest_snapshot = {
+        "snapshot_id": "snap-test-latest",
+        "refresh_status": "success",
+        "provider": "yfinance",
+        "refresh_completed_at": "2026-06-18T14:12:00+00:00",
+        "latest_observation_ts_et": "2026-06-18T10:10:00-04:00",
+        "latest_completed_bar_ts_et": "2026-06-18T10:10:00-04:00",
+        "market_session_date": "2026-06-18",
+        "market_session_status": "Open",
+        "ticker_count_requested": 222,
+        "ticker_count_successful": 221,
+        "missing_tickers": ["FTV"],
+        "stale_tickers": [],
+        "marks": {"data_quality": {"freshness": "Stale"}},
+        "shadow_intraday": {
+            "data_label": "INTRADAY_SHADOW_ESTIMATE",
+            "available": False,
+            "estimated_return": None,
+            "estimated_pnl": None,
+            "session_date": "2026-06-18",
+            "strategies": [],
+            "latest_usable_prices": {"AAPL": {"price": 299.0, "timestamp": "2026-06-18T10:10:00-04:00"}},
+        },
+    }
+    snapshot_path = snapshot_dir / "snap-test-latest.json"
+    snapshot_path.write_text(json.dumps(latest_snapshot), encoding="utf-8")
+    (root / "output/intraday_latest.json").write_text(
+        json.dumps({"snapshot_id": "snap-test-latest", "path": "output/intraday_snapshots/snap-test-latest.json"}),
+        encoding="utf-8",
+    )
+
+    merged = load_operational_snapshot_for_response(root, scheduler_enabled=True)
+
+    assert merged["intraday_runtime_status"] == "STALE"
+    assert merged["intraday_overlay_available"] is True
+    assert merged["intraday_scheduler_enabled"] is True
+    assert merged["intraday_estimate"]["provider"] == "yfinance"
+    assert merged["intraday_estimate"]["estimated_nav"] == pytest.approx(1_004_250)
+    assert merged["intraday_estimate"]["estimated_pnl"] == pytest.approx(760)
+    assert merged["intraday_estimate"]["market_data_as_of"] == "2026-06-18T10:10:00-04:00"
+    assert merged["intraday_estimate"]["covered_tickers"] == 221
+    assert merged["intraday_estimate"]["total_tickers"] == 222
+    assert merged["portfolio_daily"][-1]["date"] == "2026-06-11"
+
+
 def test_stale_intraday_overlay_is_not_merged_into_official_snapshot(tmp_path: Path):
     root = _copy_root(tmp_path)
     base = load_operational_snapshot_for_response(root)

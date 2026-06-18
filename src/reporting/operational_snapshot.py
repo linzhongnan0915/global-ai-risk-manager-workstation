@@ -2021,6 +2021,18 @@ def _read_intraday_overlay(root: Path) -> dict[str, Any] | None:
     return overlay or None
 
 
+def _read_latest_refresh_snapshot(root: Path) -> dict[str, Any] | None:
+    pointer = _read_json(root / "output/intraday_latest.json", {})
+    raw_path = pointer.get("path")
+    if not raw_path:
+        return None
+    snapshot_path = Path(str(raw_path))
+    if not snapshot_path.is_absolute():
+        snapshot_path = root / snapshot_path
+    snapshot = _read_json(snapshot_path, {})
+    return snapshot or None
+
+
 def _intraday_from_overlay(overlay: dict[str, Any]) -> dict[str, Any] | None:
     if overlay.get("schema_version") != INTRADAY_OVERLAY_SCHEMA_VERSION:
         return None
@@ -2052,6 +2064,91 @@ def _intraday_from_overlay(overlay: dict[str, Any]) -> dict[str, Any] | None:
             "next_refresh": overlay.get("next_refresh"),
         },
         "risk_factor_market_proxy_cache": overlay.get("risk_factor_market_proxy_cache"),
+    }
+
+
+def _latest_paper_row_for_session(root: Path, session_date: str | None) -> dict[str, Any] | None:
+    if not session_date:
+        return None
+    rows = paper_portfolio_snapshot_payload(root, limit=10_000).get("rows") or []
+    matches = [row for row in rows if (row.get("trading_date") or row.get("date")) == session_date]
+    return matches[-1] if matches else None
+
+
+def _intraday_from_refresh_snapshot(root: Path, snapshot: dict[str, Any]) -> tuple[dict[str, Any], str] | None:
+    session_date = snapshot.get("market_session_date") or (snapshot.get("shadow_intraday") or {}).get("session_date")
+    paper_row = _latest_paper_row_for_session(root, session_date)
+    marks = snapshot.get("marks") or {}
+    data_quality = marks.get("data_quality") or {}
+    shadow = snapshot.get("shadow_intraday") or {}
+    estimated_pnl = shadow.get("estimated_pnl")
+    if estimated_pnl is None:
+        estimated_pnl = marks.get("estimated_intraday_pnl")
+    if estimated_pnl is None and paper_row:
+        estimated_pnl = paper_row.get("daily_pnl") or paper_row.get("net_pnl")
+    estimated_nav = marks.get("estimated_intraday_nav")
+    if estimated_nav is None and shadow.get("estimated_return") is not None and marks.get("baseline_model_nav") is not None:
+        estimated_nav = float(marks["baseline_model_nav"]) * (1.0 + float(shadow["estimated_return"]))
+    if estimated_nav is None and paper_row:
+        estimated_nav = paper_row.get("ending_nav") or paper_row.get("nav")
+    latest_as_of = (
+        data_quality.get("latest_completed_bar_ts_et")
+        or snapshot.get("latest_completed_bar_ts_et")
+        or snapshot.get("latest_observation_ts_et")
+        or (paper_row or {}).get("as_of_time")
+    )
+    covered = snapshot.get("ticker_count_successful")
+    total = snapshot.get("ticker_count_requested")
+    if estimated_nav is None and estimated_pnl is None and latest_as_of is None:
+        return None
+    freshness = str(data_quality.get("freshness") or "").upper()
+    status = "STALE" if freshness == "STALE" else "LOADED"
+    return (
+        {
+            "provider": snapshot.get("provider") or "yfinance",
+            "estimated_nav": estimated_nav,
+            "estimated_pnl": estimated_pnl,
+            "market_data_as_of": latest_as_of,
+            "covered_tickers": covered,
+            "total_tickers": total,
+            "missing_tickers": snapshot.get("missing_tickers") or [],
+            "stale_tickers": snapshot.get("stale_tickers") or [],
+            "residual_pnl": None,
+            "holdings": [],
+            "strategy_contribution": {
+                row["strategy_id"]: row.get("estimated_pnl")
+                for row in shadow.get("strategies") or []
+                if row.get("strategy_id")
+            },
+            "ticker_security_contribution": [],
+            "refresh_meta": {
+                "data_freshness": freshness or "DELAYED",
+                "market_session_status": snapshot.get("market_session_status"),
+                "session_date": session_date,
+                "last_successful_refresh": snapshot.get("refresh_completed_at"),
+                "next_refresh": None,
+            },
+            "risk_factor_market_proxy_cache": marks.get("risk_factor_market_proxy_cache"),
+        },
+        status,
+    )
+
+
+def _refresh_snapshot_overlay_metadata(snapshot: dict[str, Any], intraday: dict[str, Any], status: str) -> dict[str, Any]:
+    return {
+        "schema_version": "intraday_snapshot_store_v1",
+        "generated_at": snapshot.get("refresh_completed_at"),
+        "status": status,
+        "provider": intraday.get("provider"),
+        "delayed_estimate_as_of": intraday.get("market_data_as_of"),
+        "current_trading_session_date": intraday.get("refresh_meta", {}).get("session_date"),
+        "missing_tickers": intraday.get("missing_tickers") or [],
+        "stale_tickers": intraday.get("stale_tickers") or [],
+        "price_coverage": {
+            "covered": intraday.get("covered_tickers"),
+            "total": intraday.get("total_tickers"),
+        },
+        "errors": [],
     }
 
 
@@ -2103,6 +2200,32 @@ def load_operational_snapshot_for_response(
     base = load_or_build_operational_snapshot(root)
     overlay = _read_intraday_overlay(root)
     if not overlay:
+        latest_snapshot = _read_latest_refresh_snapshot(root)
+        latest_intraday = _intraday_from_refresh_snapshot(root, latest_snapshot) if latest_snapshot else None
+        if latest_intraday:
+            intraday, status = latest_intraday
+            canonical = _read_json(_paths(root)["canonical"], {})
+            market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
+            sp500_reference_universe = _read_json(_paths(root)["sp500_reference_universe"], None)
+            source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
+            merged = build_operational_snapshot(
+                canonical,
+                intraday=intraday,
+                market_proxy_cache=market_proxy_cache or intraday.get("risk_factor_market_proxy_cache"),
+                sp500_reference_universe=sp500_reference_universe,
+                decisions=read_decisions(root),
+                operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
+                strategy_research_details=_snapshot_research_evidence(base),
+                refresh_status=status,
+            )
+            merged = _attach_paper_portfolio_daily_fields(root, merged)
+            return _attach_intraday_runtime_fields(
+                merged,
+                status=status,
+                overlay=_refresh_snapshot_overlay_metadata(latest_snapshot, intraday, status),
+                scheduler_enabled=scheduler_enabled,
+                available=True,
+            )
         return _attach_intraday_runtime_fields(
             base,
             status="NOT_LOADED",

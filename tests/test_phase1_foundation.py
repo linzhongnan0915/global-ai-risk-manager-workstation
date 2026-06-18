@@ -245,6 +245,8 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     server = (ROOT / "scripts/run_workstation_server.py").read_text(encoding="utf-8")
     assert "fetch(`/api/operational-snapshot?ts=${Date.now()}`" in app
     assert "fetch(`/api/refresh-data?ts=${Date.now()}`" in app
+    assert 'body:JSON.stringify({trigger:"manual"})' in app
+    assert "automatic_poll" not in app
     assert 'fetch("/api/decisions"' in app
     assert "setInterval(()=>refreshOperational(false),POLL_INTERVAL_MS)" in app
     assert "window.__COMMAND_POLL_INTERVAL_MS||300000" in app
@@ -302,7 +304,8 @@ def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
     ):
         assert required in app
     assert "fetch(`/api/refresh-data?ts=${Date.now()}`" in app
-    assert 'trigger:manual?"manual":"automatic_poll"' in app
+    assert 'body:JSON.stringify({trigger:"manual"})' in app
+    assert "automatic_poll" not in app
     assert "location.reload" not in app
     assert ".monitor-table th{position:sticky" in css
     assert ".monitor-table tbody tr.selected" in css

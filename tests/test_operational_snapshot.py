@@ -22,7 +22,13 @@ from src.reporting.operational_snapshot import (
     snapshot_refresh_lock,
 )
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
-from src.market.paper_portfolio_ledger import upsert_paper_portfolio_daily
+from src.market.paper_portfolio_ledger import (
+    backfill_paper_portfolio_daily_from_canonical,
+    build_paper_portfolio_backfill_rows_from_price_history,
+    paper_portfolio_daily_path,
+    upsert_paper_portfolio_daily,
+    write_paper_portfolio_daily_rows,
+)
 from scripts.generate_risk_factor_market_proxy_cache import (
     BENCHMARK_SYMBOL,
     build_cache as build_market_proxy_cache_artifact,
@@ -828,7 +834,106 @@ def test_operational_snapshot_attaches_paper_portfolio_daily_separately(tmp_path
     assert snapshot["paper_performance_daily"][-1]["is_official_ledger"] is False
     assert snapshot["paper_performance_daily_metadata"]["paper_only"] is True
     assert snapshot["paper_performance_daily_metadata"]["delayed_market_data"] is True
-    assert "strategy_daily_performance" not in snapshot
+
+
+def test_paper_portfolio_backfill_uses_canonical_portfolio_daily_without_faking_official_rows(tmp_path):
+    root = _copy_root(tmp_path)
+    canonical = _canonical()
+
+    payload = backfill_paper_portfolio_daily_from_canonical(root, canonical)
+    rows = payload["rows"]
+
+    assert [row["date"] for row in rows] == [
+        "2026-06-04",
+        "2026-06-05",
+        "2026-06-08",
+        "2026-06-10",
+        "2026-06-11",
+    ]
+    assert "2026-06-06" not in [row["date"] for row in rows]
+    assert "2026-06-07" not in [row["date"] for row in rows]
+    assert all(row["paper_only"] is True for row in rows)
+    assert all(row["delayed_market_data"] is True for row in rows)
+    assert all(row["not_live_market_data"] is True for row in rows)
+    assert all(row["is_official_ledger"] is False for row in rows)
+    assert all(row["position_source"] == "committed_shadow_holdings" for row in rows)
+    assert all(row["source"] == "canonical_operational_portfolio_daily_paper_backfill" for row in rows)
+    assert rows[0]["daily_pnl"] == pytest.approx(canonical["portfolio_daily"][0]["net_pnl"])
+    assert rows[-1]["daily_return"] == pytest.approx(canonical["portfolio_daily"][-1]["daily_return"])
+    assert rows[-1]["running_peak"] == pytest.approx(max(row["ending_nav"] for row in rows))
+    assert rows[-1]["current_drawdown"] == pytest.approx(
+        rows[-1]["ending_nav"] / rows[-1]["running_peak"] - 1
+    )
+    assert "not regenerated from historical ticker prices" in rows[0]["warnings"][0]
+
+    snapshot = load_operational_snapshot_for_response(root)
+    assert snapshot["official_ledger_daily"] == snapshot["portfolio_daily"]
+    assert snapshot["portfolio_daily"][-1]["date"] == "2026-06-11"
+    assert snapshot["paper_performance_daily"][-1]["date"] == "2026-06-11"
+    assert snapshot["paper_performance_daily"][-1]["is_official_ledger"] is False
+    assert paper_portfolio_daily_path(root).exists()
+
+
+def test_paper_portfolio_backfill_fills_each_business_day_with_current_holdings_estimate(tmp_path):
+    root = _copy_root(tmp_path)
+    canonical = {
+        "portfolio_daily": [
+            {
+                "date": "2026-06-04",
+                "beginning_nav": 1000.0,
+                "ending_nav": 1010.0,
+                "net_pnl": 10.0,
+                "daily_return": 0.01,
+                "record_label": "RETROSPECTIVE_PAPER_BACKFILL",
+            },
+            {
+                "date": "2026-06-05",
+                "beginning_nav": 1010.0,
+                "ending_nav": 1020.0,
+                "net_pnl": 10.0,
+                "daily_return": 10.0 / 1010.0,
+                "record_label": "RETROSPECTIVE_PAPER_BACKFILL",
+            },
+        ],
+        "holdings": [
+            {"date": "2026-06-05", "ticker": "AAA", "simulated_quantity": 2.0},
+            {"date": "2026-06-05", "ticker": "BBB", "simulated_quantity": -1.0},
+            {"date": "2026-06-04", "ticker": "OLD", "simulated_quantity": 99.0},
+        ],
+    }
+    price_history = [
+        {"date": "2026-06-05", "ticker": "AAA", "close": 100.0},
+        {"date": "2026-06-05", "ticker": "BBB", "close": 50.0},
+        {"date": "2026-06-08", "ticker": "AAA", "close": 103.0},
+        {"date": "2026-06-08", "ticker": "BBB", "close": 48.0},
+        {"date": "2026-06-09", "ticker": "AAA", "close": 104.0},
+        {"date": "2026-06-09", "ticker": "BBB", "close": 49.0},
+    ]
+
+    rows = build_paper_portfolio_backfill_rows_from_price_history(
+        canonical,
+        price_history,
+        start_date="2026-06-04",
+        through_date="2026-06-09",
+    )
+    payload = write_paper_portfolio_daily_rows(root, rows)
+
+    assert [row["date"] for row in payload["rows"]] == [
+        "2026-06-04",
+        "2026-06-05",
+        "2026-06-08",
+        "2026-06-09",
+    ]
+    assert "2026-06-06" not in [row["date"] for row in payload["rows"]]
+    assert payload["rows"][2]["source"] == "current_holdings_paper_estimate_backfill"
+    assert payload["rows"][2]["daily_pnl"] == pytest.approx(2.0 * 3.0 + -1.0 * -2.0)
+    assert payload["rows"][2]["prior_nav"] == pytest.approx(1020.0)
+    assert payload["rows"][2]["ending_nav"] == pytest.approx(1028.0)
+    assert payload["rows"][3]["daily_pnl"] == pytest.approx(2.0 * 1.0 + -1.0 * 1.0)
+    assert payload["rows"][3]["is_official_ledger"] is False
+    assert payload["rows"][3]["paper_only"] is True
+    assert "current holdings paper estimate backfill" in payload["rows"][3]["warnings"][0]
+    assert (root / "dashboard/data/performance/strategy_daily_performance.json").exists() is False
 
 
 def test_cached_snapshot_missing_risk_factor_contract_fields_is_rebuilt(tmp_path):

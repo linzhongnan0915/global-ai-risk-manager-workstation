@@ -13,6 +13,8 @@ from pathlib import Path
 from scripts.run_workstation_server import WorkstationHandler
 from src.market.artifact_contract import artifact_contract, ensure_dashboard_artifact, validate_runtime_bootstrap_artifact
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -21,11 +23,21 @@ def _free_port() -> int:
 
 
 def _start_server(port: int) -> ThreadingHTTPServer:
-    WorkstationHandler.warm_operational_snapshot_cache(Path(__file__).resolve().parents[1])
+    WorkstationHandler.warm_operational_snapshot_cache(ROOT)
     server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server
+
+
+def _copy_canonical_root(tmp_path: Path) -> Path:
+    root = tmp_path / "workstation"
+    (root / "dashboard/data").mkdir(parents=True)
+    (root / "dashboard/data/canonical_operational.json").write_text(
+        (ROOT / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return root
 
 
 def _fetch(url: str) -> tuple[int, dict[str, str], bytes]:
@@ -160,6 +172,72 @@ def test_operational_snapshot_endpoint_includes_intraday_runtime_fields():
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_bytes(tmp_path):
+    root = _copy_canonical_root(tmp_path)
+    paper_path = root / "dashboard/data/performance/paper_portfolio_daily.json"
+    paper_path.parent.mkdir(parents=True)
+    paper_path.write_text(
+        json.dumps(
+            {
+                "metadata": {
+                    "schema_version": "paper_portfolio_daily_v1",
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "live_brokerage_execution": False,
+                    "is_official_ledger": False,
+                    "position_source": "committed_shadow_holdings",
+                    "row_count": 1,
+                    "latest_date": "2026-06-17",
+                },
+                "rows": [
+                    {
+                        "date": "2026-06-17",
+                        "trading_date": "2026-06-17",
+                        "source": "Paper Performance",
+                        "position_source": "committed_shadow_holdings",
+                        "paper_only": True,
+                        "delayed_market_data": True,
+                        "not_live_market_data": True,
+                        "live_brokerage_execution": False,
+                        "is_official_ledger": False,
+                        "nav": 1_005_000,
+                        "ending_nav": 1_005_000,
+                        "daily_pnl": 569,
+                        "daily_return": 0.000566,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.operational_snapshot_bytes = json.dumps(
+        {
+            "official_promotion_readiness": {"execute_enabled": False},
+            "paper_performance_daily": [],
+        }
+    ).encode("utf-8")
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = _fetch(f"http://127.0.0.1:{port}/api/operational-snapshot")
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 200
+        assert [row["date"] for row in payload["paper_performance_daily"]] == ["2026-06-17"]
+        assert payload["paper_performance_daily_metadata"]["row_count"] == 1
+        assert payload["portfolio_daily"][-1]["date"] == "2026-06-11"
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
 
 
 def test_generated_artifact_contract_documents_runtime_and_research_layers():

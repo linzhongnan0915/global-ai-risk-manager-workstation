@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +41,251 @@ def _to_float(value: Any) -> float | None:
 
 def _latest_date(rows: list[dict[str, Any]]) -> str:
     return max((str(row.get("date") or "") for row in rows), default="")
+
+
+def _is_business_day(value: str) -> bool:
+    try:
+        parsed = date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return False
+    return parsed.weekday() < 5
+
+
+def _paper_backfill_warning(source_row: dict[str, Any]) -> str:
+    label = source_row.get("record_label") or "canonical_portfolio_daily"
+    return (
+        "paper performance backfill seeded from canonical portfolio_daily "
+        f"portfolio-level row ({label}); official ledger remains separate; "
+        "not regenerated from historical ticker prices"
+    )
+
+
+def build_paper_portfolio_backfill_rows(
+    canonical: dict[str, Any],
+    *,
+    start_date: str = "2026-06-04",
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for source_row in canonical.get("portfolio_daily") or []:
+        trading_date = str(source_row.get("date") or source_row.get("trading_date") or "")
+        if not trading_date or trading_date < start_date or not _is_business_day(trading_date):
+            continue
+        prior_nav = _to_float(source_row.get("beginning_nav"))
+        nav = _to_float(source_row.get("ending_nav") or source_row.get("nav"))
+        daily_pnl = _to_float(source_row.get("net_pnl") or source_row.get("daily_pnl"))
+        daily_return = _to_float(source_row.get("daily_return"))
+        if prior_nav is None or nav is None or daily_pnl is None or daily_return is None:
+            continue
+        rows.append(
+            {
+                "date": trading_date,
+                "trading_date": trading_date,
+                "as_of_time": source_row.get("data_as_of") or trading_date,
+                "source": "canonical_operational_portfolio_daily_paper_backfill",
+                "source_artifact": "dashboard/data/canonical_operational.json",
+                "source_record_label": source_row.get("record_label"),
+                "position_source": "committed_shadow_holdings",
+                "paper_only": True,
+                "delayed_market_data": True,
+                "not_live_market_data": True,
+                "live_brokerage_execution": False,
+                "is_official_ledger": False,
+                "market_data_provider": "canonical_operational_snapshot",
+                "provider": "canonical_operational_snapshot",
+                "prior_nav": prior_nav,
+                "beginning_nav": prior_nav,
+                "nav": nav,
+                "ending_nav": nav,
+                "daily_pnl": daily_pnl,
+                "net_pnl": daily_pnl,
+                "daily_return": daily_return,
+                "refresh_status": "backfilled_from_canonical_portfolio_daily",
+                "ticker_count_requested": None,
+                "ticker_count_successful": None,
+                "covered_weight": None,
+                "priced_tickers": [],
+                "missing_tickers": [],
+                "stale_tickers": [],
+                "warnings": [_paper_backfill_warning(source_row)],
+            }
+        )
+    return rows
+
+
+def _parse_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
+
+
+def _business_dates_between(start: str, end: str) -> list[str]:
+    start_date = _parse_date(start)
+    end_date = _parse_date(end)
+    if start_date is None or end_date is None or start_date > end_date:
+        return []
+    rows: list[str] = []
+    current = start_date
+    while current <= end_date:
+        if current.weekday() < 5:
+            rows.append(current.isoformat())
+        current = date.fromordinal(current.toordinal() + 1)
+    return rows
+
+
+def _latest_holding_rows(canonical: dict[str, Any]) -> list[dict[str, Any]]:
+    holdings = canonical.get("holdings") or []
+    latest_date = max((str(row.get("date") or "") for row in holdings), default="")
+    return [deepcopy(row) for row in holdings if row.get("date") == latest_date and row.get("ticker")]
+
+
+def _price_lookup(price_history: list[dict[str, Any]]) -> dict[tuple[str, str], float]:
+    lookup: dict[tuple[str, str], float] = {}
+    for row in price_history:
+        ticker = str(row.get("ticker") or "")
+        row_date = str(row.get("date") or "")
+        close = _to_float(row.get("close") or row.get("adj_close"))
+        if ticker and row_date and close is not None:
+            lookup[(ticker, row_date)] = close
+    return lookup
+
+
+def _first_missing_business_date(start_date: str, existing_dates: set[str], through_date: str) -> str | None:
+    for row_date in _business_dates_between(start_date, through_date):
+        if row_date not in existing_dates:
+            return row_date
+    return None
+
+
+def build_paper_portfolio_backfill_rows_from_price_history(
+    canonical: dict[str, Any],
+    price_history: list[dict[str, Any]],
+    *,
+    start_date: str = "2026-06-04",
+    through_date: str | None = None,
+) -> list[dict[str, Any]]:
+    canonical_rows = build_paper_portfolio_backfill_rows(canonical, start_date=start_date)
+    price_dates = sorted({str(row.get("date") or "") for row in price_history if row.get("date")})
+    latest_price_date = through_date or (price_dates[-1] if price_dates else None)
+    if not latest_price_date:
+        return canonical_rows
+    canonical_dates = {row["date"] for row in canonical_rows}
+    first_gap = _first_missing_business_date(start_date, canonical_dates, latest_price_date)
+    if first_gap is None:
+        seed_rows = canonical_rows
+        estimate_start = None
+    else:
+        seed_rows = [row for row in canonical_rows if row["date"] < first_gap]
+        estimate_start = first_gap
+    if estimate_start is None:
+        return seed_rows
+    if not seed_rows:
+        return []
+
+    holdings = _latest_holding_rows(canonical)
+    prices = _price_lookup(price_history)
+    portfolio_dates = _business_dates_between(start_date, latest_price_date)
+    estimate_dates = [row_date for row_date in portfolio_dates if row_date >= estimate_start]
+    rows = [deepcopy(row) for row in seed_rows]
+    prior_nav = _to_float(rows[-1].get("ending_nav") or rows[-1].get("nav"))
+    if prior_nav is None:
+        return rows
+    peak = max((_to_float(row.get("ending_nav") or row.get("nav")) or prior_nav for row in rows), default=prior_nav)
+    first_nav = _to_float(rows[0].get("beginning_nav") or rows[0].get("prior_nav")) or prior_nav
+
+    for row_date in estimate_dates:
+        date_index = portfolio_dates.index(row_date)
+        if date_index == 0:
+            continue
+        previous_date = portfolio_dates[date_index - 1]
+        daily_pnl = 0.0
+        priced_positions = 0
+        missing_tickers: set[str] = set()
+        priced_tickers: set[str] = set()
+        for holding in holdings:
+            ticker = str(holding.get("ticker") or "")
+            quantity = _to_float(holding.get("simulated_quantity"))
+            previous_close = prices.get((ticker, previous_date))
+            close = prices.get((ticker, row_date))
+            if not ticker or quantity is None or previous_close is None or close is None:
+                if ticker:
+                    missing_tickers.add(ticker)
+                continue
+            daily_pnl += quantity * (close - previous_close)
+            priced_positions += 1
+            priced_tickers.add(ticker)
+        if priced_positions == 0:
+            continue
+        nav = prior_nav + daily_pnl
+        peak = max(peak, nav)
+        warning = (
+            "current holdings paper estimate backfill uses latest committed holdings for historical "
+            "missing dates; delayed yfinance daily closes; not official ledger"
+        )
+        if missing_tickers:
+            warning += f"; partial price coverage missing {len(missing_tickers)} tickers"
+        row = {
+            "date": row_date,
+            "trading_date": row_date,
+            "as_of_time": row_date,
+            "source": "current_holdings_paper_estimate_backfill",
+            "source_artifact": "dashboard/data/canonical_operational.json + delayed_yfinance_daily_close",
+            "position_source": "committed_shadow_holdings",
+            "paper_only": True,
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "live_brokerage_execution": False,
+            "is_official_ledger": False,
+            "market_data_provider": "yfinance",
+            "provider": "yfinance",
+            "prior_nav": prior_nav,
+            "beginning_nav": prior_nav,
+            "nav": nav,
+            "ending_nav": nav,
+            "daily_pnl": daily_pnl,
+            "net_pnl": daily_pnl,
+            "daily_return": daily_pnl / prior_nav if prior_nav else None,
+            "cumulative_pnl": nav - first_nav,
+            "cumulative_return": nav / first_nav - 1 if first_nav else None,
+            "running_peak": peak,
+            "current_drawdown": nav / peak - 1 if peak else None,
+            "refresh_status": "backfilled_from_current_holdings_delayed_close",
+            "ticker_count_requested": len({row.get("ticker") for row in holdings if row.get("ticker")}),
+            "ticker_count_successful": len(priced_tickers),
+            "covered_weight": None,
+            "priced_tickers": sorted(priced_tickers),
+            "missing_tickers": sorted(missing_tickers),
+            "stale_tickers": [],
+            "warnings": [warning],
+        }
+        rows.append(row)
+        prior_nav = nav
+    return rows
+
+
+def write_paper_portfolio_daily_rows(root: Path, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    payload: dict[str, Any] | None = None
+    for row in rows:
+        payload = upsert_paper_portfolio_daily(root, row)
+    if payload is None:
+        return paper_portfolio_snapshot_payload(root, limit=10_000)
+    return payload
+
+
+def backfill_paper_portfolio_daily_from_canonical(
+    root: Path,
+    canonical: dict[str, Any],
+    *,
+    start_date: str = "2026-06-04",
+) -> dict[str, Any]:
+    payload: dict[str, Any] | None = None
+    for row in build_paper_portfolio_backfill_rows(canonical, start_date=start_date):
+        payload = upsert_paper_portfolio_daily(root, row)
+    if payload is None:
+        return paper_portfolio_snapshot_payload(root, limit=10_000)
+    return payload
 
 
 def build_paper_portfolio_daily_row(

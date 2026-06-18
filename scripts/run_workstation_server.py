@@ -277,10 +277,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
+                self.warm_operational_snapshot_cache(self.server_root)
                 body = self.operational_snapshot_bytes
-                if body is None or b"official_promotion_readiness" not in body:
-                    self.warm_operational_snapshot_cache(self.server_root)
-                    body = self.operational_snapshot_bytes
                 self._send_precomputed_json(body or b"{}")
             except Exception as exc:
                 self._send_safe_error(exc, context="operational-snapshot")

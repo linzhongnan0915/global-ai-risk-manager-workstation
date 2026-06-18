@@ -342,7 +342,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 titleFullVisible: title?.innerText === 'Master Portfolio Daily Performance' && title.scrollWidth <= title.clientWidth + 1,
                 detailStripPresent: Boolean(detail),
                 detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
-                hoverUpdatesDetail: /Official Ledger|Delayed Est\\./i.test(hoverText),
+                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Est\\./i.test(hoverText),
                 floatingTooltipVisible: tooltip ? getComputedStyle(tooltip).display !== 'none' && tooltip.classList.contains('visible') : false,
                 legendOverlapsCanvas: Boolean(cr && lr && overlap(lr, cr)),
                 detailOverlapsCanvas: Boolean(cr && dr && overlap(dr, cr)),

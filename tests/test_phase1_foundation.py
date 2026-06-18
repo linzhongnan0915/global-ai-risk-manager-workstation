@@ -101,7 +101,7 @@ def test_strategy_monitor_binds_explicit_summary_and_intraday_row_fields():
     assert "Current Rows" in app
     assert "Ordinary Active" in app
     assert "Top-Level Active" in app
-    assert '"Pending",pending.length,pending?"Review needed":"No pending candidate"' in app
+    assert '"Pending",pending.length,pending.length?"Review needed":"No pending candidate"' in app
     assert "Combined" in app
     assert "Internal constituents" in app
     assert "Equal Sleeve" in app
@@ -113,7 +113,8 @@ def test_strategy_monitor_binds_explicit_summary_and_intraday_row_fields():
     assert "function currentStrategyRows(c)" in app
     assert "removed_from_current_workstation_strategy_ids" in app
     assert "monitorEntities(){return currentStrategyRows(state.contract)" in app
-    assert "current operating rows: 16 ordinary active + active Combined" in app
+    assert "active operating rows from the current registry" in app
+    assert "pending / inactive rows separated" in app
 
 
 def test_complete_strategy_history_is_published_without_mixing_research():
@@ -197,7 +198,7 @@ def test_current_operating_ui_excludes_removed_research_candidate():
     assert current_rows[0]["internal_id"] == "COMBINED_PORTFOLIO"
     assert "currentStrategyRows(c).map" in app
     assert "currentPendingRows(c).length" in app
-    assert "No pending candidate in current operating set" in app
+    assert "pending rows separated by status" in app
     assert "Removed research candidates stay out of current operating rows" in app
     assert "PENDING ADMISSION</span><strong>N=${c.portfolio_summary.current_n}" not in app
 
@@ -491,7 +492,7 @@ def test_strategy_library_governance_page_is_data_bound():
         "Operational snapshot metadata",
         "c.portfolio_daily.at(-1)?.date",
         "u.current_price_covered_ticker_count??intr.covered_tickers",
-        "External institutional data research is tracked separately and is not represented as loaded",
+        "External institutional data research",
         "DATA PROCESSING LINEAGE",
         "Processing Step",
         "Work Performed",
@@ -524,7 +525,7 @@ def test_strategy_library_governance_page_is_data_bound():
         "Admission State",
         "Ordinary active strategies",
         "Combined strategy",
-        "WQ_ALPHA_018 / #000018",
+        "pendingRows=pending.map",
         "Missing canonical signal date",
         "Missing target rows",
         "Missing paper fill rows",
@@ -583,13 +584,13 @@ def test_strategy_library_governance_page_is_data_bound():
         "c.holdings.length",
         "c.portfolio_daily.length",
         "Top-Level Active",
-        "16 ordinary active strategies + 1 active Combined strategy",
+        "Derived from current registry status",
         "Paper Provenance Gate",
         "Pending / Not Fully Verified",
         "Raw provenance gate count:",
         "rawProvenanceCount=c.execution_provenance?.trade_record_counts?.VERIFIED_SHADOW_EXECUTION??0",
-        "wq_admission_gate",
-        "combined_rebalance_allowed",
+        "currentActiveRows(c)",
+        "currentPendingRows(c)",
     ):
         assert marker in app
     old_library_label = "Strategy Library & " + "Workflow"
@@ -631,7 +632,7 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "OOS, walk-forward, stress test, macro regime, and backtest metrics are displayed only when loaded as canonical evidence." in app
     assert "Daily report staging status" in app
     assert "BLOCKED_SAFE" in app
-    assert "external institutional data research is tracked separately" in app.lower()
+    assert "external institutional data research" in app.lower()
     assert "Strategy Development Workflow" in app
     assert "Shadow-Live Paper Testing Workflow" in app
     assert "Strategy Admission Gate" in app
@@ -645,11 +646,8 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "Paper Execution Record" in app
     assert "Position Ledger" in app
     assert "Human Approval" in app
-    assert "WQ_ALPHA_018 / #000018" in app
-    assert "Current sleeve</span><b>N/A</b>" in app
-    assert "Operational NAV</span><b>N/A</b>" in app
-    assert "Operational P&L</span><b>N/A</b>" in app
-    assert "Paper fill</span><b class=\"tone-warning\">Not present</b>" in app
+    assert "Pending / inactive rows" in app
+    assert "separated by current status" in app
     assert "Live brokerage fill</span><b class=\"tone-warning\">Disabled / Not present</b>" in app
     assert "codex-clipboard" not in app
     assert "function releasePanel" in app

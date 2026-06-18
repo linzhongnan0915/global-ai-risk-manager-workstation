@@ -234,6 +234,61 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .chart-legend .legend-item{display:inline-flex;align-items:center;gap:4px;min-width:0}
 .chart-legend .legend-wide{grid-column:auto;justify-self:auto}
 .chart-legend .nav-line,.chart-legend .dd-line{width:16px;height:0;display:inline-block;border-top:2px solid #2bbcff;background:transparent;box-shadow:0 0 3px #19aef544}
+
+/* Workflow + Allocation boss-facing redesign pass */
+.allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}
+.allocation-control-strip-v2{grid-template-columns:repeat(9,minmax(0,1fr));margin:5px 0;min-height:42px}
+.allocation-kpis-v2{grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
+.allocation-layout-v2{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"matrix side" "trades side" "explain side";gap:6px;align-items:start}
+.allocation-layout-v2 .allocation-matrix-panel{min-width:0}
+.allocation-decision-grid{width:100%;max-width:100%;overflow:hidden;border-top:1px solid var(--soft);background:#03090a}
+.allocation-decision-header,.allocation-decision-row{display:grid;grid-template-columns:minmax(170px,1.25fr) 82px 72px 82px 76px minmax(116px,.95fr) 102px 88px minmax(150px,1.05fr);align-items:center;gap:0}
+.allocation-decision-header{position:sticky;top:0;z-index:3;min-height:31px;background:#082026;color:#b9cfd2;font-size:8px;font-weight:900;text-transform:uppercase}
+.allocation-decision-header span,.allocation-decision-row>span,.allocation-decision-row>div,.allocation-decision-row>label{min-width:0;padding:5px 7px;border-right:1px solid #143138;overflow:hidden;text-overflow:ellipsis}
+.allocation-decision-body{max-height:498px;overflow-y:auto;overflow-x:hidden}
+.allocation-decision-row{min-height:38px;border-bottom:1px solid #10292e;background:#061113;color:#c9dadd;font-size:10px}
+.allocation-decision-row:nth-child(even){background:#071619}
+.allocation-decision-row strong{display:block;overflow:hidden;color:#f0f7f8;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.allocation-decision-row small{display:block;margin-top:2px;overflow:hidden;color:#7f969a;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.allocation-decision-row label{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px}
+.allocation-decision-row label em{color:#8fa6a9;font-size:8px;font-style:normal}
+.allocation-reason{white-space:normal;line-height:1.15;color:#d4e3e5}
+.allocation-decision-grid .allocation-input{width:100%;height:23px;padding:0 4px;font-size:10px}
+.allocation-action-badge{font-style:normal}
+.allocation-side .panel{min-width:0}
+.allocation-action-center .section-header strong{font-size:11px}
+.allocation-buttons{grid-template-columns:1fr 1fr;gap:5px}
+.allocation-buttons button{min-height:30px;padding:0 6px;white-space:normal;line-height:1.08}
+.allocation-warning-list div{grid-template-columns:minmax(0,1fr) minmax(94px,auto);padding:6px 0}
+.allocation-warning-list b{white-space:normal;line-height:1.15}
+.allocation-trade-panel,.allocation-explain-panel{min-width:0}
+.allocation-trade-table{width:100%;min-width:0;table-layout:fixed}
+.allocation-trade-table th,.allocation-trade-table td{white-space:normal}
+.workflow-command-diagram{min-height:590px;gap:10px;padding:16px 18px;border-color:#275261;background:radial-gradient(circle at 15% 12%,rgba(25,174,245,.18),transparent 28%),radial-gradient(circle at 80% 70%,rgba(35,212,119,.08),transparent 24%),linear-gradient(180deg,#0a1d2a,#061015 72%,#03090b)}
+.workflow-command-diagram header strong{font-size:24px;letter-spacing:0}
+.workflow-command-diagram header span{max-width:920px;color:#a8bdc1;font-size:12px}
+.workflow-command-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(170px,1fr));gap:18px 30px}
+.workflow-command-node{min-height:170px;padding:13px 14px;border-radius:7px;background:linear-gradient(180deg,#10283b,#0a1722 76%,#071018);box-shadow:0 10px 24px rgba(0,0,0,.28),inset 0 1px #ffffff12}
+.workflow-command-node span{font-size:9px}
+.workflow-command-node strong{margin-top:6px;font-size:16px;line-height:1.12}
+.workflow-command-node ul{gap:6px;margin-top:11px}
+.workflow-command-node li{min-height:22px;padding:6px 8px;border-radius:5px;font-size:9px;line-height:1.2}
+.workflow-command-output{min-height:48px;gap:10px;padding:10px 14px;border-radius:7px;background:#0c2232}
+.workflow-command-output strong{font-size:13px}
+.workflow-command-output span{font-size:9px;color:#b6c9cc}
+.workflow-secondary-detail{opacity:.86}
+@media(max-width:1550px){
+  .allocation-control-strip-v2{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .allocation-kpis-v2{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .allocation-layout-v2{grid-template-columns:1fr;grid-template-areas:"matrix" "side" "trades" "explain"}
+  .allocation-side{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .allocation-decision-header,.allocation-decision-row{grid-template-columns:minmax(150px,1.2fr) 70px 66px 76px 70px minmax(104px,.9fr) 92px 80px minmax(132px,1fr)}
+  .workflow-command-diagram{min-height:540px;padding:12px}
+  .workflow-command-grid{gap:12px;grid-template-rows:repeat(2,minmax(155px,1fr))}
+  .workflow-command-node{min-height:155px;padding:10px}
+  .workflow-command-node strong{font-size:13px}
+  .workflow-command-node li{font-size:8px}
+}
 .chart-legend .dd-line{border-top:2px dashed var(--red);box-shadow:none}
 .chart-legend .pnl-bar{width:8px;height:7px;display:inline-block;background:linear-gradient(90deg,var(--green) 50%,var(--red) 50%)}
 .chart-legend .official-dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:#f6fbff;border:1px solid #fff}

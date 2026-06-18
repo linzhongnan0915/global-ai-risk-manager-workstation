@@ -240,6 +240,56 @@ def test_application_shell_and_shared_components_are_wired():
     assert "--hover:" in css
 
 
+def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
+    app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
+
+    for marker in (
+        "Shadow-Live Paper PM Command Workflow",
+        "Dynamic paper strategy workflow for research admission, shadow holdings, delayed estimates, paper allocation, and dashboard monitoring.",
+        "Strategy Registry",
+        "Data & Proxy Layer",
+        "Shadow Holdings",
+        "Refresh Engine",
+        "Paper Performance",
+        "Risk / Allocation Controls",
+        "Dashboard Command Center",
+        "PM Action Output",
+        "Output: Shadow-Live Paper Risk Workstation",
+        "Official Ledger: separate",
+        "Paper Performance: separate",
+        "Delayed Estimate: separate",
+        "Brokerage Execution: disabled",
+        "Live Fill: no",
+        "Human Review: required",
+    ):
+        assert marker in app
+
+    for marker in (
+        "Paper Allocation Decision Center / Rebalance Recommendation Matrix",
+        "allocation-decision-grid",
+        "Reason / Rationale",
+        "Increase toward target",
+        "Reduce overweight sleeve",
+        "Dust trade ignored",
+        "Data incomplete / review required",
+        "/api/paper-rebalance/plan",
+        "/api/paper-rebalance/accept",
+        "/api/paper-rebalance/apply",
+        "/api/paper-rebalance/reject",
+        "Apply Paper Rebalance",
+        "Official Ledger: Unchanged",
+        "Live Brokerage Fill: No",
+        "data/paper_rebalance",
+    ):
+        assert marker in app
+
+    assert ".allocation-decision-header,.allocation-decision-row" in css
+    assert ".allocation-edit-table{min-width:1320px" in css
+    assert ".allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}" in css
+    assert app.count("function allocationPage()") >= 2
+
+
 def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     index = (ROOT / "dashboard/index.html").read_text(encoding="utf-8")
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")

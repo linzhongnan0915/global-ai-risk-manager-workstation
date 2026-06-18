@@ -34,6 +34,13 @@ from src.market.intraday_refresh_service import (
     set_refresh_cadence,
 )
 from src.market.live_refresh import build_live_overlay, write_live_overlay
+from src.market.paper_rebalance import (
+    accept_paper_rebalance_plan,
+    apply_paper_rebalance_plan,
+    generate_paper_rebalance_plan,
+    paper_rebalance_snapshot_payload,
+    reject_paper_rebalance_plan,
+)
 from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_refresh_request
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
@@ -189,6 +196,24 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def _read_json_body(self) -> dict:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw = self.rfile.read(length) if length else b"{}"
+        return json.loads(raw.decode("utf-8") or "{}")
+
+    def _paper_rebalance_response(self, extra: dict | None = None) -> dict:
+        payload = {
+            "ok": True,
+            "paper_rebalance": paper_rebalance_snapshot_payload(self.server_root),
+            "snapshot": load_operational_snapshot_for_response(
+                self.server_root,
+                scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+            ),
+        }
+        if extra:
+            payload.update(extra)
+        return payload
+
     def _intraday_config(self) -> dict:
         return load_intraday_config(self.server_root / "data/config/intraday_refresh.yaml")
 
@@ -289,6 +314,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="decisions")
             return
+        if parsed.path in {"/api/paper-rebalance", "/api/paper-rebalance/"}:
+            try:
+                self._send_json({"ok": True, "paper_rebalance": paper_rebalance_snapshot_payload(self.server_root)})
+            except Exception as exc:
+                self._send_safe_error(exc, context="paper-rebalance")
+            return
         if parsed.path in {"/api/health", "/api/health/"}:
             self._send_json(
                 {
@@ -381,9 +412,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return
         if parsed.path in {"/api/decisions", "/api/decisions/"}:
             try:
-                length = int(self.headers.get("Content-Length", "0"))
-                raw = self.rfile.read(length) if length else b"{}"
-                body = json.loads(raw.decode("utf-8") or "{}")
+                body = self._read_json_body()
                 decision = persist_decision(self.server_root, body)
                 self.warm_operational_snapshot_cache(self.server_root)
                 self._send_json(
@@ -401,6 +430,56 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": False, "error": str(exc)}, status=400)
             except Exception as exc:
                 self._send_safe_error(exc, context="decision")
+            return
+        if parsed.path in {
+            "/api/paper-rebalance/plan",
+            "/api/paper-rebalance/plan/",
+            "/api/paper-rebalance/accept",
+            "/api/paper-rebalance/accept/",
+            "/api/paper-rebalance/apply",
+            "/api/paper-rebalance/apply/",
+            "/api/paper-rebalance/reject",
+            "/api/paper-rebalance/reject/",
+        }:
+            try:
+                body = self._read_json_body()
+                if parsed.path.rstrip("/").endswith("/plan"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    plan = generate_paper_rebalance_plan(
+                        self.server_root,
+                        snapshot,
+                        body.get("target_weights") or {},
+                        intended_effective_date=body.get("intended_effective_date"),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"plan": plan}), status=201)
+                    return
+                plan_id = str(body.get("plan_id") or "").strip()
+                if not plan_id:
+                    self._send_json({"ok": False, "error": "plan_id required"}, status=400)
+                    return
+                if parsed.path.rstrip("/").endswith("/accept"):
+                    plan = accept_paper_rebalance_plan(self.server_root, plan_id)
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"plan": plan}))
+                    return
+                if parsed.path.rstrip("/").endswith("/apply"):
+                    result = apply_paper_rebalance_plan(self.server_root, plan_id)
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response(result))
+                    return
+                if parsed.path.rstrip("/").endswith("/reject"):
+                    plan = reject_paper_rebalance_plan(self.server_root, plan_id)
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"plan": plan}))
+                    return
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="paper-rebalance")
             return
         if parsed.path in {"/api/refresh-data", "/api/refresh-data/"}:
             mode, authorized = classify_refresh_request(self.headers.get("Authorization"))

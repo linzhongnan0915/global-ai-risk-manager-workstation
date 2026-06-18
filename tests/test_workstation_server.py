@@ -240,6 +240,69 @@ def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_
         WorkstationHandler.operational_snapshot_bytes = original_bytes
 
 
+def test_paper_rebalance_api_persists_pending_and_applied_paper_target(tmp_path):
+    root = _copy_canonical_root(tmp_path)
+    active = [
+        row
+        for row in json.loads((root / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8"))["strategies"]
+        if row.get("membership_state") == "executed"
+        and row.get("internal_id") != "WQ_ALPHA_018"
+    ]
+    weight = 1 / len(active)
+    targets = {row["internal_id"]: weight for row in active}
+    targets[active[0]["internal_id"]] += 0.01
+    targets[active[1]["internal_id"]] -= 0.01
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base = f"http://127.0.0.1:{port}"
+        status, _, body = _post_json(
+            f"{base}/api/paper-rebalance/plan",
+            json.dumps({"target_weights": targets}).encode("utf-8"),
+        )
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 201
+        assert payload["ok"] is True
+        plan_id = payload["plan"]["plan_id"]
+        assert payload["plan"]["execution_mode"] == "Paper Only"
+        assert payload["plan"]["live_brokerage_fill"] == "No"
+        assert payload["plan"]["official_ledger_mutation"] == "No"
+
+        status, _, body = _post_json(
+            f"{base}/api/paper-rebalance/accept",
+            json.dumps({"plan_id": plan_id}).encode("utf-8"),
+        )
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 200
+        assert payload["plan"]["applied_status"] == "Accepted Pending Application"
+
+        status, _, body = _post_json(
+            f"{base}/api/paper-rebalance/apply",
+            json.dumps({"plan_id": plan_id}).encode("utf-8"),
+        )
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 200
+        assert payload["current_paper_target"]["applied_status"] == "Applied to Paper Allocation"
+        assert payload["cost_record"]["official_ledger_mutation"] == "No"
+
+        status, _, body = _fetch(f"{base}/api/paper-rebalance")
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 200
+        assert payload["paper_rebalance"]["current_paper_target"]["applied_plan_id"] == plan_id
+        assert payload["paper_rebalance"]["latest_cost_record"]["plan_id"] == plan_id
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
 def test_generated_artifact_contract_documents_runtime_and_research_layers():
     contract = artifact_contract()
     runtime_names = {row["name"] for row in contract["runtime_artifacts"]}

@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
 from src.market.market_hours import market_session_status
+from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.market.paper_portfolio_ledger import paper_portfolio_snapshot_payload, upsert_paper_portfolio_daily
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.strategies.display_metadata import strategy_display_metadata
@@ -1980,6 +1981,7 @@ def _attach_paper_portfolio_daily_fields(root: Path, snapshot: dict[str, Any]) -
     enriched["official_ledger_daily"] = deepcopy(enriched.get("portfolio_daily") or [])
     enriched["paper_performance_daily"] = payload["rows"]
     enriched["paper_performance_daily_metadata"] = payload["metadata"]
+    enriched["paper_rebalance"] = paper_rebalance_snapshot_payload(root)
     return enriched
 
 

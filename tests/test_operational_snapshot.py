@@ -364,6 +364,7 @@ def test_latest_refresh_snapshot_supplies_delayed_estimate_without_legacy_overla
         "market_session_status": "Open",
         "ticker_count_requested": 222,
         "ticker_count_successful": 221,
+        "refresh_interval_minutes": 30,
         "missing_tickers": ["FTV"],
         "stale_tickers": [],
         "marks": {"data_quality": {"freshness": "Stale"}},
@@ -374,8 +375,22 @@ def test_latest_refresh_snapshot_supplies_delayed_estimate_without_legacy_overla
             "estimated_pnl": None,
             "session_date": "2026-06-18",
             "strategies": [],
-            "latest_usable_prices": {"AAPL": {"price": 299.0, "timestamp": "2026-06-18T10:10:00-04:00"}},
+            "latest_usable_prices": {},
         },
+    }
+    canonical = json.loads((root / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8"))
+    active_id = next(row["internal_id"] for row in canonical["strategies"] if row["internal_id"] not in {"COMBINED_PORTFOLIO", "WQ_ALPHA_018"})
+    active_holdings = [
+        row
+        for row in canonical["holdings"]
+        if row.get("strategy_id") == active_id and row.get("date") == max(h.get("date") or "" for h in canonical["holdings"])
+    ]
+    latest_snapshot["shadow_intraday"]["latest_usable_prices"] = {
+        row["ticker"]: {
+            "price": float(row["simulated_execution_price"]) + 1.0,
+            "timestamp": "2026-06-18T10:10:00-04:00",
+        }
+        for row in active_holdings
     }
     snapshot_path = snapshot_dir / "snap-test-latest.json"
     snapshot_path.write_text(json.dumps(latest_snapshot), encoding="utf-8")
@@ -395,7 +410,16 @@ def test_latest_refresh_snapshot_supplies_delayed_estimate_without_legacy_overla
     assert merged["intraday_estimate"]["market_data_as_of"] == "2026-06-18T10:10:00-04:00"
     assert merged["intraday_estimate"]["covered_tickers"] == 221
     assert merged["intraday_estimate"]["total_tickers"] == 222
+    assert merged["intraday_refresh_cadence_minutes"] == 30
     assert merged["portfolio_daily"][-1]["date"] == "2026-06-11"
+    strategy = next(row for row in merged["strategies"] if row["internal_id"] == active_id)
+    assert strategy["intraday_estimated_nav"] is not None
+    assert strategy["intraday_estimated_pnl"] is not None
+    assert strategy["intraday_estimate_unavailable_reason"] is None
+    assert strategy["latest_delayed_price_as_of"] == "2026-06-18T10:10:00-04:00"
+    assert strategy["price_coverage"]["priced"] == len(active_holdings)
+    assert strategy["price_coverage"]["total"] == len(active_holdings)
+    assert strategy["price_coverage"]["status"] == "COMPLETE"
 
 
 def test_stale_intraday_overlay_is_not_merged_into_official_snapshot(tmp_path: Path):

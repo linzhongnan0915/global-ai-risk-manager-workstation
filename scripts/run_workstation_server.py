@@ -543,7 +543,7 @@ def _startup_refresh() -> None:
 def _intraday_scheduler_loop(root: Path) -> None:
     official_promotion_enabled = os.environ.get("ENABLE_OFFICIAL_PROMOTION", "").strip().lower() in {"1", "true", "yes", "on"}
     while True:
-        interval = 10
+        interval = 30
         try:
             cfg = load_intraday_config(root / "data/config/intraday_refresh.yaml")
             status = read_refresh_status(cfg)
@@ -551,8 +551,14 @@ def _intraday_scheduler_loop(root: Path) -> None:
                 cfg,
                 selected_interval_minutes=status.get("selected_interval_minutes"),
             )
+            interval = max(interval, 30)
             if cfg.get("enabled", True):
-                result = refresh_operational_snapshot(root)
+                result = run_intraday_refresh(
+                    force=False,
+                    interval_minutes=interval,
+                    artifact_path=root / "output" / "dashboard_artifact.json",
+                    config=cfg,
+                )
                 if result.get("ok"):
                     WorkstationHandler.warm_operational_snapshot_cache(root)
                     logger.info("Operational intraday overlay refreshed: %s", result.get("snapshot_id"))
@@ -581,7 +587,12 @@ def main(
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     bind_host, bind_port = resolve_server_bind(host, port)
     env_scheduler = os.environ.get("ENABLE_INTRADAY_SCHEDULER", "").strip().lower() in {"1", "true", "yes", "on"}
-    scheduler_enabled = bool(not no_intraday_scheduler and (intraday_scheduler is True or env_scheduler))
+    cfg = load_intraday_config(PROJECT_ROOT / "data/config/intraday_refresh.yaml")
+    scheduler_enabled = intraday_scheduler_enabled(
+        config_enabled=bool(cfg.get("enabled", True)),
+        force_start=True if (intraday_scheduler is True or env_scheduler or bool(cfg.get("enabled", True))) else None,
+        force_disable=no_intraday_scheduler,
+    )
     set_background_scheduler_enabled(scheduler_enabled)
     WorkstationHandler.intraday_scheduler_enabled = scheduler_enabled
     if refresh_on_start:

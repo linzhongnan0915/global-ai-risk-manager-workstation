@@ -22,7 +22,7 @@ def load_intraday_config(path: str | Path = DEFAULT_CONFIG_PATH) -> dict[str, An
     payload = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     cfg = dict(payload.get("intraday_refresh") or {})
     cfg.setdefault("enabled", True)
-    cfg.setdefault("default_interval_minutes", 5)
+    cfg.setdefault("default_interval_minutes", 30)
     cfg.setdefault("allowed_intervals_minutes", [5, 10, 30])
     cfg.setdefault("provider", "yfinance")
     cfg.setdefault("bar_interval_by_refresh", {5: "5m", 10: "5m", 30: "15m"})
@@ -44,13 +44,13 @@ def load_intraday_config(path: str | Path = DEFAULT_CONFIG_PATH) -> dict[str, An
     raw_map = cfg.get("bar_interval_by_refresh") or {}
     cfg["bar_interval_by_refresh"] = {int(k): str(v) for k, v in raw_map.items()}
     cfg["allowed_intervals_minutes"] = [int(v) for v in cfg.get("allowed_intervals_minutes") or [5, 10, 30]]
-    cfg["default_interval_minutes"] = int(cfg.get("default_interval_minutes") or 5)
+    cfg["default_interval_minutes"] = int(cfg.get("default_interval_minutes") or 30)
     cfg["stale_after_minutes"] = _normalize_stale_after(cfg.get("stale_after_minutes"))
     return cfg
 
 
 def bar_interval_for_refresh(config: dict[str, Any], interval_minutes: int | None = None) -> str:
-    minutes = int(interval_minutes or config.get("default_interval_minutes") or 5)
+    minutes = int(interval_minutes or config.get("default_interval_minutes") or 30)
     mapping = config.get("bar_interval_by_refresh") or {}
     if minutes not in mapping:
         allowed = sorted(mapping.keys())
@@ -61,7 +61,7 @@ def bar_interval_for_refresh(config: dict[str, Any], interval_minutes: int | Non
 
 
 def stale_after_minutes_for(config: dict[str, Any], interval_minutes: int | None = None) -> int:
-    minutes = int(interval_minutes or config.get("default_interval_minutes") or 5)
+    minutes = int(interval_minutes or config.get("default_interval_minutes") or 30)
     mapping = config.get("stale_after_minutes") or {}
     if minutes in mapping:
         return int(mapping[minutes])
@@ -81,8 +81,8 @@ def resolve_refresh_interval_minutes(
     elif selected_interval_minutes is not None:
         candidate = int(selected_interval_minutes)
     else:
-        candidate = int(config.get("default_interval_minutes") or 5)
+        candidate = int(config.get("default_interval_minutes") or 30)
     allowed = config.get("allowed_intervals_minutes") or [5, 10, 30]
     if candidate not in allowed:
-        return int(config.get("default_interval_minutes") or 5)
+        return int(config.get("default_interval_minutes") or 30)
     return candidate

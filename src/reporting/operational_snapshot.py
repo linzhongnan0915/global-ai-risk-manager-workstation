@@ -2075,12 +2075,57 @@ def _latest_paper_row_for_session(root: Path, session_date: str | None) -> dict[
     return matches[-1] if matches else None
 
 
+def _intraday_from_latest_prices(
+    canonical: dict[str, Any],
+    latest_prices: dict[str, Any],
+    *,
+    latest_as_of: str | None,
+) -> tuple[list[dict[str, Any]], dict[str, float]]:
+    if not latest_prices:
+        return [], {}
+    current_holdings = _current_holdings(canonical.get("holdings") or [])
+    enriched_holdings: list[dict[str, Any]] = []
+    strategy_contribution: dict[str, float] = {}
+    for row in current_holdings:
+        ticker = row.get("ticker")
+        price_payload = latest_prices.get(str(ticker)) if ticker is not None else None
+        latest_price = None
+        latest_timestamp = latest_as_of
+        if isinstance(price_payload, dict):
+            latest_price = price_payload.get("price") or price_payload.get("close") or price_payload.get("latest_price")
+            latest_timestamp = price_payload.get("timestamp") or price_payload.get("observation_ts_et") or latest_as_of
+        elif price_payload is not None:
+            latest_price = price_payload
+        estimated_pnl = None
+        if latest_price is not None and row.get("simulated_quantity") is not None and row.get("simulated_execution_price") is not None:
+            estimated_pnl = float(row["simulated_quantity"]) * (
+                float(latest_price) - float(row["simulated_execution_price"])
+            )
+            strategy_id = row.get("strategy_id")
+            if strategy_id:
+                strategy_contribution[strategy_id] = strategy_contribution.get(strategy_id, 0.0) + estimated_pnl
+        enriched_holdings.append(
+            {
+                **row,
+                "latest_price": latest_price,
+                "latest_price_source": "Delayed Market Price" if latest_price is not None else None,
+                "latest_delayed_price_as_of": latest_timestamp if latest_price is not None else None,
+                "data_as_of": latest_timestamp if latest_price is not None else None,
+                "daily_estimated_pnl": estimated_pnl,
+                "estimated_contribution": estimated_pnl,
+                "intraday_estimate_method": "delayed mark against current paper holding execution price",
+            }
+        )
+    return enriched_holdings, strategy_contribution
+
+
 def _intraday_from_refresh_snapshot(root: Path, snapshot: dict[str, Any]) -> tuple[dict[str, Any], str] | None:
     session_date = snapshot.get("market_session_date") or (snapshot.get("shadow_intraday") or {}).get("session_date")
     paper_row = _latest_paper_row_for_session(root, session_date)
     marks = snapshot.get("marks") or {}
     data_quality = marks.get("data_quality") or {}
     shadow = snapshot.get("shadow_intraday") or {}
+    latest_prices = snapshot.get("latest_usable_prices") or shadow.get("latest_usable_prices") or {}
     estimated_pnl = shadow.get("estimated_pnl")
     if estimated_pnl is None:
         estimated_pnl = marks.get("estimated_intraday_pnl")
@@ -2101,6 +2146,18 @@ def _intraday_from_refresh_snapshot(root: Path, snapshot: dict[str, Any]) -> tup
     total = snapshot.get("ticker_count_requested")
     if estimated_nav is None and estimated_pnl is None and latest_as_of is None:
         return None
+    canonical = _read_json(_paths(root)["canonical"], {})
+    enriched_holdings, price_strategy_contribution = _intraday_from_latest_prices(
+        canonical,
+        latest_prices,
+        latest_as_of=latest_as_of,
+    )
+    snapshot_strategy_contribution = {
+        row["strategy_id"]: row.get("estimated_pnl")
+        for row in shadow.get("strategies") or []
+        if row.get("strategy_id") and row.get("estimated_pnl") is not None
+    }
+    strategy_contribution = snapshot_strategy_contribution or price_strategy_contribution
     freshness = str(data_quality.get("freshness") or "").upper()
     status = "STALE" if freshness == "STALE" else "LOADED"
     return (
@@ -2114,12 +2171,8 @@ def _intraday_from_refresh_snapshot(root: Path, snapshot: dict[str, Any]) -> tup
             "missing_tickers": snapshot.get("missing_tickers") or [],
             "stale_tickers": snapshot.get("stale_tickers") or [],
             "residual_pnl": None,
-            "holdings": [],
-            "strategy_contribution": {
-                row["strategy_id"]: row.get("estimated_pnl")
-                for row in shadow.get("strategies") or []
-                if row.get("strategy_id")
-            },
+            "holdings": enriched_holdings,
+            "strategy_contribution": strategy_contribution,
             "ticker_security_contribution": [],
             "refresh_meta": {
                 "data_freshness": freshness or "DELAYED",
@@ -2148,6 +2201,7 @@ def _refresh_snapshot_overlay_metadata(snapshot: dict[str, Any], intraday: dict[
             "covered": intraday.get("covered_tickers"),
             "total": intraday.get("total_tickers"),
         },
+        "refresh_cadence_minutes": max(int(snapshot.get("refresh_interval_minutes") or 30), 30),
         "errors": [],
     }
 
@@ -2178,16 +2232,53 @@ def _attach_intraday_runtime_fields(
     enriched["intraday_overlay_available"] = available
     enriched["intraday_scheduler_enabled"] = bool(scheduler_enabled)
     enriched["intraday_refresh_message"] = _runtime_message(status, overlay)
+    enriched["intraday_refresh_cadence_minutes"] = (overlay or {}).get("refresh_cadence_minutes") or 30
     enriched["intraday_overlay_metadata"] = {
         "schema_version": (overlay or {}).get("schema_version"),
         "generated_at": (overlay or {}).get("generated_at"),
         "status": status,
         "stale_after_seconds": (overlay or {}).get("stale_after_seconds"),
+        "refresh_cadence_minutes": (overlay or {}).get("refresh_cadence_minutes") or 30,
         "delayed_estimate_as_of": (overlay or {}).get("delayed_estimate_as_of"),
         "current_trading_session_date": (overlay or {}).get("current_trading_session_date"),
         "errors": (overlay or {}).get("errors") or [],
     }
     return enriched
+
+
+def _snapshot_from_latest_refresh(
+    root: Path,
+    base: dict[str, Any],
+    *,
+    scheduler_enabled: bool,
+) -> dict[str, Any] | None:
+    latest_snapshot = _read_latest_refresh_snapshot(root)
+    latest_intraday = _intraday_from_refresh_snapshot(root, latest_snapshot) if latest_snapshot else None
+    if not latest_intraday:
+        return None
+    intraday, status = latest_intraday
+    canonical = _read_json(_paths(root)["canonical"], {})
+    market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
+    sp500_reference_universe = _read_json(_paths(root)["sp500_reference_universe"], None)
+    source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
+    merged = build_operational_snapshot(
+        canonical,
+        intraday=intraday,
+        market_proxy_cache=market_proxy_cache or intraday.get("risk_factor_market_proxy_cache"),
+        sp500_reference_universe=sp500_reference_universe,
+        decisions=read_decisions(root),
+        operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
+        strategy_research_details=_snapshot_research_evidence(base),
+        refresh_status=status,
+    )
+    merged = _attach_paper_portfolio_daily_fields(root, merged)
+    return _attach_intraday_runtime_fields(
+        merged,
+        status=status,
+        overlay=_refresh_snapshot_overlay_metadata(latest_snapshot, intraday, status),
+        scheduler_enabled=scheduler_enabled,
+        available=True,
+    )
 
 
 def load_operational_snapshot_for_response(
@@ -2200,32 +2291,9 @@ def load_operational_snapshot_for_response(
     base = load_or_build_operational_snapshot(root)
     overlay = _read_intraday_overlay(root)
     if not overlay:
-        latest_snapshot = _read_latest_refresh_snapshot(root)
-        latest_intraday = _intraday_from_refresh_snapshot(root, latest_snapshot) if latest_snapshot else None
-        if latest_intraday:
-            intraday, status = latest_intraday
-            canonical = _read_json(_paths(root)["canonical"], {})
-            market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
-            sp500_reference_universe = _read_json(_paths(root)["sp500_reference_universe"], None)
-            source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
-            merged = build_operational_snapshot(
-                canonical,
-                intraday=intraday,
-                market_proxy_cache=market_proxy_cache or intraday.get("risk_factor_market_proxy_cache"),
-                sp500_reference_universe=sp500_reference_universe,
-                decisions=read_decisions(root),
-                operational_pricing_universe_size=source.get("operational_pricing_universe_size"),
-                strategy_research_details=_snapshot_research_evidence(base),
-                refresh_status=status,
-            )
-            merged = _attach_paper_portfolio_daily_fields(root, merged)
-            return _attach_intraday_runtime_fields(
-                merged,
-                status=status,
-                overlay=_refresh_snapshot_overlay_metadata(latest_snapshot, intraday, status),
-                scheduler_enabled=scheduler_enabled,
-                available=True,
-            )
+        latest = _snapshot_from_latest_refresh(root, base, scheduler_enabled=scheduler_enabled)
+        if latest:
+            return latest
         return _attach_intraday_runtime_fields(
             base,
             status="NOT_LOADED",
@@ -2242,6 +2310,9 @@ def load_operational_snapshot_for_response(
             available=False,
         )
     if overlay.get("status") != "LOADED" or _is_overlay_stale(overlay, now=now):
+        latest = _snapshot_from_latest_refresh(root, base, scheduler_enabled=scheduler_enabled)
+        if latest:
+            return latest
         return _attach_intraday_runtime_fields(
             base,
             status="STALE" if overlay.get("status") == "LOADED" else str(overlay.get("status") or "NOT_LOADED"),

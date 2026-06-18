@@ -250,6 +250,7 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert 'fetch("/api/decisions"' in app
     assert "setInterval(()=>refreshOperational(false),POLL_INTERVAL_MS)" in app
     assert "window.__COMMAND_POLL_INTERVAL_MS||300000" in app
+    assert "Auto delayed refresh every ${cadence} min" in app
     assert "location.reload" not in app
     assert 'data-decision-action="APPROVE"' in app
     assert 'data-contributor-id="' in app
@@ -267,6 +268,7 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert "load_operational_snapshot_for_response" in server
     assert "operational_intraday_overlay.json" in (ROOT / "src/reporting/operational_snapshot.py").read_text(encoding="utf-8")
     assert "ENABLE_INTRADAY_SCHEDULER" in server
+    assert "default_interval_minutes: 30" in (ROOT / "data/config/intraday_refresh.yaml").read_text(encoding="utf-8")
 
 
 def test_dashboard_snapshot_loading_cannot_remain_infinite_loading_shell():

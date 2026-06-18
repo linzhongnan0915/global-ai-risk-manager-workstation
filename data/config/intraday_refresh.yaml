@@ -4,7 +4,7 @@
 intraday_refresh:
   enabled: true
   # Render deployments require ENABLE_INTRADAY_SCHEDULER=1 to run the background loop.
-  default_interval_minutes: 5
+  default_interval_minutes: 30
   allowed_intervals_minutes:
     - 5
     - 10

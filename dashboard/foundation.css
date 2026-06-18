@@ -265,17 +265,17 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .allocation-trade-table{width:100%;min-width:0;table-layout:fixed}
 .allocation-trade-table th,.allocation-trade-table td{white-space:normal}
 .workflow-command-diagram{min-height:590px;gap:10px;padding:16px 18px;border-color:#275261;background:radial-gradient(circle at 15% 12%,rgba(25,174,245,.18),transparent 28%),radial-gradient(circle at 80% 70%,rgba(35,212,119,.08),transparent 24%),linear-gradient(180deg,#0a1d2a,#061015 72%,#03090b)}
-.workflow-command-diagram header strong{font-size:24px;letter-spacing:0}
-.workflow-command-diagram header span{max-width:920px;color:#a8bdc1;font-size:12px}
-.workflow-command-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(170px,1fr));gap:18px 30px}
-.workflow-command-node{min-height:170px;padding:13px 14px;border-radius:7px;background:linear-gradient(180deg,#10283b,#0a1722 76%,#071018);box-shadow:0 10px 24px rgba(0,0,0,.28),inset 0 1px #ffffff12}
-.workflow-command-node span{font-size:9px}
-.workflow-command-node strong{margin-top:6px;font-size:16px;line-height:1.12}
-.workflow-command-node ul{gap:6px;margin-top:11px}
-.workflow-command-node li{min-height:22px;padding:6px 8px;border-radius:5px;font-size:9px;line-height:1.2}
-.workflow-command-output{min-height:48px;gap:10px;padding:10px 14px;border-radius:7px;background:#0c2232}
-.workflow-command-output strong{font-size:13px}
-.workflow-command-output span{font-size:9px;color:#b6c9cc}
+.workflow-command-diagram header strong{font-size:28px;letter-spacing:0}
+.workflow-command-diagram header span{max-width:980px;color:#b7cdd1;font-size:14px}
+.workflow-command-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(172px,1fr));gap:16px 26px}
+.workflow-command-node{min-height:172px;padding:14px 15px;border-radius:7px;background:linear-gradient(180deg,#10283b,#0a1722 76%,#071018);box-shadow:0 10px 24px rgba(0,0,0,.28),inset 0 1px #ffffff12}
+.workflow-command-node span{font-size:11px}
+.workflow-command-node strong{margin-top:7px;font-size:19px;line-height:1.12}
+.workflow-command-node ul{gap:7px;margin-top:12px}
+.workflow-command-node li{min-height:25px;padding:7px 9px;border-radius:5px;font-size:11px;line-height:1.22}
+.workflow-command-output{min-height:50px;gap:12px;padding:10px 14px;border-radius:7px;background:#0c2232}
+.workflow-command-output strong{font-size:15px}
+.workflow-command-output span{font-size:11px;color:#c2d5d8}
 .workflow-secondary-detail{opacity:.86}
 @media(max-width:1550px){
   .allocation-control-strip-v2{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -286,8 +286,9 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
   .workflow-command-diagram{min-height:540px;padding:12px}
   .workflow-command-grid{gap:12px;grid-template-rows:repeat(2,minmax(155px,1fr))}
   .workflow-command-node{min-height:155px;padding:10px}
-  .workflow-command-node strong{font-size:13px}
-  .workflow-command-node li{font-size:8px}
+  .workflow-command-node span{font-size:10px}
+  .workflow-command-node strong{font-size:16px}
+  .workflow-command-node li{font-size:10px}
 }
 .chart-legend .dd-line{border-top:2px dashed var(--red);box-shadow:none}
 .chart-legend .pnl-bar{width:8px;height:7px;display:inline-block;background:linear-gradient(90deg,var(--green) 50%,var(--red) 50%)}

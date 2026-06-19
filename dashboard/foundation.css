@@ -242,7 +242,7 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .allocation-layout-v2{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"matrix side" "trades side" "explain side";gap:6px;align-items:start}
 .allocation-layout-v2 .allocation-matrix-panel{min-width:0}
 .allocation-decision-grid{width:100%;max-width:100%;overflow:hidden;border-top:1px solid var(--soft);background:#03090a}
-.allocation-decision-header,.allocation-decision-row{display:grid;grid-template-columns:minmax(170px,1.25fr) 82px 72px 82px 76px minmax(116px,.95fr) 102px 88px minmax(150px,1.05fr);align-items:center;gap:0}
+.allocation-decision-header,.allocation-decision-row{display:grid;grid-template-columns:minmax(190px,1.35fr) 82px 86px 88px 108px 92px minmax(210px,1.25fr);align-items:center;gap:0}
 .allocation-decision-header{position:sticky;top:0;z-index:3;min-height:31px;background:#082026;color:#b9cfd2;font-size:8px;font-weight:900;text-transform:uppercase}
 .allocation-decision-header span,.allocation-decision-row>span,.allocation-decision-row>div,.allocation-decision-row>label{min-width:0;padding:5px 7px;border-right:1px solid #143138;overflow:hidden;text-overflow:ellipsis}
 .allocation-decision-body{max-height:498px;overflow-y:auto;overflow-x:hidden}
@@ -282,7 +282,7 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
   .allocation-kpis-v2{grid-template-columns:repeat(3,minmax(0,1fr))}
   .allocation-layout-v2{grid-template-columns:1fr;grid-template-areas:"matrix" "side" "trades" "explain"}
   .allocation-side{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .allocation-decision-header,.allocation-decision-row{grid-template-columns:minmax(150px,1.2fr) 70px 66px 76px 70px minmax(104px,.9fr) 92px 80px minmax(132px,1fr)}
+  .allocation-decision-header,.allocation-decision-row{grid-template-columns:minmax(160px,1.25fr) 72px 76px 80px 92px 80px minmax(150px,1fr)}
   .workflow-command-diagram{min-height:540px;padding:12px}
   .workflow-command-grid{gap:12px;grid-template-rows:repeat(2,minmax(155px,1fr))}
   .workflow-command-node{min-height:155px;padding:10px}

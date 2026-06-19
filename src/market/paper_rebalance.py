@@ -79,6 +79,7 @@ def next_business_day(value: str | None) -> str:
         current = date.fromisoformat(str(value)[:10])
     except (TypeError, ValueError):
         current = datetime.now(timezone.utc).date()
+    current = max(current, datetime.now(timezone.utc).date())
     current += timedelta(days=1)
     while current.weekday() >= 5:
         current += timedelta(days=1)

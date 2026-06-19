@@ -267,15 +267,18 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
 
     for marker in (
         "Paper Allocation Decision Center / Performance Recommendation Matrix",
+        "Suggested Target is evidence-driven; Target remains user-controlled",
         "allocation-decision-grid",
+        "Suggested %",
         "Reason / Rationale",
-        "Positive return / drawdown profile",
-        "Weaker return / drawdown profile",
+        "Positive paper performance + supportive backtest Sharpe",
+        "Negative recent paper performance",
         "Dust trade ignored",
-        "Data incomplete / review required",
-        "Use Performance Recommendation",
+        "Missing / limited evidence; review required",
+        "Apply Suggested Targets",
         "allocationRecommendedWeights",
         "allocationRecommendationScore",
+        "allocationRecommendationAction",
         "/api/paper-rebalance/plan",
         "/api/paper-rebalance/accept",
         "/api/paper-rebalance/apply",
@@ -290,7 +293,11 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     assert ".allocation-decision-header,.allocation-decision-row" in css
     assert ".allocation-edit-table{min-width:1320px" in css
     assert ".allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}" in css
-    assert app.count("function allocationPage()") >= 2
+    assert app.count("function allocationPage()") == 1
+    assert "canvas.__commandChartPoints" in app
+    assert "Math.hypot(p.x-x,p.y-y)" in app
+    assert "Current Trading Date" in app
+    assert "Intraday Estimate Status" in app
 
 
 def test_command_center_uses_operational_snapshot_polling_without_full_reload():
@@ -406,23 +413,24 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "function officialChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function paperChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function commandChartSeries(c)" in app
-    assert "return paper.length?" in app
+    assert 'return {kind:"official",label:"Official Ledger"' in app
     assert "function latestPaperPerformanceDate(c)" in app
-    assert "Paper Performance Latest Date" in app
+    assert "Current Trading Date" in app
+    assert "Intraday Estimate Status" in app
     assert "function paperRowForCurrentSession(c)" in app
     assert "function chartShowsIntradayEstimate(c)" in app
-    assert "Paper Performance" in app
-    assert "Official fallback · Paper ledger pending · Delayed estimate separate" in app
-    assert "Paper ledger pending · Showing official fallback" in app
+    assert "Recorded official closes" in app
+    assert "Paper performance separate" in app
     assert "chart-status-chips" in app
     assert "Today's delayed estimate shown separately; paper daily record pending" not in app
     assert "COMMAND_CHART_PAPER_KEYS" not in app
     assert ".sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-limit)" in app
-    assert "const paper=paperChartRows(c),official=officialChartRows(c)" in app
-    assert "function drawCommandChart(canvas,c){const series=commandChartSeries(c)" in app
+    assert "const official=officialChartRows(c),paper=paperChartRows(c)" in app
+    assert "function drawCommandChart(canvas,c){" in app
+    assert "const series=commandChartSeries(c),rows=series.rows" in app
     assert "function bindCommandChartTooltip()" in app
     assert "const series=commandChartSeries(state.contract),rows=series.rows" in app
-    assert "chartDetailMarkup({date:sessionLabel(c),source:\"Delayed Estimate\",nav:intr.estimated_nav,pnl:intr.estimated_pnl,drawdown:null})" in app
+    assert "chartDetailMarkup({date:sessionLabel(state.contract),source:\"Delayed Estimate\",nav:intr.estimated_nav,pnl:intr.estimated_pnl,drawdown:null})" in app
     assert "Official portfolio ledger through ${latestPortfolioLedgerDate(c)}" in app
     assert "function chartDetailMarkup" in app
     assert "<b>Date</b>" in app

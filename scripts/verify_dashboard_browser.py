@@ -289,23 +289,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             and "INVALID_EXECUTION_RECORD" not in initial_body_upper
         )
         report["checks"]["official_date_label_precision"] = (
-            (
-                "official ledger through" in initial_body_text.lower()
-                or "official fallback" in initial_body_text.lower()
-                or "paper history" in initial_body_text.lower()
-                or "showing official fallback" in initial_body_text.lower()
-            )
-            and "OFFICIAL LEDGER DATE" in initial_body_upper
-            and (
-                "PAPER PERFORMANCE LATEST DATE" in initial_body_upper
-                or "paper ledger pending" in initial_body_text.lower()
-                or "paper history" in initial_body_text.lower()
-            )
+            "OFFICIAL LEDGER DATE" in initial_body_upper
+            and "CURRENT TRADING DATE" in initial_body_upper
+            and "LAST OFFICIAL CLOSE" in initial_body_upper
             and latest_ledger_date is not None
-            and (
-                latest_ledger_date == official_close_date
-                or f"Official Daily Ledger through {official_close_date}" not in initial_body_text
-            )
+            and str(latest_ledger_date) in initial_body_text
+            and (official_close_date is None or str(official_close_date) in initial_body_text)
         )
         chart_state = page.evaluate(
             """
@@ -335,9 +324,10 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               return {
                 expectedOfficialRows,
                 headerMentionsWindow: (
-                  (/Paper history/i.test(panel?.innerText || ''))
-                  || (/Official fallback/i.test(panel?.innerText || '') && /Paper ledger pending/i.test(panel?.innerText || ''))
-                  || (/Paper ledger pending/i.test(panel?.innerText || '') && /Showing official fallback/i.test(panel?.innerText || ''))
+                  (/Recorded official closes/i.test(panel?.innerText || '') && /current session estimate separate/i.test(panel?.innerText || ''))
+                  || (/Recorded official closes/i.test(panel?.innerText || '') && /intraday pending until official close is recorded/i.test(panel?.innerText || ''))
+                  || (/Official Ledger/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
+                  || (/Paper Performance separate/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
                 ),
                 titleFullVisible: title?.innerText === 'Master Portfolio Daily Performance' && title.scrollWidth <= title.clientWidth + 1,
                 detailStripPresent: Boolean(detail),

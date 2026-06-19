@@ -416,19 +416,19 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "function officialChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function paperChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function commandChartSeries(c)" in app
-    assert 'return {kind:"official",label:"Official Ledger"' in app
+    assert 'return {kind:paper.length?"paper":"official",label:paper.length?"Paper Performance Daily":"Official Ledger"' in app
     assert "function latestPaperPerformanceDate(c)" in app
     assert "Current Trading Date" in app
     assert "Intraday Estimate Status" in app
     assert "function paperRowForCurrentSession(c)" in app
     assert "function chartShowsIntradayEstimate(c)" in app
-    assert "Recorded official closes" in app
-    assert "Paper performance separate" in app
+    assert "Paper daily ledger by workday" in app
+    assert "Official ledger markers" in app
     assert "chart-status-chips" in app
     assert "Today's delayed estimate shown separately; paper daily record pending" not in app
     assert "COMMAND_CHART_PAPER_KEYS" not in app
     assert ".sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-limit)" in app
-    assert "const official=officialChartRows(c),paper=paperChartRows(c)" in app
+    assert "const paper=paperChartRows(c),official=officialChartRows(c)" in app
     assert "function drawCommandChart(canvas,c){" in app
     assert "const series=commandChartSeries(c),rows=series.rows" in app
     assert "function bindCommandChartTooltip()" in app

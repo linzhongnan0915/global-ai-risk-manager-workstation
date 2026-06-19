@@ -335,14 +335,17 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
 def test_dashboard_snapshot_loading_cannot_remain_infinite_loading_shell():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
 
-    assert "SNAPSHOT_LOAD_TIMEOUT_MS=45000" in app
+    assert "SNAPSHOT_LOAD_TIMEOUT_MS=12000" in app
     assert "AbortController" in app
     assert "snapshotShapeError" in app
     assert "renderLoadFailed" in app
-    assert 'data-load-state="LOAD_FAILED"' in app
-    assert "DATA_MISSING" in app
+    assert "renderDegradedShell" in app
+    assert 'data-load-state="DEGRADED"' in app
+    assert "Monitoring Data Degraded" in app
+    assert "Section-level degraded warning" in app
+    assert "No fake NAV, P&L, strategy rows, fills, or official ledger records" in app
     assert 'snapshotLoadState:"READY"' in app
-    assert 'snapshotLoadState:"LOAD_FAILED"' in app
+    assert 'snapshotLoadState:"DEGRADED"' in app
 
 
 def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():

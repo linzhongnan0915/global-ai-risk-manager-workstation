@@ -37,6 +37,7 @@ def load_intraday_config(path: str | Path = DEFAULT_CONFIG_PATH) -> dict[str, An
     cfg.setdefault("latest_pointer_path", "output/intraday_latest.json")
     cfg.setdefault("status_path", "output/intraday_refresh_status.json")
     cfg.setdefault("lock_path", "output/intraday_refresh.lock")
+    cfg.setdefault("lock_stale_after_minutes", 90)
     cfg.setdefault("shadow_database_path", "output/shadow/strategy_shadow.db")
     cfg.setdefault("allow_artifact_position_fallback", False)
     cfg.setdefault("market_holidays", [])

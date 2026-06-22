@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -24,7 +24,13 @@ from src.market.market_hours import (
     next_scheduled_refresh,
     should_run_scheduled_refresh,
 )
-from src.market.paper_portfolio_ledger import build_paper_portfolio_daily_row, upsert_paper_portfolio_daily
+from src.market.paper_portfolio_ledger import (
+    applied_paper_rebalance_for_date,
+    build_paper_portfolio_daily_row,
+    build_paper_strategy_daily_rows,
+    upsert_paper_portfolio_daily,
+    upsert_paper_strategy_daily,
+)
 from src.market.snapshot_store import (
     new_snapshot_id,
     publish_snapshot,
@@ -165,16 +171,192 @@ def collect_committed_shadow_holding_tickers(root: Path) -> list[str]:
     return sorted(tickers)
 
 
+def _parse_iso_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _date_from_iso(value: str | None) -> str | None:
+    return str(value)[:10] if value else None
+
+
+def _snapshot_session_date(snapshot: dict[str, Any] | None) -> str | None:
+    if not snapshot:
+        return None
+    shadow = snapshot.get("shadow_intraday") or {}
+    return (
+        snapshot.get("market_session_date")
+        or shadow.get("session_date")
+        or _date_from_iso(snapshot.get("latest_completed_bar_ts_et"))
+        or _date_from_iso(snapshot.get("latest_observation_ts_et"))
+    )
+
+
+def _snapshot_latest_as_of(snapshot: dict[str, Any] | None) -> str | None:
+    if not snapshot:
+        return None
+    marks = snapshot.get("marks") or {}
+    data_quality = marks.get("data_quality") or {}
+    return (
+        data_quality.get("latest_completed_bar_ts_et")
+        or snapshot.get("latest_completed_bar_ts_et")
+        or snapshot.get("latest_observation_ts_et")
+    )
+
+
+def _status_started_at(status: dict[str, Any]) -> datetime | None:
+    return _parse_iso_timestamp(status.get("started_at"))
+
+
+def _refresh_status_is_stale(
+    status: dict[str, Any],
+    *,
+    now: datetime | None = None,
+    stale_after_minutes: int = 90,
+) -> bool:
+    if not status.get("in_progress"):
+        return False
+    started = _status_started_at(status)
+    if started is None:
+        return False
+    current = now or datetime.now(timezone.utc)
+    return current - started > timedelta(minutes=stale_after_minutes)
+
+
+def _lock_file_is_stale(lock_path: Path, *, stale_after_seconds: int | None) -> bool:
+    if stale_after_seconds is None or stale_after_seconds <= 0 or not lock_path.exists():
+        return False
+    try:
+        modified = datetime.fromtimestamp(lock_path.stat().st_mtime, tz=timezone.utc)
+    except OSError:
+        return False
+    return datetime.now(timezone.utc) - modified > timedelta(seconds=stale_after_seconds)
+
+
+def _snapshot_is_current_for_session(
+    snapshot: dict[str, Any] | None,
+    session_date: str,
+) -> bool:
+    if not snapshot:
+        return False
+    latest_as_of = _snapshot_latest_as_of(snapshot)
+    return _snapshot_session_date(snapshot) == session_date or _date_from_iso(latest_as_of) == session_date
+
+
+def refresh_lifecycle_status(
+    config: dict[str, Any] | None = None,
+    *,
+    now: datetime | None = None,
+    interval_minutes: int | None = None,
+) -> dict[str, Any]:
+    """Classify whether the delayed intraday pipeline is current, stale, pending, or needs refresh."""
+    cfg = config or load_intraday_config()
+    status = read_refresh_status(cfg)
+    interval = resolve_refresh_interval_minutes(
+        cfg,
+        interval_minutes=interval_minutes,
+        selected_interval_minutes=status.get("selected_interval_minutes"),
+    )
+    lock_stale_after_minutes = max(int(cfg.get("lock_stale_after_minutes") or 90), interval * 2)
+    stale_running = _refresh_status_is_stale(
+        status,
+        now=now,
+        stale_after_minutes=lock_stale_after_minutes,
+    )
+    session = market_session_status(
+        now,
+        timezone=cfg["timezone"],
+        holidays=cfg.get("market_holidays") or [],
+        interval_minutes=interval,
+    )
+    snapshot = read_latest_snapshot(cfg)
+    latest_as_of = _snapshot_latest_as_of(snapshot)
+    latest_ts = _parse_iso_timestamp(latest_as_of)
+    current_day_snapshot = _snapshot_is_current_for_session(snapshot, session.session_date)
+    last_error = status.get("last_error")
+    state = "closed"
+    reason = "market_closed"
+    if status.get("in_progress") and not stale_running:
+        state = "pending"
+        reason = "refresh_in_progress"
+    elif status.get("state") in {"failed", "cooldown"} and last_error and not current_day_snapshot:
+        state = "provider_failed"
+        reason = "provider_failed_no_current_snapshot"
+    elif session.status == "Open":
+        if not current_day_snapshot:
+            state = "refresh_needed"
+            reason = "missing_current_day_intraday_snapshot"
+        elif latest_ts is None:
+            state = "refresh_needed"
+            reason = "missing_latest_market_observation"
+        else:
+            current = now or datetime.now(timezone.utc)
+            if current.tzinfo is None:
+                current = current.replace(tzinfo=timezone.utc)
+            age = (current.astimezone(latest_ts.tzinfo) - latest_ts).total_seconds() / 60
+            stale_after = stale_after_minutes_for(cfg, interval)
+            if age > stale_after:
+                state = "stale"
+                reason = "current_day_intraday_snapshot_stale"
+            else:
+                state = "current"
+                reason = "current_day_intraday_snapshot_available"
+    elif current_day_snapshot:
+        state = "current"
+        reason = "current_day_snapshot_available_outside_regular_session"
+    elif status.get("state") in {"failed", "cooldown"} and last_error:
+        state = "provider_failed"
+        reason = "provider_failed_latest_available_preserved"
+    elif session.is_trading_day and session.status in {"Pre-market", "After-hours"}:
+        state = "closed"
+        reason = f"market_{session.status.lower().replace('-', '_')}"
+    if stale_running and state == "pending":
+        state = "refresh_needed" if session.status == "Open" else "stale"
+        reason = "stale_refresh_lock_or_status_recovered"
+    return {
+        "state": state,
+        "reason": reason,
+        "market_status": session.status,
+        "market_session_date": session.session_date,
+        "is_trading_day": session.is_trading_day,
+        "refresh_needed": state == "refresh_needed",
+        "pending": state == "pending",
+        "provider_failed": state == "provider_failed",
+        "latest_snapshot_id": snapshot.get("snapshot_id") if snapshot else None,
+        "latest_snapshot_session_date": _snapshot_session_date(snapshot),
+        "latest_market_observation_at": latest_as_of,
+        "last_successful_refresh_at": snapshot.get("refresh_completed_at") if snapshot else status.get("last_success_at"),
+        "last_error": last_error,
+        "status_state": status.get("state") or "idle",
+        "status_in_progress": bool(status.get("in_progress") and not stale_running),
+        "stale_status_recovered": stale_running,
+        "refresh_interval_minutes": interval,
+        "lock_stale_after_minutes": lock_stale_after_minutes,
+    }
+
+
 def _is_provider_rate_limit_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return any(token in message for token in ("429", "too many requests", "rate limit", "rate-limited", "cooldown"))
 
 
 @contextmanager
-def refresh_lock(lock_path: Path):
+def refresh_lock(lock_path: Path, *, stale_after_seconds: int | None = None):
     acquired = False
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if _lock_file_is_stale(lock_path, stale_after_seconds=stale_after_seconds):
+            try:
+                lock_path.unlink()
+            except OSError:
+                pass
         fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         os.write(fd, str(os.getpid()).encode())
         os.close(fd)
@@ -232,9 +414,12 @@ def build_refresh_status_payload(
     else:
         freshness = None
         last_success = status.get("last_success_at")
-    in_progress = bool(status.get("in_progress"))
+    lifecycle = refresh_lifecycle_status(cfg, interval_minutes=interval)
+    in_progress = bool(status.get("in_progress") and not lifecycle.get("stale_status_recovered"))
     state = status.get("state") or "idle"
     if in_progress:
+        state = "refreshing"
+    if lifecycle.get("state") == "pending":
         state = "refreshing"
     canonical_data_state = _canonical_data_state_label(
         session.status,
@@ -284,6 +469,9 @@ def build_refresh_status_payload(
         "scheduler_label": scheduler_label,
         "scheduler_display": scheduler_display,
         "canonical_data_state": canonical_data_state,
+        "refresh_lifecycle_state": lifecycle["state"],
+        "refresh_needed": lifecycle["refresh_needed"],
+        "refresh_lifecycle": lifecycle,
         "snapshot_id": snapshot_id,
         "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
         "refresh_state": state,
@@ -303,9 +491,10 @@ def build_refresh_status_payload(
             if demo
             else "Research market proxy refresh; not live portfolio or exchange data."
         ),
-        "scheduler_deployment_note": "Render requires ENABLE_INTRADAY_SCHEDULER=1.",
+        "scheduler_deployment_note": (
+            "In-process scheduler runs while the service is awake; first dashboard open can request a controlled refresh."
+        ),
         "demo_hosting": demo,
-        "scheduler_label": scheduler_label,
     }
 
 
@@ -374,7 +563,8 @@ def run_intraday_refresh(
         return payload
 
     lock_path = Path(cfg["lock_path"])
-    with refresh_lock(lock_path) as acquired:
+    stale_after_seconds = max(int(cfg.get("lock_stale_after_minutes") or 90), interval * 2) * 60
+    with refresh_lock(lock_path, stale_after_seconds=stale_after_seconds) as acquired:
         if not acquired:
             current = read_refresh_status(cfg)
             return {
@@ -464,6 +654,13 @@ def run_intraday_refresh(
                     f"partial ticker coverage ({successful}/{requested}, below {min_ratio:.0%}); stale/missing ticker labels preserved"
                 )
             refresh_coverage_status = "partial" if refresh_warnings or fetch_result.get("missing_tickers") or fetch_result.get("stale_tickers") else "fresh"
+            trading_date = (
+                fetch_result.get("market_session_date")
+                or fetch_result.get("session_date")
+                or max((str(row.get("session_date") or "") for row in fetch_result.get("rows") or []), default="")
+                or session.session_date
+            )
+            paper_rebalance = applied_paper_rebalance_for_date(refresh_root, trading_date)
 
             marks = revalue_mark_sensitive_outputs(artifact, fetch_result, load_market_universe())
             shadow_intraday = build_shadow_intraday_estimates(
@@ -499,18 +696,33 @@ def run_intraday_refresh(
                 refresh_status=refresh_coverage_status,
                 warnings=refresh_warnings,
                 position_source=position_source,
+                rebalance=paper_rebalance,
+            )
+            strategy_paper_rows = build_paper_strategy_daily_rows(
+                artifact,
+                fetch_result,
+                refresh_status=refresh_coverage_status,
+                position_source=position_source,
+                rebalance=paper_rebalance,
             )
             if paper_row:
                 paper_payload = upsert_paper_portfolio_daily(refresh_root, paper_row)
+                strategy_payload = (
+                    upsert_paper_strategy_daily(refresh_root, strategy_paper_rows)
+                    if strategy_paper_rows else {"rows": []}
+                )
                 paper_update = {
                     "portfolio_row_updated": True,
-                    "strategy_rows_updated": 0,
+                    "strategy_rows_updated": len(strategy_paper_rows),
                     "trading_date": paper_row.get("date"),
                     "nav": paper_row.get("ending_nav"),
                     "daily_pnl": paper_row.get("daily_pnl"),
                     "daily_return": paper_row.get("daily_return"),
                     "refresh_status": refresh_coverage_status,
                     "row_count": len(paper_payload.get("rows") or []),
+                    "strategy_row_count": len(strategy_payload.get("rows") or []),
+                    "paper_transaction_cost": paper_row.get("paper_transaction_cost"),
+                    "applied_paper_rebalance_plan_id": paper_rebalance.get("applied_plan_id"),
                     "paper_only": True,
                     "delayed_market_data": True,
                     "not_live_market_data": True,
@@ -541,7 +753,7 @@ def run_intraday_refresh(
                 "latest_observation_ts_et": fetch_result.get("latest_observation_ts_et"),
                 "latest_completed_bar_ts_et": fetch_result.get("latest_completed_bar_ts_et"),
                 "incomplete_current_bars": fetch_result.get("incomplete_current_bars") or [],
-                "market_session_date": session.session_date,
+                "market_session_date": trading_date,
                 "market_session_status": session.status,
                 "ticker_count_requested": requested,
                 "ticker_count_successful": successful,
@@ -681,12 +893,12 @@ def _canonical_data_state_label(
         return "Refresh failed"
     if market_status != "Open":
         return "Latest market close"
+    if not has_snapshot:
+        return "Refresh needed"
     if freshness == "Current":
         return "Current intraday proxy"
     if freshness == "Delayed":
         return "Delayed"
     if freshness == "Stale":
         return "Stale"
-    if not has_snapshot:
-        return "Latest market close"
     return "Latest market close"

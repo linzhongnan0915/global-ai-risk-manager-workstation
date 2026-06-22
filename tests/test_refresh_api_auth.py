@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import socket
 import sys
 import threading
+from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -16,8 +19,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.run_workstation_server import WorkstationHandler, resolve_server_bind
 from src.market.refresh_auth import classify_refresh_request, parse_bearer_token
-from src.market.intraday_refresh_service import run_intraday_refresh
-from src.market.paper_portfolio_ledger import paper_portfolio_daily_path
+from src.market.intraday_config import load_intraday_config
+from src.market.intraday_refresh_service import build_refresh_status_payload, refresh_lifecycle_status, run_intraday_refresh
+from src.market.paper_portfolio_ledger import paper_portfolio_daily_path, paper_strategy_daily_path
 from src.market.snapshot_store import read_latest_pointer, read_latest_snapshot
 
 
@@ -106,6 +110,31 @@ def test_classify_refresh_request_modes(monkeypatch):
     assert classify_refresh_request("Bearer wrong") == ("rejected", False)
     assert classify_refresh_request("Bearer ") == ("rejected", False)
     assert classify_refresh_request(None) == ("manual", True)
+
+
+def test_intraday_refresh_status_defaults_to_controlled_30_minute_cadence(tmp_path: Path):
+    cfg = dict(load_intraday_config())
+    cfg["latest_pointer_path"] = str(tmp_path / "latest.json")
+    cfg["status_path"] = str(tmp_path / "status.json")
+    cfg["lock_path"] = str(tmp_path / "refresh.lock")
+    payload = build_refresh_status_payload(cfg)
+
+    assert payload["refresh_cadence_minutes"] == 30
+    assert payload["selected_cadence_minutes"] == 30
+    assert payload["refresh_lifecycle"]["refresh_interval_minutes"] == 30
+    assert payload["scheduler_deployment_note"].startswith("In-process scheduler runs")
+
+
+def test_market_open_missing_intraday_snapshot_exposes_refresh_needed(intraday_cfg):
+    now = datetime(2026, 6, 22, 10, 0, tzinfo=ZoneInfo("America/New_York"))
+
+    lifecycle = refresh_lifecycle_status(intraday_cfg, now=now)
+
+    assert lifecycle["market_status"] == "Open"
+    assert lifecycle["market_session_date"] == "2026-06-22"
+    assert lifecycle["state"] == "refresh_needed"
+    assert lifecycle["reason"] == "missing_current_day_intraday_snapshot"
+    assert lifecycle["latest_snapshot_id"] is None
 
 
 def test_external_refresh_valid_token_allowed(monkeypatch, tmp_path: Path):
@@ -209,7 +238,7 @@ def test_external_scheduler_status_payload(monkeypatch):
     payload = build_refresh_status_payload()
     assert payload["external_scheduler_active"] is True
     assert payload["scheduler_display"] == "External active"
-    assert payload["refresh_cadence_minutes"] == 5
+    assert payload["refresh_cadence_minutes"] == 30
 
 
 def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cfg, minimal_artifact, tmp_path: Path):
@@ -275,6 +304,67 @@ def test_refresh_failure_preserves_last_valid_snapshot(intraday_cfg, minimal_art
     assert fail.get("ok") is False
     assert read_latest_pointer(intraday_cfg)["snapshot_id"] == first_id
     assert read_latest_snapshot(intraday_cfg)["snapshot_id"] == first_id
+
+
+def test_refresh_recovers_stale_lock_and_running_status(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path, ["SPY"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    lock_path = Path(intraday_cfg["lock_path"])
+    lock_path.write_text("stale", encoding="utf-8")
+    old = datetime(2026, 6, 18, 2, 21, tzinfo=timezone.utc).timestamp()
+    os.utime(lock_path, (old, old))
+    Path(intraday_cfg["status_path"]).write_text(
+        json.dumps(
+            {
+                "state": "running",
+                "in_progress": True,
+                "started_at": "2026-06-18T02:21:51+00:00",
+                "selected_interval_minutes": 30,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _mock_fetch_success(tickers, **kwargs):
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": "SPY",
+                    "observation_ts_et": "2026-06-22T10:00:00-04:00",
+                    "session_date": "2026-06-22",
+                    "open": 100.0,
+                    "high": 101.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": "2026-06-22T10:00:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-22T10:00:00-04:00",
+        }
+
+    result = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success,
+    )
+
+    assert result["ok"] is True
+    assert result["refresh_status"] == "success"
+    assert lock_path.exists() is False
 
 
 def test_refresh_uses_committed_shadow_holdings_when_shadow_db_unavailable(intraday_cfg, minimal_artifact, tmp_path: Path):
@@ -409,7 +499,7 @@ def test_refresh_uses_committed_holdings_without_creating_legacy_artifact(intrad
     assert artifact_path.exists() is False
 
 
-def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledger(intraday_cfg, minimal_artifact, tmp_path: Path):
+def test_refresh_updates_portfolio_and_strategy_level_paper_performance(intraday_cfg, minimal_artifact, tmp_path: Path):
     _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
@@ -455,7 +545,7 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
 
     update = result["paper_performance_update"]
     assert update["portfolio_row_updated"] is True
-    assert update["strategy_rows_updated"] == 0
+    assert update["strategy_rows_updated"] == 2
     assert update["trading_date"] == "2026-06-17"
     assert update["refresh_status"] == "fresh"
     ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
@@ -469,6 +559,13 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
     assert row["daily_return"] == pytest.approx(0.01)
     assert row["daily_pnl"] == pytest.approx(10_000)
     assert row["is_official_ledger"] is False
+    strategy_ledger = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert strategy_ledger["metadata"]["is_official_ledger"] is False
+    assert strategy_ledger["metadata"]["paper_only"] is True
+    assert len(strategy_ledger["rows"]) == 2
+    assert {row["strategy_id"] for row in strategy_ledger["rows"]} == {"S1", "S2"}
+    assert all(row["date"] == "2026-06-17" for row in strategy_ledger["rows"])
+    assert all(row["daily_return"] == pytest.approx(0.01) for row in strategy_ledger["rows"])
     second = run_intraday_refresh(
         force=True,
         artifact_path=artifact_path,
@@ -480,6 +577,9 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
     assert len(ledger["rows"]) == 1
     assert ledger["rows"][0]["daily_return"] == pytest.approx(0.02)
     assert ledger["rows"][0]["daily_pnl"] == pytest.approx(20_000)
+    strategy_ledger = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert len(strategy_ledger["rows"]) == 2
+    assert all(row["daily_return"] == pytest.approx(0.02) for row in strategy_ledger["rows"])
     third = run_intraday_refresh(
         force=True,
         artifact_path=artifact_path,
@@ -489,7 +589,107 @@ def test_refresh_updates_portfolio_level_paper_performance_without_strategy_ledg
     ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
     assert third["paper_performance_update"]["trading_date"] == "2026-06-18"
     assert [row["date"] for row in ledger["rows"]] == ["2026-06-17", "2026-06-18"]
+    strategy_ledger = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert sorted({(row["date"], row["strategy_id"]) for row in strategy_ledger["rows"]}) == [
+        ("2026-06-17", "S1"),
+        ("2026-06-17", "S2"),
+        ("2026-06-18", "S1"),
+        ("2026-06-18", "S2"),
+    ]
     assert (tmp_path / "dashboard/data/performance/strategy_daily_performance.json").exists() is False
+
+
+def test_refresh_includes_applied_paper_rebalance_costs_in_paper_only_rows(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    rebalance_dir = tmp_path / "data/paper_rebalance"
+    rebalance_dir.mkdir(parents=True)
+    (rebalance_dir / "current_paper_target_weights.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "paper_rebalance_v1",
+                "applied_plan_id": "paper-rebalance-test",
+                "intended_effective_date": "2026-06-17",
+                "weights": {"S1": 0.6, "S2": 0.4},
+                "paper_transaction_cost_total": 15.0,
+                "paper_only": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (rebalance_dir / "paper_rebalance_plans.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "paper_rebalance_v1",
+                "plans": [
+                    {
+                        "plan_id": "paper-rebalance-test",
+                        "applied_status": "Applied to Paper Allocation",
+                        "intended_effective_date": "2026-06-17",
+                        "line_items": [
+                            {"strategy_id": "S1", "estimated_transaction_cost": 10.0},
+                            {"strategy_id": "S2", "estimated_transaction_cost": 5.0},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _mock_fetch_success(tickers, **kwargs):
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": ticker,
+                    "observation_ts_et": "2026-06-17T15:55:00-04:00",
+                    "session_date": "2026-06-17",
+                    "open": 100.0,
+                    "high": 102.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+                for ticker in tickers
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": "2026-06-17T15:55:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-17T15:55:00-04:00",
+        }
+
+    result = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success,
+    )
+
+    assert result["paper_performance_update"]["paper_transaction_cost"] == pytest.approx(15.0)
+    portfolio_rows = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))["rows"]
+    assert portfolio_rows[0]["gross_pnl"] == pytest.approx(10_000)
+    assert portfolio_rows[0]["daily_pnl"] == pytest.approx(9_985)
+    assert portfolio_rows[0]["is_official_ledger"] is False
+    strategy_rows = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))["rows"]
+    by_id = {row["strategy_id"]: row for row in strategy_rows}
+    assert by_id["S1"]["paper_transaction_cost"] == pytest.approx(10.0)
+    assert by_id["S1"]["gross_pnl"] == pytest.approx(6_000.0)
+    assert by_id["S1"]["daily_pnl"] == pytest.approx(5_990.0)
+    assert by_id["S1"]["applied_paper_target_weight"] == pytest.approx(0.6)
+    assert by_id["S2"]["paper_transaction_cost"] == pytest.approx(5.0)
+    assert by_id["S2"]["gross_pnl"] == pytest.approx(4_000.0)
+    assert by_id["S2"]["daily_pnl"] == pytest.approx(3_995.0)
+    assert by_id["S2"]["applied_paper_target_weight"] == pytest.approx(0.4)
 
 
 def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal_artifact, tmp_path: Path):

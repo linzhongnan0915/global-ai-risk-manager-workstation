@@ -15,7 +15,13 @@ from uuid import uuid4
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
 from src.market.market_hours import market_session_status
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
-from src.market.paper_portfolio_ledger import paper_portfolio_snapshot_payload, upsert_paper_portfolio_daily
+from src.market.paper_portfolio_ledger import (
+    applied_paper_rebalance_for_date,
+    paper_portfolio_snapshot_payload,
+    paper_strategy_snapshot_payload,
+    upsert_paper_portfolio_daily,
+    upsert_paper_strategy_daily,
+)
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.strategies.display_metadata import strategy_display_metadata
 
@@ -1978,9 +1984,12 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
 def _attach_paper_portfolio_daily_fields(root: Path, snapshot: dict[str, Any]) -> dict[str, Any]:
     enriched = deepcopy(snapshot)
     payload = paper_portfolio_snapshot_payload(root)
+    strategy_payload = paper_strategy_snapshot_payload(root)
     enriched["official_ledger_daily"] = deepcopy(enriched.get("portfolio_daily") or [])
     enriched["paper_performance_daily"] = payload["rows"]
     enriched["paper_performance_daily_metadata"] = payload["metadata"]
+    enriched["paper_strategy_daily"] = strategy_payload["rows"]
+    enriched["paper_strategy_daily_metadata"] = strategy_payload["metadata"]
     enriched["paper_rebalance"] = paper_rebalance_snapshot_payload(root)
     return enriched
 
@@ -2075,6 +2084,69 @@ def _latest_paper_row_for_session(root: Path, session_date: str | None) -> dict[
     rows = paper_portfolio_snapshot_payload(root, limit=10_000).get("rows") or []
     matches = [row for row in rows if (row.get("trading_date") or row.get("date")) == session_date]
     return matches[-1] if matches else None
+
+
+def _paper_strategy_rows_from_snapshot(
+    snapshot: dict[str, Any],
+    *,
+    trading_date: str,
+    as_of_time: str | None,
+    provider: str | None,
+    refresh_status: str,
+    rebalance: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    rebalance = rebalance or {}
+    cost_by_strategy = rebalance.get("cost_by_strategy") or {}
+    applied_weights = rebalance.get("weights") or {}
+    for strategy in snapshot.get("strategies") or []:
+        strategy_id = strategy.get("internal_id")
+        if not strategy_id or strategy_id in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS:
+            continue
+        if strategy.get("membership_state") != "executed":
+            continue
+        gross_pnl = _safe_number(strategy.get("intraday_estimated_pnl"))
+        prior_nav = _safe_number(strategy.get("ending_nav"))
+        if gross_pnl is None or prior_nav in {None, 0}:
+            continue
+        transaction_cost = _safe_number(cost_by_strategy.get(strategy_id)) or 0.0
+        net_pnl = gross_pnl - transaction_cost
+        rows.append(
+            {
+                "date": trading_date,
+                "trading_date": trading_date,
+                "strategy_id": strategy_id,
+                "display_id": strategy.get("display_id"),
+                "display_name": strategy.get("display_name") or strategy.get("name") or strategy_id,
+                "as_of_time": as_of_time,
+                "source": "Paper Strategy Daily Ledger",
+                "source_artifact": "dashboard/data/performance/paper_strategy_daily.json",
+                "position_source": "committed_shadow_holdings",
+                "paper_only": True,
+                "delayed_market_data": True,
+                "not_live_market_data": True,
+                "live_brokerage_execution": False,
+                "is_official_ledger": False,
+                "provider": provider,
+                "prior_nav": prior_nav,
+                "beginning_nav": prior_nav,
+                "gross_pnl": gross_pnl,
+                "paper_transaction_cost": transaction_cost,
+                "transaction_cost": transaction_cost,
+                "daily_pnl": net_pnl,
+                "net_pnl": net_pnl,
+                "daily_return": net_pnl / prior_nav if prior_nav else None,
+                "ending_nav": prior_nav + net_pnl,
+                "nav": prior_nav + net_pnl,
+                "refresh_status": refresh_status,
+                "price_coverage": deepcopy(strategy.get("price_coverage")),
+                "latest_delayed_price_as_of": strategy.get("latest_delayed_price_as_of"),
+                "applied_paper_target_weight": applied_weights.get(strategy_id),
+                "applied_paper_rebalance_plan_id": rebalance.get("applied_plan_id"),
+                "paper_rebalance_cost_included": transaction_cost > 0,
+            }
+        )
+    return rows
 
 
 def _intraday_from_latest_prices(
@@ -2218,7 +2290,26 @@ def _runtime_message(status: str, overlay: dict[str, Any] | None) -> str:
     if status == "ERROR":
         errors = (overlay or {}).get("errors") or ["Delayed estimate refresh failed."]
         return f"{errors[0]} Official ledger unchanged."
+    if status == "PENDING":
+        return "Controlled delayed refresh is pending; official ledger unchanged."
+    if status == "REFRESH_NEEDED":
+        return "Current trading session delayed estimate is missing or stale; controlled refresh needed."
+    if status == "PROVIDER_FAILED":
+        return "Delayed provider failed; latest available estimate is preserved when present."
     return "Delayed estimate not loaded; official ledger remains separate."
+
+
+def _runtime_status_from_lifecycle(status: str, refresh_lifecycle: dict[str, Any] | None) -> str:
+    state = (refresh_lifecycle or {}).get("state")
+    if status in {"LOADED", "STALE", "ERROR"}:
+        return status
+    if state == "pending":
+        return "PENDING"
+    if state == "refresh_needed":
+        return "REFRESH_NEEDED"
+    if state == "provider_failed":
+        return "PROVIDER_FAILED"
+    return status
 
 
 def _attach_intraday_runtime_fields(
@@ -2228,17 +2319,24 @@ def _attach_intraday_runtime_fields(
     overlay: dict[str, Any] | None,
     scheduler_enabled: bool,
     available: bool,
+    refresh_lifecycle: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     enriched = deepcopy(snapshot)
-    enriched["intraday_runtime_status"] = status
+    runtime_status = _runtime_status_from_lifecycle(status, refresh_lifecycle)
+    enriched["intraday_runtime_status"] = runtime_status
     enriched["intraday_overlay_available"] = available
     enriched["intraday_scheduler_enabled"] = bool(scheduler_enabled)
-    enriched["intraday_refresh_message"] = _runtime_message(status, overlay)
+    enriched["intraday_refresh_message"] = _runtime_message(runtime_status, overlay)
+    enriched["intraday_refresh_status"] = (refresh_lifecycle or {}).get("state") or status.lower()
+    enriched["intraday_refresh_lifecycle"] = refresh_lifecycle or {
+        "state": status.lower(),
+        "reason": "runtime_status_only",
+    }
     enriched["intraday_refresh_cadence_minutes"] = (overlay or {}).get("refresh_cadence_minutes") or 30
     enriched["intraday_overlay_metadata"] = {
         "schema_version": (overlay or {}).get("schema_version"),
         "generated_at": (overlay or {}).get("generated_at"),
-        "status": status,
+        "status": runtime_status,
         "stale_after_seconds": (overlay or {}).get("stale_after_seconds"),
         "refresh_cadence_minutes": (overlay or {}).get("refresh_cadence_minutes") or 30,
         "delayed_estimate_as_of": (overlay or {}).get("delayed_estimate_as_of"),
@@ -2253,6 +2351,7 @@ def _snapshot_from_latest_refresh(
     base: dict[str, Any],
     *,
     scheduler_enabled: bool,
+    refresh_lifecycle: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     latest_snapshot = _read_latest_refresh_snapshot(root)
     latest_intraday = _intraday_from_refresh_snapshot(root, latest_snapshot) if latest_snapshot else None
@@ -2280,6 +2379,7 @@ def _snapshot_from_latest_refresh(
         overlay=_refresh_snapshot_overlay_metadata(latest_snapshot, intraday, status),
         scheduler_enabled=scheduler_enabled,
         available=True,
+        refresh_lifecycle=refresh_lifecycle,
     )
 
 
@@ -2288,12 +2388,18 @@ def load_operational_snapshot_for_response(
     *,
     scheduler_enabled: bool = False,
     now: datetime | None = None,
+    refresh_lifecycle: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return official base snapshot merged with a fresh delayed overlay when available."""
     base = load_or_build_operational_snapshot(root)
     overlay = _read_intraday_overlay(root)
     if not overlay:
-        latest = _snapshot_from_latest_refresh(root, base, scheduler_enabled=scheduler_enabled)
+        latest = _snapshot_from_latest_refresh(
+            root,
+            base,
+            scheduler_enabled=scheduler_enabled,
+            refresh_lifecycle=refresh_lifecycle,
+        )
         if latest:
             return latest
         return _attach_intraday_runtime_fields(
@@ -2302,6 +2408,7 @@ def load_operational_snapshot_for_response(
             overlay=None,
             scheduler_enabled=scheduler_enabled,
             available=False,
+            refresh_lifecycle=refresh_lifecycle,
         )
     if overlay.get("status") == "ERROR":
         return _attach_intraday_runtime_fields(
@@ -2310,9 +2417,15 @@ def load_operational_snapshot_for_response(
             overlay=overlay,
             scheduler_enabled=scheduler_enabled,
             available=False,
+            refresh_lifecycle=refresh_lifecycle,
         )
     if overlay.get("status") != "LOADED" or _is_overlay_stale(overlay, now=now):
-        latest = _snapshot_from_latest_refresh(root, base, scheduler_enabled=scheduler_enabled)
+        latest = _snapshot_from_latest_refresh(
+            root,
+            base,
+            scheduler_enabled=scheduler_enabled,
+            refresh_lifecycle=refresh_lifecycle,
+        )
         if latest:
             return latest
         return _attach_intraday_runtime_fields(
@@ -2321,6 +2434,7 @@ def load_operational_snapshot_for_response(
             overlay=overlay,
             scheduler_enabled=scheduler_enabled,
             available=False,
+            refresh_lifecycle=refresh_lifecycle,
         )
     intraday = _intraday_from_overlay(overlay)
     if intraday is None:
@@ -2333,6 +2447,7 @@ def load_operational_snapshot_for_response(
             },
             scheduler_enabled=scheduler_enabled,
             available=False,
+            refresh_lifecycle=refresh_lifecycle,
         )
     canonical = _read_json(_paths(root)["canonical"], {})
     market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
@@ -2355,6 +2470,7 @@ def load_operational_snapshot_for_response(
         overlay=overlay,
         scheduler_enabled=scheduler_enabled,
         available=True,
+        refresh_lifecycle=refresh_lifecycle,
     )
 
 
@@ -2390,6 +2506,15 @@ def refresh_operational_snapshot(
             missing = set(fetched.get("missing_tickers") or [])
             stale = set(fetched.get("stale_tickers") or [])
             latest_price_as_of = fetched.get("latest_completed_bar_ts_et") or fetched.get("latest_observation_ts_et")
+            session = market_session_status(interval_minutes=5)
+            trading_date = (
+                fetched.get("market_session_date")
+                or fetched.get("session_date")
+                or max((str(row.get("session_date") or "") for row in fetched.get("rows") or []), default="")
+                or (str(latest_price_as_of or "")[:10])
+                or session.session_date
+            )
+            paper_rebalance = applied_paper_rebalance_for_date(root, trading_date)
             for row in holdings:
                 bar = bars.get(row["ticker"])
                 price_change = bar.get("intraday_return_from_open") if bar else None
@@ -2410,6 +2535,21 @@ def refresh_operational_snapshot(
                 if pnl is not None:
                     strategy_contribution[row["strategy_id"]] = strategy_contribution.get(row["strategy_id"], 0.0) + pnl
                     ticker_contribution[row["ticker"]] = ticker_contribution.get(row["ticker"], 0.0) + pnl
+            applied_weights = paper_rebalance.get("weights") or {}
+            if applied_weights:
+                canonical_weights = {
+                    str(row.get("internal_id")): _safe_number(row.get("current_weight"))
+                    for row in canonical.get("strategies") or []
+                    if row.get("internal_id")
+                }
+                strategy_contribution = {
+                    strategy_id: (
+                        pnl * (float(applied_weights[strategy_id]) / canonical_weights[strategy_id])
+                        if strategy_id in applied_weights and canonical_weights.get(strategy_id) not in {None, 0}
+                        else pnl
+                    )
+                    for strategy_id, pnl in strategy_contribution.items()
+                }
             estimated_pnl = sum(strategy_contribution.values()) if strategy_contribution else None
             official_nav = canonical["portfolio_summary"].get("nav")
             now = datetime.now(timezone.utc)
@@ -2418,10 +2558,10 @@ def refresh_operational_snapshot(
                 generated_at=now.isoformat(),
                 requested_tickers=tickers,
             )
-            session = market_session_status(interval_minutes=5)
             priced_tickers = len(bars)
             freshness = "STALE" if missing or stale or priced_tickers < len(tickers) else "DELAYED"
             paper_refresh_status = "partial" if missing or stale or priced_tickers < len(tickers) else "fresh"
+            paper_transaction_cost = float(paper_rebalance.get("transaction_cost_total") or 0.0)
             intraday = {
                 "provider": fetched.get("provider") or "yfinance",
                 "estimated_nav": official_nav + estimated_pnl if official_nav is not None and estimated_pnl is not None else None,
@@ -2441,7 +2581,7 @@ def refresh_operational_snapshot(
                 "refresh_meta": {
                     "data_freshness": freshness,
                     "market_session_status": session.status,
-                    "session_date": session.session_date,
+                    "session_date": trading_date,
                     "last_successful_refresh": now.isoformat(),
                     "next_refresh": (now + timedelta(seconds=REFRESH_INTERVAL_SECONDS)).isoformat(),
                 },
@@ -2452,11 +2592,13 @@ def refresh_operational_snapshot(
                 "reason": "no_usable_delayed_estimate",
             }
             if estimated_pnl is not None and official_nav not in {None, 0} and priced_tickers > 0:
+                net_pnl = estimated_pnl - paper_transaction_cost
+                paper_nav = official_nav + net_pnl
                 paper_payload = upsert_paper_portfolio_daily(
                     root,
                     {
-                        "date": session.session_date,
-                        "trading_date": session.session_date,
+                        "date": trading_date,
+                        "trading_date": trading_date,
                         "as_of_time": latest_price_as_of,
                         "source": "Paper Portfolio Daily Ledger",
                         "source_artifact": "dashboard/data/performance/paper_portfolio_daily.json",
@@ -2469,11 +2611,14 @@ def refresh_operational_snapshot(
                         "provider": intraday["provider"],
                         "prior_nav": official_nav,
                         "beginning_nav": official_nav,
-                        "nav": intraday["estimated_nav"],
-                        "ending_nav": intraday["estimated_nav"],
-                        "daily_pnl": estimated_pnl,
-                        "net_pnl": estimated_pnl,
-                        "daily_return": estimated_pnl / official_nav,
+                        "nav": paper_nav,
+                        "ending_nav": paper_nav,
+                        "gross_pnl": estimated_pnl,
+                        "paper_transaction_cost": paper_transaction_cost,
+                        "transaction_cost": paper_transaction_cost,
+                        "daily_pnl": net_pnl,
+                        "net_pnl": net_pnl,
+                        "daily_return": net_pnl / official_nav,
                         "refresh_status": paper_refresh_status,
                         "ticker_count_requested": len(tickers),
                         "ticker_count_successful": priced_tickers,
@@ -2485,17 +2630,27 @@ def refresh_operational_snapshot(
                             [f"partial delayed market coverage ({priced_tickers}/{len(tickers)})"]
                             if paper_refresh_status == "partial" else []
                         ),
+                        "applied_paper_rebalance_plan_id": paper_rebalance.get("applied_plan_id"),
+                        "paper_rebalance_cost_included": paper_transaction_cost > 0,
+                        "applied_paper_allocation": {
+                            "applied": bool(paper_rebalance.get("applied")),
+                            "weights": paper_rebalance.get("weights") or {},
+                            "intended_effective_date": paper_rebalance.get("intended_effective_date"),
+                            "persistence_note": paper_rebalance.get("persistence_note"),
+                        },
                     },
                 )
                 paper_update = {
                     "portfolio_row_updated": True,
                     "strategy_rows_updated": 0,
-                    "trading_date": session.session_date,
-                    "nav": intraday["estimated_nav"],
-                    "daily_pnl": estimated_pnl,
-                    "daily_return": estimated_pnl / official_nav,
+                    "trading_date": trading_date,
+                    "nav": paper_nav,
+                    "daily_pnl": net_pnl,
+                    "daily_return": net_pnl / official_nav,
                     "refresh_status": paper_refresh_status,
                     "row_count": len(paper_payload.get("rows") or []),
+                    "paper_transaction_cost": paper_transaction_cost,
+                    "applied_paper_rebalance_plan_id": paper_rebalance.get("applied_plan_id"),
                     "paper_only": True,
                     "delayed_market_data": True,
                     "not_live_market_data": True,
@@ -2511,12 +2666,24 @@ def refresh_operational_snapshot(
                 strategy_research_details=_snapshot_research_evidence(base),
                 refresh_status="SUCCESS" if freshness == "DELAYED" else "STALE",
             )
+            strategy_paper_rows = _paper_strategy_rows_from_snapshot(
+                merged,
+                trading_date=trading_date,
+                as_of_time=latest_price_as_of,
+                provider=intraday["provider"],
+                refresh_status=paper_refresh_status,
+                rebalance=paper_rebalance,
+            )
+            if strategy_paper_rows:
+                strategy_payload = upsert_paper_strategy_daily(root, strategy_paper_rows)
+                paper_update["strategy_rows_updated"] = len(strategy_paper_rows)
+                paper_update["strategy_row_count"] = len(strategy_payload.get("rows") or [])
             overlay = {
                 "schema_version": INTRADAY_OVERLAY_SCHEMA_VERSION,
                 "generated_at": now.isoformat(),
                 "status": "LOADED",
                 "provider": intraday["provider"],
-                "current_trading_session_date": session.session_date,
+                "current_trading_session_date": trading_date,
                 "market_session_status": session.status,
                 "delayed_estimate_as_of": latest_price_as_of,
                 "estimated_nav": intraday["estimated_nav"],

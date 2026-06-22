@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import socket
 import threading
+import time
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
@@ -161,9 +162,18 @@ def test_operational_snapshot_endpoint_includes_intraday_runtime_fields():
         assert status == 200
         assert int(headers["content-length"]) == len(body)
         payload = json.loads(body.decode("utf-8"))
-        assert payload["intraday_runtime_status"] in {"NOT_LOADED", "LOADED", "STALE", "ERROR"}
+        assert payload["intraday_runtime_status"] in {
+            "NOT_LOADED",
+            "LOADED",
+            "STALE",
+            "ERROR",
+            "PENDING",
+            "REFRESH_NEEDED",
+            "PROVIDER_FAILED",
+        }
         assert "intraday_overlay_available" in payload
         assert "intraday_scheduler_enabled" in payload
+        assert "intraday_refresh_status" in payload
         assert "intraday_refresh_message" in payload
         assert "official_promotion_readiness" in payload
         assert payload["official_promotion_readiness"]["execute_enabled"] is False
@@ -238,6 +248,69 @@ def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_
         server.server_close()
         WorkstationHandler.server_root = original_root
         WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_operational_snapshot_endpoint_starts_controlled_bootstrap_refresh(monkeypatch, tmp_path):
+    root = _copy_canonical_root(tmp_path)
+    config_dir = root / "data/config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "intraday_refresh.yaml").write_text(
+        (ROOT / "data/config/intraday_refresh.yaml").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    calls = []
+
+    monkeypatch.setattr(
+        "scripts.run_workstation_server.refresh_lifecycle_status",
+        lambda cfg: {
+            "state": "refresh_needed",
+            "reason": "missing_current_day_intraday_snapshot",
+            "market_status": "Open",
+            "market_session_date": "2026-06-22",
+            "refresh_needed": True,
+            "pending": False,
+            "provider_failed": False,
+            "refresh_interval_minutes": 30,
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.run_workstation_server.run_intraday_refresh",
+        lambda **kwargs: calls.append(kwargs) or {"ok": True, "skipped": True, "reason": "test_refresh"},
+    )
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    original_bootstrap = WorkstationHandler.request_bootstrap_enabled
+    original_in_progress = WorkstationHandler.bootstrap_refresh_in_progress
+    original_last = WorkstationHandler.last_bootstrap_refresh_at
+    WorkstationHandler.server_root = root
+    WorkstationHandler.operational_snapshot_bytes = None
+    WorkstationHandler.request_bootstrap_enabled = True
+    WorkstationHandler.bootstrap_refresh_in_progress = False
+    WorkstationHandler.last_bootstrap_refresh_at = 0.0
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, _, body = _fetch(f"http://127.0.0.1:{port}/api/operational-snapshot")
+        payload = json.loads(body.decode("utf-8"))
+        deadline = time.time() + 2
+        while not calls and time.time() < deadline:
+            time.sleep(0.01)
+        assert status == 200
+        assert payload["intraday_runtime_status"] == "PENDING"
+        assert payload["intraday_refresh_status"] == "pending"
+        assert calls
+        assert calls[0]["interval_minutes"] == 30
+        assert calls[0]["force"] is False
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+        WorkstationHandler.request_bootstrap_enabled = original_bootstrap
+        WorkstationHandler.bootstrap_refresh_in_progress = original_in_progress
+        WorkstationHandler.last_bootstrap_refresh_at = original_last
 
 
 def test_paper_rebalance_api_persists_pending_and_applied_paper_target(tmp_path):

@@ -29,6 +29,7 @@ from src.market.intraday_config import load_intraday_config, resolve_refresh_int
 from src.market.intraday_refresh_service import (
     build_refresh_status_payload,
     read_latest_snapshot_payload,
+    refresh_lifecycle_status,
     run_intraday_refresh,
     set_background_scheduler_enabled,
     set_refresh_cadence,
@@ -60,6 +61,7 @@ logger = logging.getLogger(__name__)
 GZIP_MIN_BYTES = 512
 GZIP_EXTENSIONS = {".html", ".htm", ".js", ".css", ".json", ".svg"}
 MANUAL_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("MANUAL_REFRESH_COOLDOWN_SECONDS", "60"))
+BOOTSTRAP_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("BOOTSTRAP_REFRESH_COOLDOWN_SECONDS", "60"))
 
 
 def resolve_server_bind(host: str | None = None, port: int | None = None) -> tuple[str, int]:
@@ -110,8 +112,13 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     research_extension_bytes: bytes | None = None
     operational_snapshot_bytes: bytes | None = None
     intraday_scheduler_enabled = False
+    request_bootstrap_enabled = False
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
+    bootstrap_refresh_lock = threading.Lock()
+    operational_snapshot_cache_lock = threading.Lock()
+    bootstrap_refresh_in_progress = False
+    last_bootstrap_refresh_at = 0.0
 
     @classmethod
     def warm_artifact_caches(cls, artifact: dict) -> None:
@@ -120,10 +127,74 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         cls.research_extension_bytes = _json_bytes(build_research_extension(artifact))
 
     @classmethod
-    def warm_operational_snapshot_cache(cls, root: Path) -> None:
+    def warm_operational_snapshot_cache(cls, root: Path, refresh_lifecycle: dict | None = None) -> None:
         scheduler_enabled = bool(getattr(cls, "intraday_scheduler_enabled", False))
-        snapshot = load_operational_snapshot_for_response(root, scheduler_enabled=scheduler_enabled)
-        cls.operational_snapshot_bytes = _json_bytes(snapshot)
+        with cls.operational_snapshot_cache_lock:
+            snapshot = load_operational_snapshot_for_response(
+                root,
+                scheduler_enabled=scheduler_enabled,
+                refresh_lifecycle=refresh_lifecycle,
+            )
+            cls.operational_snapshot_bytes = _json_bytes(snapshot)
+
+    @classmethod
+    def _run_bootstrap_refresh(cls, root: Path, interval: int) -> None:
+        try:
+            cfg = load_intraday_config(root / "data/config/intraday_refresh.yaml")
+            result = run_intraday_refresh(
+                force=False,
+                interval_minutes=interval,
+                artifact_path=root / "output" / "dashboard_artifact.json",
+                config=cfg,
+            )
+            try:
+                cls.warm_operational_snapshot_cache(root)
+            except Exception as cache_exc:
+                logger.warning("Bootstrap refresh finished but snapshot cache warm failed: %s", cache_exc)
+            if result.get("ok"):
+                logger.info("Bootstrap intraday refresh finished: %s", result.get("snapshot_id") or result.get("reason"))
+            else:
+                logger.warning("Bootstrap intraday refresh failed: %s", result.get("error"))
+        finally:
+            with cls.bootstrap_refresh_lock:
+                cls.bootstrap_refresh_in_progress = False
+
+    @classmethod
+    def maybe_start_intraday_bootstrap(cls, root: Path) -> dict:
+        config_path = root / "data/config/intraday_refresh.yaml"
+        if not config_path.exists():
+            return {
+                "state": "closed",
+                "reason": "intraday_config_missing",
+                "refresh_needed": False,
+                "pending": False,
+                "provider_failed": False,
+                "refresh_interval_minutes": 30,
+            }
+        cfg = load_intraday_config(config_path)
+        lifecycle = refresh_lifecycle_status(cfg)
+        if not bool(cfg.get("enabled", True)):
+            return {**lifecycle, "state": "closed", "reason": "intraday_refresh_disabled"}
+        if lifecycle.get("state") not in {"refresh_needed", "stale"}:
+            return lifecycle
+        if not bool(getattr(cls, "request_bootstrap_enabled", False)):
+            return lifecycle
+        with cls.bootstrap_refresh_lock:
+            now = time.monotonic()
+            if cls.bootstrap_refresh_in_progress:
+                return {**lifecycle, "state": "pending", "reason": "bootstrap_refresh_already_pending"}
+            if now - cls.last_bootstrap_refresh_at < BOOTSTRAP_REFRESH_COOLDOWN_SECONDS:
+                return {**lifecycle, "state": "pending", "reason": "bootstrap_refresh_cooldown"}
+            cls.bootstrap_refresh_in_progress = True
+            cls.last_bootstrap_refresh_at = now
+            interval = max(int(lifecycle.get("refresh_interval_minutes") or 30), 30)
+        threading.Thread(target=cls._run_bootstrap_refresh, args=(root, interval), daemon=True).start()
+        return {
+            **lifecycle,
+            "state": "pending",
+            "reason": "bootstrap_refresh_started",
+            "requested_refresh_state": lifecycle.get("state"),
+        }
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -302,7 +373,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
-                self.warm_operational_snapshot_cache(self.server_root)
+                refresh_lifecycle = WorkstationHandler.maybe_start_intraday_bootstrap(self.server_root)
+                self.warm_operational_snapshot_cache(self.server_root, refresh_lifecycle=refresh_lifecycle)
                 body = self.operational_snapshot_bytes
                 self._send_precomputed_json(body or b"{}")
             except Exception as exc:
@@ -674,6 +746,7 @@ def main(
     )
     set_background_scheduler_enabled(scheduler_enabled)
     WorkstationHandler.intraday_scheduler_enabled = scheduler_enabled
+    WorkstationHandler.request_bootstrap_enabled = True
     if refresh_on_start:
         print("Startup official/live refresh is disabled for the Foundation dashboard.")
     WorkstationHandler.warm_operational_snapshot_cache(PROJECT_ROOT)

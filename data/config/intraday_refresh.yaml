@@ -3,7 +3,8 @@
 
 intraday_refresh:
   enabled: true
-  # Render deployments require ENABLE_INTRADAY_SCHEDULER=1 to run the background loop.
+  # The server starts a controlled 30-minute loop when this config is enabled;
+  # first dashboard open can also request a background refresh if Render restarts.
   default_interval_minutes: 30
   allowed_intervals_minutes:
     - 5
@@ -32,6 +33,7 @@ intraday_refresh:
   latest_pointer_path: output/intraday_latest.json
   status_path: output/intraday_refresh_status.json
   lock_path: output/intraday_refresh.lock
+  lock_stale_after_minutes: 90
   shadow_database_path: output/shadow/strategy_shadow.db
 
   # NYSE full-day closures (extend annually for prototype).

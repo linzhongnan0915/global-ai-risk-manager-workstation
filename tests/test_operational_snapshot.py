@@ -268,15 +268,24 @@ def test_intraday_refresh_reprices_holdings_strategies_combined_and_contributors
     assert merged_same_day["paper_performance_daily"][0]["daily_pnl"] == pytest.approx(
         second["intraday_estimate"]["estimated_pnl"]
     )
+    active_paper_rows = [
+        row for row in second["strategies"]
+        if row["membership_state"] == "executed" and row["internal_id"] != "WQ_ALPHA_018"
+    ]
+    assert len(merged_same_day["paper_strategy_daily"]) == len(active_paper_rows)
+    assert all(row["date"] == first_trading_date for row in merged_same_day["paper_strategy_daily"])
+    assert all(row["paper_only"] is True for row in merged_same_day["paper_strategy_daily"])
+    assert all(row["is_official_ledger"] is False for row in merged_same_day["paper_strategy_daily"])
     assert second["intraday_estimate"]["estimated_pnl"] == pytest.approx(first["intraday_estimate"]["estimated_pnl"] * 2)
     assert second["intraday_estimate"]["estimated_nav"] == pytest.approx(
         second["official_daily"]["nav"] + second["intraday_estimate"]["estimated_pnl"]
     )
     third = refresh_operational_snapshot(root, fetch_fn=fake_fetch(0.003, "2026-06-16T10:05:00-04:00"))
     assert third["ok"] is True
-    assert third["paper_performance_update"]["trading_date"] == first_trading_date
+    assert third["paper_performance_update"]["trading_date"] == "2026-06-16"
     merged_next_day = load_operational_snapshot_for_response(root)
-    assert [row["date"] for row in merged_next_day["paper_performance_daily"]] == [first_trading_date]
+    assert [row["date"] for row in merged_next_day["paper_performance_daily"]] == [first_trading_date, "2026-06-16"]
+    assert sorted({row["date"] for row in merged_next_day["paper_strategy_daily"]}) == [first_trading_date, "2026-06-16"]
     assert merged_next_day["official_daily"]["latest_official_close_date"] == "2026-06-12"
     ordinary = [
         row for row in second["strategies"]
@@ -322,6 +331,31 @@ def test_clean_base_snapshot_without_overlay_is_official_only_and_does_not_creat
     assert snapshot["intraday_estimate"]["estimated_nav"] is None
     assert snapshot["portfolio_daily"][-1]["date"] == "2026-06-11"
     assert not any(row["date"] == "2026-06-15" for row in snapshot["portfolio_daily"])
+
+
+def test_operational_snapshot_exposes_refresh_needed_without_faking_delayed_estimate(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    snapshot = load_operational_snapshot_for_response(
+        root,
+        scheduler_enabled=True,
+        refresh_lifecycle={
+            "state": "refresh_needed",
+            "reason": "missing_current_day_intraday_snapshot",
+            "market_status": "Open",
+            "market_session_date": "2026-06-22",
+            "refresh_needed": True,
+            "pending": False,
+            "provider_failed": False,
+            "refresh_interval_minutes": 30,
+        },
+    )
+
+    assert snapshot["intraday_runtime_status"] == "REFRESH_NEEDED"
+    assert snapshot["intraday_refresh_status"] == "refresh_needed"
+    assert snapshot["intraday_refresh_lifecycle"]["market_session_date"] == "2026-06-22"
+    assert snapshot["intraday_estimate"]["estimated_nav"] is None
+    assert snapshot["intraday_estimate"]["estimated_pnl"] is None
+    assert snapshot["official_ledger_daily"] == snapshot["portfolio_daily"]
 
 
 def test_latest_refresh_snapshot_supplies_delayed_estimate_without_legacy_overlay(tmp_path: Path):

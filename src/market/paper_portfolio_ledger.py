@@ -9,11 +9,18 @@ from typing import Any
 
 
 PAPER_PORTFOLIO_DAILY_RELATIVE_PATH = Path("dashboard/data/performance/paper_portfolio_daily.json")
+PAPER_STRATEGY_DAILY_RELATIVE_PATH = Path("dashboard/data/performance/paper_strategy_daily.json")
 PAPER_PORTFOLIO_DAILY_SCHEMA_VERSION = "paper_portfolio_daily_v1"
+PAPER_STRATEGY_DAILY_SCHEMA_VERSION = "paper_strategy_daily_v1"
+PAPER_REBALANCE_DIR = Path("data/paper_rebalance")
 
 
 def paper_portfolio_daily_path(root: Path) -> Path:
     return root / PAPER_PORTFOLIO_DAILY_RELATIVE_PATH
+
+
+def paper_strategy_daily_path(root: Path) -> Path:
+    return root / PAPER_STRATEGY_DAILY_RELATIVE_PATH
 
 
 def _read_json(path: Path, default: Any) -> Any:
@@ -41,6 +48,62 @@ def _to_float(value: Any) -> float | None:
 
 def _latest_date(rows: list[dict[str, Any]]) -> str:
     return max((str(row.get("date") or "") for row in rows), default="")
+
+
+def _strategy_id(row: dict[str, Any]) -> str | None:
+    value = row.get("strategy_id") or row.get("internal_id") or row.get("id")
+    return str(value) if value else None
+
+
+def applied_paper_rebalance_for_date(root: Path, trading_date: str | None) -> dict[str, Any]:
+    """Return applied paper target weights and effective-date costs without touching official ledgers."""
+    target = _read_json(root / PAPER_REBALANCE_DIR / "current_paper_target_weights.json", None)
+    plans = _read_json(root / PAPER_REBALANCE_DIR / "paper_rebalance_plans.json", {"plans": []})
+    if not isinstance(target, dict):
+        return {
+            "applied": False,
+            "weights": {},
+            "transaction_cost_total": 0.0,
+            "cost_by_strategy": {},
+            "applied_plan_id": None,
+            "intended_effective_date": None,
+        }
+    plan_id = target.get("applied_plan_id")
+    matched_plan = next(
+        (plan for plan in plans.get("plans") or [] if plan.get("plan_id") == plan_id),
+        None,
+    )
+    intended_effective_date = target.get("intended_effective_date") or (matched_plan or {}).get("intended_effective_date")
+    cost_applies = bool(trading_date and intended_effective_date == trading_date)
+    cost_by_strategy: dict[str, float] = {}
+    if cost_applies and matched_plan:
+        for item in matched_plan.get("line_items") or []:
+            strategy_id = _strategy_id(item)
+            cost = _to_float(item.get("estimated_transaction_cost")) or 0.0
+            if strategy_id:
+                cost_by_strategy[strategy_id] = cost
+    total_cost = (
+        sum(cost_by_strategy.values())
+        if cost_by_strategy
+        else (_to_float(target.get("paper_transaction_cost_total")) or 0.0 if cost_applies else 0.0)
+    )
+    return {
+        "applied": True,
+        "weights": {
+            str(strategy_id): float(weight)
+            for strategy_id, weight in (target.get("weights") or {}).items()
+            if _to_float(weight) is not None
+        },
+        "transaction_cost_total": total_cost,
+        "cost_by_strategy": cost_by_strategy,
+        "applied_plan_id": plan_id,
+        "intended_effective_date": intended_effective_date,
+        "cost_applies_to_trading_date": cost_applies,
+        "persistence_note": (
+            "Paper target/cost artifacts are local filesystem persistence; hosted services without durable disk "
+            "must externalize these artifacts before treating next-day persistence as guaranteed."
+        ),
+    }
 
 
 def _is_business_day(value: str) -> bool:
@@ -295,7 +358,10 @@ def build_paper_portfolio_daily_row(
     refresh_status: str,
     warnings: list[str] | None = None,
     position_source: str = "committed_shadow_holdings",
+    rebalance: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
+    rebalance = rebalance or {}
+    applied_weights = rebalance.get("weights") or {}
     bars = {
         str(row.get("source_ticker") or row.get("ticker")): row
         for row in fetch_result.get("rows") or []
@@ -308,11 +374,15 @@ def build_paper_portfolio_daily_row(
     covered_weight = 0.0
     priced_tickers: set[str] = set()
     for strategy in strategy_rows:
+        strategy_id = str(strategy.get("strategy_id") or strategy.get("internal_id") or "")
         strategy_weight = _to_float(strategy.get("current_weight"))
         if strategy_weight is None:
             strategy_weight = _to_float(
-                (artifact.get("allocation") or {}).get("current_weights", {}).get(strategy.get("strategy_id"))
+                (artifact.get("allocation") or {}).get("current_weights", {}).get(strategy_id)
             )
+        applied_weight = _to_float(applied_weights.get(strategy_id))
+        if applied_weight is not None:
+            strategy_weight = applied_weight
         if strategy_weight is None or strategy_weight == 0:
             continue
         for position in (strategy.get("position_packet") or {}).get("latest_positions") or []:
@@ -341,6 +411,9 @@ def build_paper_portfolio_daily_row(
     )
     if not trading_date:
         return None
+    transaction_cost = _to_float(rebalance.get("transaction_cost_total")) or 0.0
+    net_pnl = daily_pnl - transaction_cost
+    nav = prior_nav + net_pnl
     return {
         "date": trading_date,
         "trading_date": trading_date,
@@ -358,9 +431,12 @@ def build_paper_portfolio_daily_row(
         "beginning_nav": prior_nav,
         "nav": nav,
         "ending_nav": nav,
-        "daily_pnl": daily_pnl,
-        "net_pnl": daily_pnl,
-        "daily_return": portfolio_return,
+        "gross_pnl": daily_pnl,
+        "paper_transaction_cost": transaction_cost,
+        "transaction_cost": transaction_cost,
+        "daily_pnl": net_pnl,
+        "net_pnl": net_pnl,
+        "daily_return": net_pnl / prior_nav if prior_nav else None,
         "refresh_status": refresh_status,
         "ticker_count_requested": int(fetch_result.get("ticker_count_requested") or len(bars)),
         "ticker_count_successful": int(fetch_result.get("ticker_count_successful") or len(priced_tickers)),
@@ -369,7 +445,115 @@ def build_paper_portfolio_daily_row(
         "missing_tickers": fetch_result.get("missing_tickers") or [],
         "stale_tickers": fetch_result.get("stale_tickers") or [],
         "warnings": warnings or [],
+        "applied_paper_rebalance_plan_id": rebalance.get("applied_plan_id"),
+        "paper_rebalance_cost_included": transaction_cost > 0,
+        "applied_paper_allocation": {
+            "applied": bool(rebalance.get("applied")),
+            "weights": rebalance.get("weights") or {},
+            "intended_effective_date": rebalance.get("intended_effective_date"),
+            "persistence_note": rebalance.get("persistence_note"),
+        },
     }
+
+
+def build_paper_strategy_daily_rows(
+    artifact: dict[str, Any],
+    fetch_result: dict[str, Any],
+    *,
+    refresh_status: str,
+    position_source: str = "committed_shadow_holdings",
+    rebalance: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    bars = {
+        str(row.get("source_ticker") or row.get("ticker")): row
+        for row in fetch_result.get("rows") or []
+        if row.get("source_ticker") or row.get("ticker")
+    }
+    if not bars:
+        return []
+    rebalance = rebalance or {}
+    cost_by_strategy = rebalance.get("cost_by_strategy") or {}
+    applied_weights = rebalance.get("weights") or {}
+    prior_portfolio_nav = _to_float(artifact.get("initial_capital")) or 1_000_000.0
+    trading_date = (
+        fetch_result.get("market_session_date")
+        or fetch_result.get("session_date")
+        or _latest_date([row for row in fetch_result.get("rows") or [] if row.get("session_date")])
+        or (str(fetch_result.get("latest_completed_bar_ts_et") or fetch_result.get("latest_observation_ts_et") or "")[:10])
+    )
+    if not trading_date:
+        return []
+    rows: list[dict[str, Any]] = []
+    for strategy in artifact.get("strategies") or []:
+        strategy_id = str(strategy.get("strategy_id") or strategy.get("internal_id") or "")
+        if not strategy_id:
+            continue
+        strategy_weight = _to_float(strategy.get("current_weight"))
+        if strategy_weight is None:
+            strategy_weight = _to_float((artifact.get("allocation") or {}).get("current_weights", {}).get(strategy_id))
+        if strategy_weight is None or strategy_weight == 0:
+            continue
+        strategy_return = 0.0
+        covered = 0
+        total = 0
+        for position in (strategy.get("position_packet") or {}).get("latest_positions") or []:
+            ticker = str(position.get("source_ticker") or position.get("ticker") or "")
+            if not ticker:
+                continue
+            total += 1
+            position_return = _to_float((bars.get(ticker) or {}).get("intraday_return_from_open"))
+            position_weight = _to_float(position.get("weight"))
+            if position_return is None or position_weight is None:
+                continue
+            covered += 1
+            strategy_return += position_weight * position_return
+        if covered == 0 or total == 0:
+            continue
+        applied_weight = _to_float(applied_weights.get(strategy_id))
+        effective_weight = applied_weight if applied_weight is not None else strategy_weight
+        prior_nav = prior_portfolio_nav * effective_weight
+        gross_pnl = prior_nav * strategy_return
+        transaction_cost = _to_float(cost_by_strategy.get(strategy_id)) or 0.0
+        net_pnl = gross_pnl - transaction_cost
+        rows.append(
+            {
+                "date": trading_date,
+                "trading_date": trading_date,
+                "strategy_id": strategy_id,
+                "display_name": strategy.get("name") or strategy.get("display_name") or strategy_id,
+                "as_of_time": fetch_result.get("latest_completed_bar_ts_et") or fetch_result.get("latest_observation_ts_et"),
+                "source": "Paper Strategy Daily Ledger",
+                "source_artifact": str(PAPER_STRATEGY_DAILY_RELATIVE_PATH).replace("\\", "/"),
+                "position_source": position_source,
+                "paper_only": True,
+                "delayed_market_data": True,
+                "not_live_market_data": True,
+                "live_brokerage_execution": False,
+                "is_official_ledger": False,
+                "provider": fetch_result.get("provider"),
+                "prior_nav": prior_nav,
+                "beginning_nav": prior_nav,
+                "gross_pnl": gross_pnl,
+                "paper_transaction_cost": transaction_cost,
+                "transaction_cost": transaction_cost,
+                "daily_pnl": net_pnl,
+                "net_pnl": net_pnl,
+                "daily_return": net_pnl / prior_nav if prior_nav else None,
+                "nav": prior_nav + net_pnl,
+                "ending_nav": prior_nav + net_pnl,
+                "refresh_status": refresh_status,
+                "price_coverage": {
+                    "priced": covered,
+                    "total": total,
+                    "status": "COMPLETE" if covered == total else "PARTIAL",
+                },
+                "latest_delayed_price_as_of": fetch_result.get("latest_completed_bar_ts_et") or fetch_result.get("latest_observation_ts_et"),
+                "applied_paper_target_weight": applied_weights.get(strategy_id),
+                "applied_paper_rebalance_plan_id": rebalance.get("applied_plan_id"),
+                "paper_rebalance_cost_included": transaction_cost > 0,
+            }
+        )
+    return rows
 
 
 def upsert_paper_portfolio_daily(root: Path, row: dict[str, Any]) -> dict[str, Any]:
@@ -430,6 +614,57 @@ def upsert_paper_portfolio_daily(root: Path, row: dict[str, Any]) -> dict[str, A
     return next_payload
 
 
+def upsert_paper_strategy_daily(root: Path, rows_to_upsert: list[dict[str, Any]]) -> dict[str, Any]:
+    path = paper_strategy_daily_path(root)
+    payload = _read_json(
+        path,
+        {
+            "schema_version": PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+            "metadata": {
+                "paper_only": True,
+                "delayed_market_data": True,
+                "not_live_market_data": True,
+                "live_brokerage_execution": False,
+                "is_official_ledger": False,
+                "position_source": "committed_shadow_holdings",
+            },
+            "rows": [],
+        },
+    )
+    incoming = [deepcopy(row) for row in rows_to_upsert if row.get("date") and _strategy_id(row)]
+    existing = [
+        deepcopy(row)
+        for row in payload.get("rows") or []
+        if row.get("date") and _strategy_id(row)
+    ]
+    incoming_keys = {(row["date"], _strategy_id(row)) for row in incoming}
+    rows = [
+        row for row in existing
+        if (row.get("date"), _strategy_id(row)) not in incoming_keys
+    ]
+    rows.extend(incoming)
+    rows.sort(key=lambda item: (str(item.get("date") or ""), str(_strategy_id(item) or "")))
+    metadata = {
+        **(payload.get("metadata") or {}),
+        "schema_version": PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+        "row_count": len(rows),
+        "latest_date": rows[-1].get("date") if rows else None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "paper_only": True,
+        "delayed_market_data": True,
+        "not_live_market_data": True,
+        "live_brokerage_execution": False,
+        "is_official_ledger": False,
+    }
+    next_payload = {
+        "schema_version": PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+        "metadata": metadata,
+        "rows": rows,
+    }
+    _atomic_write_json(path, next_payload)
+    return next_payload
+
+
 def paper_portfolio_snapshot_payload(root: Path, *, limit: int = 20) -> dict[str, Any]:
     payload = _read_json(
         paper_portfolio_daily_path(root),
@@ -454,6 +689,43 @@ def paper_portfolio_snapshot_payload(root: Path, *, limit: int = 20) -> dict[str
         "metadata": {
             **(payload.get("metadata") or {}),
             "schema_version": payload.get("schema_version") or PAPER_PORTFOLIO_DAILY_SCHEMA_VERSION,
+            "row_count": len(rows),
+            "paper_only": True,
+            "delayed_market_data": True,
+            "not_live_market_data": True,
+            "live_brokerage_execution": False,
+            "is_official_ledger": False,
+        },
+        "rows": rows[-limit:],
+    }
+
+
+def paper_strategy_snapshot_payload(root: Path, *, limit: int = 10_000) -> dict[str, Any]:
+    payload = _read_json(
+        paper_strategy_daily_path(root),
+        {
+            "schema_version": PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+            "metadata": {
+                "schema_version": PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+                "row_count": 0,
+                "paper_only": True,
+                "delayed_market_data": True,
+                "not_live_market_data": True,
+                "live_brokerage_execution": False,
+                "is_official_ledger": False,
+            },
+            "rows": [],
+        },
+    )
+    rows = sorted(
+        [deepcopy(row) for row in payload.get("rows") or []],
+        key=lambda row: (str(row.get("date") or ""), str(_strategy_id(row) or "")),
+    )
+    return {
+        "schema_version": payload.get("schema_version") or PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
+        "metadata": {
+            **(payload.get("metadata") or {}),
+            "schema_version": payload.get("schema_version") or PAPER_STRATEGY_DAILY_SCHEMA_VERSION,
             "row_count": len(rows),
             "paper_only": True,
             "delayed_market_data": True,

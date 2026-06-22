@@ -182,6 +182,98 @@ def fetch_intraday_bars(
     }
 
 
+def fetch_daily_price_history(
+    tickers: list[str],
+    *,
+    start_date: str,
+    end_date: str,
+    timeout_seconds: int | None = None,
+    retry_attempts: int | None = None,
+    backoff_seconds: list[int] | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch delayed daily closes for paper-ledger gap filling."""
+    cfg = load_intraday_config()
+    timeout_seconds = int(timeout_seconds or cfg.get("request_timeout_seconds") or 20)
+    retry_attempts = int(retry_attempts or cfg.get("retry_attempts") or 3)
+    backoff_seconds = list(backoff_seconds or cfg.get("backoff_seconds") or [5, 15, 30])
+    source_tickers = sorted({ticker for ticker in tickers if ticker})
+    if not source_tickers:
+        return []
+    source_by_provider = {
+        mapping.provider_symbol: mapping.ticker
+        for mapping in (map_ticker_to_provider(ticker) for ticker in source_tickers)
+        if mapping.provider_symbol
+    }
+    unique = sorted(source_by_provider)
+    last_error: Exception | None = None
+    raw = pd.DataFrame()
+    use_threads = not is_demo_hosting()
+    for attempt in range(retry_attempts):
+        try:
+            raw = yf.download(
+                tickers=unique,
+                start=start_date,
+                end=end_date,
+                interval="1d",
+                auto_adjust=False,
+                progress=False,
+                group_by="ticker",
+                threads=use_threads,
+                timeout=timeout_seconds,
+            )
+            if raw.empty:
+                raise ValueError("yfinance returned empty daily price panel")
+            break
+        except Exception as exc:  # pragma: no cover - network fallback path
+            last_error = exc
+            if _is_rate_limit_error(exc):
+                logger.warning("yfinance rate limited during daily close fetch; paper ledger gap fill skipped")
+            if attempt + 1 >= retry_attempts:
+                raise
+            time.sleep(backoff_seconds[min(attempt, len(backoff_seconds) - 1)])
+    if raw.empty:
+        raise ValueError(str(last_error or "daily price fetch failed"))
+    return _normalize_daily_price_panel(raw, unique, source_by_provider)
+
+
+def _normalize_daily_price_panel(
+    data: pd.DataFrame,
+    provider_tickers: list[str],
+    source_by_provider: dict[str, str],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    multi = isinstance(data.columns, pd.MultiIndex)
+    for provider_ticker in provider_tickers:
+        if multi:
+            if provider_ticker not in data.columns.get_level_values(0):
+                continue
+            frame = data[provider_ticker].copy()
+        else:
+            frame = data.copy()
+        frame = frame.reset_index()
+        date_col = next((name for name in ("Date", "Datetime", "index") if name in frame.columns), frame.columns[0])
+        for _, row in frame.iterrows():
+            close = row.get("Close")
+            if pd.isna(close):
+                continue
+            rows.append(
+                {
+                    "date": pd.to_datetime(row[date_col]).date().isoformat(),
+                    "ticker": source_by_provider.get(provider_ticker, provider_ticker),
+                    "source_ticker": provider_ticker,
+                    "open": _float(row.get("Open")),
+                    "high": _float(row.get("High")),
+                    "low": _float(row.get("Low")),
+                    "close": _float(close),
+                    "adj_close": _float(row.get("Adj Close", close)),
+                    "volume": _float(row.get("Volume")),
+                    "source": "yfinance",
+                }
+            )
+    rows.sort(key=lambda item: (item["date"], item["ticker"]))
+    return rows
+
+
 def _normalize_intraday_panel(
     data: pd.DataFrame,
     tickers: list[str],

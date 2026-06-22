@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -17,7 +17,7 @@ from src.market.intraday_config import (
     resolve_refresh_interval_minutes,
     stale_after_minutes_for,
 )
-from src.market.intraday_provider import bar_duration_minutes, fetch_intraday_bars
+from src.market.intraday_provider import bar_duration_minutes, fetch_daily_price_history, fetch_intraday_bars
 from src.market.intraday_revaluation import revalue_mark_sensitive_outputs
 from src.market.market_hours import (
     market_session_status,
@@ -27,7 +27,11 @@ from src.market.market_hours import (
 from src.market.paper_portfolio_ledger import (
     applied_paper_rebalance_for_date,
     build_paper_portfolio_daily_row,
+    build_paper_portfolio_gap_fill_rows,
     build_paper_strategy_daily_rows,
+    missing_paper_portfolio_business_dates,
+    paper_portfolio_snapshot_payload,
+    rebase_paper_portfolio_daily_row,
     upsert_paper_portfolio_daily,
     upsert_paper_strategy_daily,
 )
@@ -58,9 +62,12 @@ def set_background_scheduler_enabled(enabled: bool | None) -> None:
 
 def load_dashboard_artifact(path: Path | str = DEFAULT_ARTIFACT_PATH) -> dict[str, Any]:
     artifact_path = Path(path)
+    committed = build_committed_shadow_refresh_artifact(_refresh_root_from_artifact_path(artifact_path))
+    if committed.get("strategies"):
+        return committed
     if artifact_path.exists():
         return json.loads(artifact_path.read_text(encoding="utf-8"))
-    return build_committed_shadow_refresh_artifact(_refresh_root_from_artifact_path(artifact_path))
+    return committed
 
 
 def _refresh_root_from_artifact_path(path: Path | str) -> Path:
@@ -185,6 +192,51 @@ def _parse_iso_timestamp(value: str | None) -> datetime | None:
 
 def _date_from_iso(value: str | None) -> str | None:
     return str(value)[:10] if value else None
+
+
+def _to_float(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if numeric == numeric else None
+
+
+def _fetch_result_has_daily_price_history(fetch_result: dict[str, Any]) -> bool:
+    rows = (
+        fetch_result.get("daily_price_history")
+        or fetch_result.get("price_history")
+        or fetch_result.get("market_proxy_price_history")
+        or []
+    )
+    return isinstance(rows, list) and bool(rows)
+
+
+def _paper_gap_history_start_date(existing_rows: list[dict[str, Any]], first_missing_date: str) -> str:
+    prior_dates = sorted(
+        {
+            str(row.get("date") or row.get("trading_date") or "")[:10]
+            for row in existing_rows
+            if str(row.get("date") or row.get("trading_date") or "")[:10] < first_missing_date
+        }
+    )
+    if prior_dates:
+        return prior_dates[-1]
+    try:
+        parsed = date.fromisoformat(first_missing_date[:10])
+    except ValueError:
+        return first_missing_date[:10]
+    return (parsed - timedelta(days=7)).isoformat()
+
+
+def _paper_gap_history_end_date(through_date: str) -> str:
+    try:
+        parsed = date.fromisoformat(through_date[:10])
+    except ValueError:
+        return through_date[:10]
+    return (parsed + timedelta(days=1)).isoformat()
 
 
 def _snapshot_session_date(snapshot: dict[str, Any] | None) -> str | None:
@@ -706,6 +758,65 @@ def run_intraday_refresh(
                 rebalance=paper_rebalance,
             )
             if paper_row:
+                existing_paper_rows = paper_portfolio_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
+                paper_gap_missing_dates = missing_paper_portfolio_business_dates(
+                    existing_paper_rows,
+                    through_date=str(paper_row.get("date") or ""),
+                    holidays=cfg.get("market_holidays") or [],
+                )
+                if paper_gap_missing_dates and not _fetch_result_has_daily_price_history(fetch_result):
+                    if fetch_fn is None:
+                        try:
+                            fetch_result["daily_price_history"] = fetch_daily_price_history(
+                                tickers,
+                                start_date=_paper_gap_history_start_date(existing_paper_rows, paper_gap_missing_dates[0]),
+                                end_date=_paper_gap_history_end_date(str(paper_row.get("date") or "")),
+                                timeout_seconds=int(cfg.get("request_timeout_seconds") or 20),
+                                retry_attempts=int(cfg.get("retry_attempts") or 3),
+                                backoff_seconds=list(cfg.get("backoff_seconds") or [5, 15, 30]),
+                            )
+                            fetch_result["daily_price_history_provider"] = "yfinance"
+                        except Exception as exc:
+                            refresh_warnings.append(
+                                "paper daily gap fill pending; delayed daily close history unavailable "
+                                f"for {', '.join(paper_gap_missing_dates)}: {exc}"
+                            )
+                    else:
+                        refresh_warnings.append(
+                            "paper daily gap fill pending; delayed daily close history unavailable "
+                            f"for {', '.join(paper_gap_missing_dates)}"
+                        )
+                paper_gap_rows = build_paper_portfolio_gap_fill_rows(
+                    artifact,
+                    fetch_result,
+                    existing_rows=existing_paper_rows,
+                    through_date=str(paper_row.get("date") or ""),
+                    holidays=cfg.get("market_holidays") or [],
+                    position_source=position_source,
+                    rebalance=paper_rebalance,
+                )
+                paper_gap_fill_dates = [row["date"] for row in paper_gap_rows]
+                paper_gap_unfilled_dates = [
+                    row_date for row_date in paper_gap_missing_dates
+                    if row_date not in set(paper_gap_fill_dates)
+                ]
+                if paper_gap_unfilled_dates and _fetch_result_has_daily_price_history(fetch_result):
+                    refresh_warnings.append(
+                        "paper daily gap fill incomplete; paired delayed close history unavailable "
+                        f"for {', '.join(paper_gap_unfilled_dates)}"
+                    )
+                prior_paper_rows = [
+                    row for row in [*existing_paper_rows, *paper_gap_rows]
+                    if str(row.get("date") or "") < str(paper_row.get("date") or "")
+                ]
+                prior_paper_nav = None
+                if prior_paper_rows:
+                    latest_prior = sorted(prior_paper_rows, key=lambda row: str(row.get("date") or ""))[-1]
+                    prior_paper_nav = _to_float(latest_prior.get("ending_nav") or latest_prior.get("nav"))
+                paper_row = rebase_paper_portfolio_daily_row(paper_row, prior_paper_nav)
+                paper_payload = None
+                for gap_row in paper_gap_rows:
+                    paper_payload = upsert_paper_portfolio_daily(refresh_root, gap_row)
                 paper_payload = upsert_paper_portfolio_daily(refresh_root, paper_row)
                 strategy_payload = (
                     upsert_paper_strategy_daily(refresh_root, strategy_paper_rows)
@@ -714,6 +825,10 @@ def run_intraday_refresh(
                 paper_update = {
                     "portfolio_row_updated": True,
                     "strategy_rows_updated": len(strategy_paper_rows),
+                    "gap_rows_updated": len(paper_gap_rows),
+                    "gap_fill_dates": paper_gap_fill_dates,
+                    "gap_fill_missing_dates": paper_gap_missing_dates,
+                    "gap_fill_unfilled_dates": paper_gap_unfilled_dates,
                     "trading_date": paper_row.get("date"),
                     "nav": paper_row.get("ending_nav"),
                     "daily_pnl": paper_row.get("daily_pnl"),

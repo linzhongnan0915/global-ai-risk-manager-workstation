@@ -468,7 +468,7 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "Official Daily Ledger through" not in app
     assert "chart-detail-strip" in app
     assert "data-portfolio-point" not in app
-    assert "Math.ceil(rows.length/4)" in app
+    assert "rows.length<=14?1:Math.max(1,Math.ceil(rows.length/7))" in app
     assert "ctx.fillText(chartDateLabel(rows[i].date).replace(\" 0\",\" \"),q.x,h-12)" in app
     assert "official_close_date||rows[i].date" not in app
     assert "r.official_close_date||r.date" not in app

@@ -661,6 +661,65 @@ def test_refresh_updates_portfolio_and_strategy_level_paper_performance(intraday
     assert (tmp_path / "dashboard/data/performance/strategy_daily_performance.json").exists() is False
 
 
+def test_refresh_stale_quote_labels_do_not_overwrite_paper_performance(intraday_cfg, minimal_artifact, tmp_path: Path):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch(rate: float, ts: str, stale: bool = False):
+        def _fetch(tickers, **kwargs):
+            return {
+                "provider": "yfinance",
+                "bar_interval": "5m",
+                "requested_tickers": tickers,
+                "rows": [
+                    {
+                        "source_ticker": ticker,
+                        "observation_ts_et": ts,
+                        "session_date": ts[:10],
+                        "open": 100.0,
+                        "high": 102.0,
+                        "low": 99.0,
+                        "close": 100.0 * (1.0 + rate),
+                        "volume": 1000.0,
+                        "bar_interval": "5m",
+                        "bar_completeness": "completed",
+                        "intraday_return_from_open": rate,
+                        "timezone": "America/New_York",
+                    }
+                    for ticker in tickers
+                ],
+                "missing_tickers": [],
+                "stale_tickers": tickers if stale else [],
+                "ticker_count_requested": len(tickers),
+                "ticker_count_successful": len(tickers),
+                "latest_observation_ts_et": ts,
+                "latest_completed_bar_ts_et": ts,
+            }
+        return _fetch
+
+    fresh = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch(0.01, "2026-06-17T15:50:00-04:00"),
+    )
+    ledger_before = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+
+    stale = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch(0.20, "2026-06-17T15:55:00-04:00", stale=True),
+    )
+    ledger_after = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+
+    assert fresh["paper_performance_update"]["portfolio_row_updated"] is True
+    assert stale["paper_performance_update"]["portfolio_row_updated"] is False
+    assert stale["paper_performance_update"]["reason"] == "stale_delayed_quotes_preserved_paper_ledger"
+    assert ledger_after["rows"] == ledger_before["rows"]
+
+
 def test_refresh_gap_fills_missing_paper_business_days_before_current_day(intraday_cfg, minimal_artifact, tmp_path: Path):
     _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
     artifact_path = tmp_path / "artifact.json"

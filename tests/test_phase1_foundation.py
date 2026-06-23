@@ -143,9 +143,9 @@ def test_performance_analytics_layer_is_data_bound_and_separates_research():
         "MASTER_PORTFOLIO",
         "PORTFOLIO & STRATEGY PERFORMANCE ANALYTICS",
         "current operating sleeves",
-        "Insufficient Official History",
-        "Minimum official observations required",
-        "Official Ledger: portfolio_daily only; delayed estimates excluded",
+        "Insufficient Portfolio Daily History",
+        "Minimum portfolio daily observations required",
+        "Portfolio Daily: paper_performance_daily preferred; official ledger retained for audit",
         "Operational Ledger: strategy_daily official shadow-live rows",
         "Operational paper-ledger metrics and research/backtest metrics remain separate",
         "Missing research artifacts are shown as Not loaded rather than estimated",
@@ -297,6 +297,8 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     assert "canvas.__commandChartPoints" in app
     assert "Math.hypot(p.x-x,p.y-y)" in app
     assert "Current Trading Date" in app
+    assert "Portfolio Daily Date" in app
+    assert "Portfolio Daily Source" in app
     assert "Intraday Estimate Status" in app
 
 
@@ -410,8 +412,15 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     ]
     assert data["portfolio_daily"][-1]["data_as_of"] == "2026-06-12"
     assert data["portfolio_daily"][-1]["date"] != data["portfolio_daily"][-1]["data_as_of"]
-    assert "Visible ledger date uses portfolio_daily.date" in app
+    assert "Visible portfolio date uses paper_performance_daily when available" in app
     assert "function latestPortfolioLedgerDate(c)" in app
+    assert "function latestPortfolioDailyDate(c)" in app
+    assert "function portfolioDailyRows(c,limit=null)" in app
+    assert "function portfolioDailyRowVisible(c,r)" in app
+    assert 'lifecycle(c).state==="INTRADAY_ESTIMATE"' in app
+    assert "function delayedEstimateFoldedIntoPortfolio(c)" in app
+    assert "Already represented by Portfolio Daily" in app
+    assert "no duplicate estimate card" in app
     assert "const COMMAND_CHART_OFFICIAL_WINDOW=20" in app
     assert "function officialChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
     assert "function paperChartRows(c,limit=COMMAND_CHART_OFFICIAL_WINDOW)" in app
@@ -428,13 +437,13 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "Today's delayed estimate shown separately; paper daily record pending" not in app
     assert "COMMAND_CHART_PAPER_KEYS" not in app
     assert ".sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-limit)" in app
-    assert "const paper=paperChartRows(c),official=officialChartRows(c)" in app
+    assert "const paper=portfolioDailyRows(c,COMMAND_CHART_OFFICIAL_WINDOW),official=officialChartRows(c)" in app
     assert "function drawCommandChart(canvas,c){" in app
     assert "const series=commandChartSeries(c),rows=series.rows" in app
     assert "function bindCommandChartTooltip()" in app
     assert "const series=commandChartSeries(state.contract),rows=series.rows" in app
     assert "chartDetailMarkup({date:sessionLabel(state.contract),source:\"Delayed Estimate\",nav:intr.estimated_nav,pnl:intr.estimated_pnl,drawdown:null})" in app
-    assert "Official portfolio ledger through ${latestPortfolioLedgerDate(c)}" in app
+    assert "Official audit ledger through ${latestPortfolioLedgerDate(c)}" in app
     assert "function chartDetailMarkup" in app
     assert "<b>Date</b>" in app
     assert "<b>Source</b>" in app
@@ -554,7 +563,7 @@ def test_strategy_library_governance_page_is_data_bound():
         "Candidate admission records",
         "Research evidence registry",
         "Operational snapshot metadata",
-        "c.portfolio_daily.at(-1)?.date",
+        "latestPortfolioDailyDate(c)",
         "u.current_price_covered_ticker_count??intr.covered_tickers",
         "External institutional data research",
         "DATA PROCESSING LINEAGE",
@@ -571,8 +580,8 @@ def test_strategy_library_governance_page_is_data_bound():
         "4. Derive Combined strategy",
         "${ordinary.length} ordinary active strategy net returns",
         "5. Align portfolio performance dates",
-        "portfolio_daily.date",
-        "Use ledger date for visible chart/card dates; keep official close/data_as_of as metadata",
+        "paper_performance_daily",
+        "Use paper performance date for visible chart/card dates when available; keep official close/data_as_of as audit metadata",
         "6. Build style / family proxy",
         "active strategy families",
         "7. Apply evidence gates",

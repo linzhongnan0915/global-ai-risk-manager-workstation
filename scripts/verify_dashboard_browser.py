@@ -274,8 +274,8 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 return await response.json();
             }"""
         )
-        latest_ledger_date = (served_snapshot.get("portfolio_daily") or [{}])[-1].get("date")
-        official_close_date = (served_snapshot.get("official_daily") or {}).get("latest_official_close_date")
+        paper_rows = served_snapshot.get("paper_performance_daily") or []
+        latest_portfolio_daily_date = (paper_rows or served_snapshot.get("portfolio_daily") or [{}])[-1].get("date")
         initial_body_text = page.locator("body").inner_text()
         initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
@@ -288,13 +288,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             and "COMBINED FAMILY MIX" not in initial_body_upper
             and "INVALID_EXECUTION_RECORD" not in initial_body_upper
         )
-        report["checks"]["official_date_label_precision"] = (
-            "OFFICIAL LEDGER DATE" in initial_body_upper
+        report["checks"]["portfolio_daily_label_precision"] = (
+            "PORTFOLIO DAILY DATE" in initial_body_upper
+            and "PORTFOLIO DAILY SOURCE" in initial_body_upper
             and "CURRENT TRADING DATE" in initial_body_upper
-            and "LAST OFFICIAL CLOSE" in initial_body_upper
-            and latest_ledger_date is not None
-            and str(latest_ledger_date) in initial_body_text
-            and (official_close_date is None or str(official_close_date) in initial_body_text)
+            and latest_portfolio_daily_date is not None
+            and str(latest_portfolio_daily_date) in initial_body_text
         )
         chart_state = page.evaluate(
             """

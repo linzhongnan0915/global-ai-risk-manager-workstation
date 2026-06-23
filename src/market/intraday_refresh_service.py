@@ -757,7 +757,13 @@ def run_intraday_refresh(
                 position_source=position_source,
                 rebalance=paper_rebalance,
             )
-            if paper_row:
+            paper_prices_stale = bool(fetch_result.get("stale_tickers"))
+            if paper_prices_stale:
+                refresh_warnings.append(
+                    "paper daily ledger not updated because delayed quote freshness is stale; "
+                    "latest good paper row is preserved"
+                )
+            if paper_row and not paper_prices_stale:
                 existing_paper_rows = paper_portfolio_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
                 paper_gap_missing_dates = missing_paper_portfolio_business_dates(
                     existing_paper_rows,
@@ -846,7 +852,10 @@ def run_intraday_refresh(
             else:
                 paper_update = {
                     **no_paper_update,
-                    "reason": "no_priced_committed_shadow_holdings",
+                    "reason": (
+                        "stale_delayed_quotes_preserved_paper_ledger"
+                        if paper_prices_stale else "no_priced_committed_shadow_holdings"
+                    ),
                     "refresh_status": refresh_coverage_status,
                 }
             daily_finalization = finalize_daily_shadow_returns(

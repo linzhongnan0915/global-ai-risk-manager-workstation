@@ -1,0 +1,496 @@
+{
+  "schema_version": "yfinance_staged_scaling_diagnostics_v1",
+  "generated_at": "2026-06-23T13:38:59.144497-04:00",
+  "stages_run": [
+    {
+      "stage_name": "step1_us_all_common_research_500",
+      "command": "python scripts\\refresh_universe.py --provider yfinance-provisional --universe US_ALL_COMMON_RESEARCH --max-tickers 500 --as-of-date 2026-06-23 --use-cache",
+      "started_at": "2026-06-23T12:10:17.7394475-04:00",
+      "finished_at": "2026-06-23T12:21:18.181640-04:00",
+      "elapsed_seconds": 660.442193,
+      "provider": "yfinance-provisional",
+      "universe": "US_ALL_COMMON_RESEARCH",
+      "as_of_date": "2026-06-23",
+      "source_status": "LOADED_YFINANCE_PUBLIC_FALLBACK_PROVISIONAL",
+      "data_source": "YFINANCE_PUBLIC_FALLBACK",
+      "point_in_time_status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL",
+      "research_use": "PROTOTYPE_ONLY",
+      "not_survivor_bias_free": true,
+      "candidate_count": 500,
+      "included_count": 361,
+      "excluded_count": 139,
+      "top_exclusion_reasons": {
+        "min_adv_20d": 103,
+        "min_price": 35,
+        "min_adv_60d": 1
+      },
+      "yfinance_failures": 0,
+      "ticker_failures": [],
+      "missing_price_count": 0,
+      "missing_adv_20d_count": 0,
+      "missing_adv_60d_count": 0,
+      "missing_market_cap_count": 0,
+      "missing_sector_count": 3,
+      "missing_industry_count": 3,
+      "cache_behavior": {
+        "exact_cache_status": "not_reported_as_exact_cache_hit",
+        "partial_cache_hit_count": 0,
+        "partial_cache_miss_count": 500
+      },
+      "candidate_sources": {
+        "sp500_current": {
+          "path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\dashboard\\data\\universes\\sp500_current.json",
+          "count": 503,
+          "as_of_date": "2026-06-17",
+          "status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL"
+        },
+        "worldquant_current_listed_artifact": {
+          "count": 0
+        },
+        "nasdaq_trader_symbol_directory": {
+          "status": "DOWNLOADED_CURRENT_LISTED",
+          "count": 4986,
+          "summary": {
+            "nasdaq_listed_rows": 5525,
+            "other_exchange_rows": 7339,
+            "total_unique_symbols": 12864,
+            "total_rows": 12864,
+            "etf_exclusions": 5372,
+            "test_issue_exclusions": 33,
+            "non_common_security_exclusions": 1972,
+            "non_common_exclusions_by_reason": {
+              "warrant": 473,
+              "preferred_share": 442,
+              "units": 302,
+              "closed_end_fund": 239,
+              "spac_shell": 212,
+              "notes_debt": 174,
+              "rights": 128,
+              "fund_trust": 2
+            },
+            "adr_count": 487,
+            "needs_review_count": 390,
+            "eligible_candidate_count": 5097,
+            "reit_common_equity_count": 29,
+            "fund_closed_end_exclusion_count": 241,
+            "duplicate_symbol_rows": 0
+          }
+        },
+        "candidate_counts_by_universe": {
+          "US_ALL_COMMON_RESEARCH": 500
+        }
+      },
+      "coverage_summary": {
+        "price": {
+          "covered": 500,
+          "total": 500,
+          "ratio": 1.0
+        },
+        "adv_20d": {
+          "covered": 500,
+          "total": 500,
+          "ratio": 1.0
+        },
+        "adv_60d": {
+          "covered": 500,
+          "total": 500,
+          "ratio": 1.0
+        },
+        "market_cap": {
+          "covered": 500,
+          "total": 500,
+          "ratio": 1.0
+        },
+        "sector": {
+          "covered": 497,
+          "total": 500,
+          "ratio": 0.994
+        },
+        "industry": {
+          "covered": 497,
+          "total": 500,
+          "ratio": 0.994
+        }
+      },
+      "asset_type_distribution": {
+        "COMMON_STOCK": 500
+      },
+      "exchange_distribution": {
+        "NASDAQ": 500
+      },
+      "warnings": [
+        "Broad candidate pool was generated from current Nasdaq Trader symbol-directory utilities; historical delistings are absent.",
+        "Broad current-listed WorldQuant security master artifacts were not found.",
+        "Point-in-time status is CURRENT_MEMBERSHIP_ONLY_PROVISIONAL until historical membership is supplied.",
+        "The broad research pool is not a direct optimizer/trading universe; use US_TRADABLE_LIQUID or approved strategy-specific universes for that purpose.",
+        "This universe is current-membership-only and not survivor-bias-free.",
+        "US_LARGE_CAP_CORE uses the current S&P 500 reference artifact when available; this is not historical index membership.",
+        "YFinance/public fallback data is prototype-only and not institutional-grade.",
+        "missing_industry: 3 of 500 provisional yfinance records are missing this field.",
+        "missing_sector: 3 of 500 provisional yfinance records are missing this field."
+      ],
+      "stderr_tail": [
+        "$ALOV: possibly delisted; no price data found  (period=5d)",
+        "$ALOV: possibly delisted; no price data found  (period=5d)"
+      ],
+      "stdout_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage1_step1\\refresh_stdout.log",
+      "stderr_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage1_step1\\refresh_stderr.log"
+    },
+    {
+      "stage_name": "step2_us_all_common_research_1500",
+      "command": "python scripts\\refresh_universe.py --provider yfinance-provisional --universe US_ALL_COMMON_RESEARCH --max-tickers 1500 --as-of-date 2026-06-23 --use-cache",
+      "started_at": "2026-06-23T12:27:44.756893-04:00",
+      "finished_at": "2026-06-23T12:46:15.980291-04:00",
+      "elapsed_seconds": 1111.223398,
+      "provider": "yfinance-provisional",
+      "universe": "US_ALL_COMMON_RESEARCH",
+      "as_of_date": "2026-06-23",
+      "source_status": "LOADED_YFINANCE_PUBLIC_FALLBACK_PROVISIONAL",
+      "data_source": "YFINANCE_PUBLIC_FALLBACK",
+      "point_in_time_status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL",
+      "research_use": "PROTOTYPE_ONLY",
+      "not_survivor_bias_free": true,
+      "candidate_count": 1500,
+      "included_count": 1060,
+      "excluded_count": 440,
+      "top_exclusion_reasons": {
+        "min_adv_20d": 279,
+        "min_price": 156,
+        "min_adv_60d": 3,
+        "missing_adv_20d": 2
+      },
+      "yfinance_failures": 0,
+      "ticker_failures": [],
+      "fundamental_failures": [],
+      "missing_price_count": 0,
+      "missing_adv_20d_count": 2,
+      "missing_adv_60d_count": 2,
+      "missing_market_cap_count": 3,
+      "missing_sector_count": 2,
+      "missing_industry_count": 2,
+      "cache_behavior": {
+        "exact_cache_status": "not_reported_as_exact_cache_hit",
+        "cache_hit_count": 500,
+        "cache_miss_count": 1000,
+        "partial_cache_reuse_count": 500,
+        "partial_cache_hit_count": 500,
+        "partial_cache_miss_count": 1000,
+        "price_rows_loaded": 1000,
+        "fundamental_rows_loaded": 1000
+      },
+      "candidate_sources": {
+        "sp500_current": {
+          "path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\dashboard\\data\\universes\\sp500_current.json",
+          "count": 503,
+          "as_of_date": "2026-06-17",
+          "status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL"
+        },
+        "worldquant_current_listed_artifact": {
+          "count": 0
+        },
+        "nasdaq_trader_symbol_directory": {
+          "status": "DOWNLOADED_CURRENT_LISTED",
+          "count": 4986,
+          "summary": {
+            "nasdaq_listed_rows": 5525,
+            "other_exchange_rows": 7339,
+            "total_unique_symbols": 12864,
+            "total_rows": 12864,
+            "etf_exclusions": 5372,
+            "test_issue_exclusions": 33,
+            "non_common_security_exclusions": 1972,
+            "non_common_exclusions_by_reason": {
+              "warrant": 473,
+              "preferred_share": 442,
+              "units": 302,
+              "closed_end_fund": 239,
+              "spac_shell": 212,
+              "notes_debt": 174,
+              "rights": 128,
+              "fund_trust": 2
+            },
+            "adr_count": 487,
+            "needs_review_count": 390,
+            "eligible_candidate_count": 5097,
+            "reit_common_equity_count": 29,
+            "fund_closed_end_exclusion_count": 241,
+            "duplicate_symbol_rows": 0
+          }
+        },
+        "candidate_counts_by_universe": {
+          "US_ALL_COMMON_RESEARCH": 1500
+        }
+      },
+      "coverage_summary": {
+        "price": {
+          "covered": 1500,
+          "total": 1500,
+          "ratio": 1.0
+        },
+        "adv_20d": {
+          "covered": 1498,
+          "total": 1500,
+          "ratio": 0.9986666666666667
+        },
+        "adv_60d": {
+          "covered": 1498,
+          "total": 1500,
+          "ratio": 0.9986666666666667
+        },
+        "market_cap": {
+          "covered": 1497,
+          "total": 1500,
+          "ratio": 0.998
+        },
+        "sector": {
+          "covered": 1498,
+          "total": 1500,
+          "ratio": 0.9986666666666667
+        },
+        "industry": {
+          "covered": 1498,
+          "total": 1500,
+          "ratio": 0.9986666666666667
+        }
+      },
+      "asset_type_distribution": {
+        "COMMON_STOCK": 1497,
+        "REIT_COMMON_EQUITY": 3
+      },
+      "exchange_distribution": {
+        "NASDAQ": 1500
+      },
+      "warnings": [
+        "Broad candidate pool was generated from current Nasdaq Trader symbol-directory utilities; historical delistings are absent.",
+        "Broad current-listed WorldQuant security master artifacts were not found.",
+        "Loaded 500 ticker rows from same-date yfinance provisional partial cache.",
+        "Point-in-time status is CURRENT_MEMBERSHIP_ONLY_PROVISIONAL until historical membership is supplied.",
+        "The broad research pool is not a direct optimizer/trading universe; use US_TRADABLE_LIQUID or approved strategy-specific universes for that purpose.",
+        "This universe is current-membership-only and not survivor-bias-free.",
+        "US_ALL_COMMON_RESEARCH: one or more required fields are missing for candidates.",
+        "US_LARGE_CAP_CORE uses the current S&P 500 reference artifact when available; this is not historical index membership.",
+        "YFinance/public fallback data is prototype-only and not institutional-grade.",
+        "missing_adv_20d: 2 of 1500 provisional yfinance records are missing this field.",
+        "missing_adv_60d: 2 of 1500 provisional yfinance records are missing this field.",
+        "missing_industry: 2 of 1500 provisional yfinance records are missing this field.",
+        "missing_market_cap: 3 of 1500 provisional yfinance records are missing this field.",
+        "missing_sector: 2 of 1500 provisional yfinance records are missing this field."
+      ],
+      "stderr_tail": [
+        "$EFTY: possibly delisted; no price data found  (period=5d)",
+        "$EFTY: possibly delisted; no price data found  (period=5d)",
+        "$EMPG: possibly delisted; no price data found  (period=5d)",
+        "$EMPG: possibly delisted; no price data found  (period=5d)",
+        "$HCHL: possibly delisted; no price data found  (period=5d)",
+        "$HCHL: possibly delisted; no price data found  (period=5d)",
+        "$INHD: possibly delisted; no price data found  (period=5d)",
+        "$INHD: possibly delisted; no price data found  (period=5d)",
+        "$JDZG: possibly delisted; no price data found  (period=5d)",
+        "$JDZG: possibly delisted; no price data found  (period=5d)"
+      ],
+      "stdout_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage2_1500\\refresh_stdout.log",
+      "stderr_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage2_1500\\refresh_stderr.log",
+      "latency_rate_limit_assessment": "Completed in 1111.2 seconds with limited yfinance missing-price stderr warnings and no recorded yfinance failures or hard rate-limit failure.",
+      "safe_to_proceed_later_to_3000": true,
+      "safe_to_proceed_later_to_3000_notes": "Reasonable as a separate controlled stage with cache enabled, unchanged gates, explicit stop conditions, and latency/rate-limit monitoring. Do not jump to 5000."
+    },
+    {
+      "stage_name": "step3_us_all_common_research_3000",
+      "command": "python scripts\\refresh_universe.py --provider yfinance-provisional --universe US_ALL_COMMON_RESEARCH --max-tickers 3000 --as-of-date 2026-06-23 --use-cache",
+      "started_at": "2026-06-23T12:54:52.142997-04:00",
+      "finished_at": "2026-06-23T13:32:36.751952-04:00",
+      "elapsed_seconds": 2264.608955,
+      "provider": "yfinance-provisional",
+      "universe": "US_ALL_COMMON_RESEARCH",
+      "as_of_date": "2026-06-23",
+      "source_status": "LOADED_YFINANCE_PUBLIC_FALLBACK_PROVISIONAL",
+      "data_source": "YFINANCE_PUBLIC_FALLBACK",
+      "point_in_time_status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL",
+      "research_use": "PROTOTYPE_ONLY",
+      "not_survivor_bias_free": true,
+      "candidate_count": 3000,
+      "included_count": 2116,
+      "excluded_count": 884,
+      "top_exclusion_reasons": {
+        "min_adv_20d": 557,
+        "min_price": 312,
+        "missing_adv_20d": 12,
+        "min_adv_60d": 3
+      },
+      "yfinance_failures": 0,
+      "ticker_failures": [],
+      "fundamental_failures": [],
+      "missing_price_count": 0,
+      "missing_adv_20d_count": 12,
+      "missing_adv_60d_count": 12,
+      "missing_market_cap_count": 3,
+      "missing_sector_count": 5,
+      "missing_industry_count": 5,
+      "cache_behavior": {
+        "exact_cache_status": "not_reported_as_exact_cache_hit",
+        "cache_hit_count": 1500,
+        "cache_miss_count": 1500,
+        "partial_cache_reuse_count": 1500,
+        "partial_cache_hit_count": 1500,
+        "partial_cache_miss_count": 1500,
+        "price_rows_loaded": 1500,
+        "fundamental_rows_loaded": 1500
+      },
+      "candidate_sources": {
+        "sp500_current": {
+          "path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\dashboard\\data\\universes\\sp500_current.json",
+          "count": 503,
+          "as_of_date": "2026-06-17",
+          "status": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL"
+        },
+        "worldquant_current_listed_artifact": {
+          "count": 0
+        },
+        "nasdaq_trader_symbol_directory": {
+          "status": "DOWNLOADED_CURRENT_LISTED",
+          "count": 4986,
+          "summary": {
+            "nasdaq_listed_rows": 5525,
+            "other_exchange_rows": 7339,
+            "total_unique_symbols": 12864,
+            "total_rows": 12864,
+            "etf_exclusions": 5372,
+            "test_issue_exclusions": 33,
+            "non_common_security_exclusions": 1972,
+            "non_common_exclusions_by_reason": {
+              "warrant": 473,
+              "preferred_share": 442,
+              "units": 302,
+              "closed_end_fund": 239,
+              "spac_shell": 212,
+              "notes_debt": 174,
+              "rights": 128,
+              "fund_trust": 2
+            },
+            "adr_count": 487,
+            "needs_review_count": 390,
+            "eligible_candidate_count": 5097,
+            "reit_common_equity_count": 29,
+            "fund_closed_end_exclusion_count": 241,
+            "duplicate_symbol_rows": 0
+          }
+        },
+        "candidate_counts_by_universe": {
+          "US_ALL_COMMON_RESEARCH": 3000
+        }
+      },
+      "coverage_summary": {
+        "price": {
+          "covered": 3000,
+          "total": 3000,
+          "ratio": 1.0
+        },
+        "adv_20d": {
+          "covered": 2988,
+          "total": 3000,
+          "ratio": 0.996
+        },
+        "adv_60d": {
+          "covered": 2988,
+          "total": 3000,
+          "ratio": 0.996
+        },
+        "market_cap": {
+          "covered": 2997,
+          "total": 3000,
+          "ratio": 0.999
+        },
+        "sector": {
+          "covered": 2995,
+          "total": 3000,
+          "ratio": 0.9983333333333333
+        },
+        "industry": {
+          "covered": 2995,
+          "total": 3000,
+          "ratio": 0.9983333333333333
+        }
+      },
+      "asset_type_distribution": {
+        "COMMON_STOCK": 2994,
+        "REIT_COMMON_EQUITY": 6
+      },
+      "exchange_distribution": {
+        "NASDAQ": 2984,
+        "NYSE": 16
+      },
+      "exchange_skew_status": "skewed_nasdaq_dominant",
+      "warnings": [
+        "Broad candidate pool was generated from current Nasdaq Trader symbol-directory utilities; historical delistings are absent.",
+        "Broad current-listed WorldQuant security master artifacts were not found.",
+        "Loaded 1500 ticker rows from same-date yfinance provisional partial cache.",
+        "Point-in-time status is CURRENT_MEMBERSHIP_ONLY_PROVISIONAL until historical membership is supplied.",
+        "The broad research pool is not a direct optimizer/trading universe; use US_TRADABLE_LIQUID or approved strategy-specific universes for that purpose.",
+        "This universe is current-membership-only and not survivor-bias-free.",
+        "US_ALL_COMMON_RESEARCH: one or more required fields are missing for candidates.",
+        "US_LARGE_CAP_CORE uses the current S&P 500 reference artifact when available; this is not historical index membership.",
+        "YFinance/public fallback data is prototype-only and not institutional-grade.",
+        "missing_adv_20d: 12 of 3000 provisional yfinance records are missing this field.",
+        "missing_adv_60d: 12 of 3000 provisional yfinance records are missing this field.",
+        "missing_industry: 5 of 3000 provisional yfinance records are missing this field.",
+        "missing_market_cap: 3 of 3000 provisional yfinance records are missing this field.",
+        "missing_sector: 5 of 3000 provisional yfinance records are missing this field."
+      ],
+      "stderr_tail": [
+        "$MAGH: possibly delisted; no price data found  (period=5d)",
+        "$MAGH: possibly delisted; no price data found  (period=5d)",
+        "$MAMK: possibly delisted; no price data found  (period=5d)",
+        "$MAMK: possibly delisted; no price data found  (period=5d)",
+        "$MCTA: possibly delisted; no price data found  (period=5d)",
+        "$MCTA: possibly delisted; no price data found  (period=5d)",
+        "$NUTR: possibly delisted; no price data found  (period=5d)",
+        "$NUTR: possibly delisted; no price data found  (period=5d)",
+        "$OST: possibly delisted; no price data found  (period=5d)",
+        "$OST: possibly delisted; no price data found  (period=5d)",
+        "$PC: possibly delisted; no price data found  (period=5d)",
+        "$PC: possibly delisted; no price data found  (period=5d)",
+        "$PLTS: possibly delisted; no price data found  (period=5d)",
+        "$PLTS: possibly delisted; no price data found  (period=5d)",
+        "$PTNM: possibly delisted; no price data found  (period=5d)",
+        "$PTNM: possibly delisted; no price data found  (period=5d)",
+        "$QMMM: possibly delisted; no price data found  (period=5d)",
+        "$QMMM: possibly delisted; no price data found  (period=5d)",
+        "$SDM: possibly delisted; no price data found  (period=5d)",
+        "$SDM: possibly delisted; no price data found  (period=5d)",
+        "$SVA: possibly delisted; no price data found  (period=5d)",
+        "$SVA: possibly delisted; no price data found  (period=5d)",
+        "$UCFI: possibly delisted; no price data found  (period=5d)",
+        "$UCFI: possibly delisted; no price data found  (period=5d)"
+      ],
+      "stdout_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage3_3000\\refresh_stdout.log",
+      "stderr_path": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\yfinance_stage3_3000\\refresh_stderr.log",
+      "latency_rate_limit_assessment": "Completed in 2264.6 seconds with ticker-level yfinance missing-price stderr warnings, no recorded yfinance failures, and no hard rate-limit failure.",
+      "post_run_checks": {
+        "focused_yfinance_provider_tests": "9 passed",
+        "universe_provider_api_tests": "10 passed",
+        "workstation_server_operational_snapshot_tests": "52 passed",
+        "dashboard_browser_verifier": "passed; Console errors: 0",
+        "plain_node_check": "not available on PATH",
+        "bundled_node_syntax_check": "passed"
+      },
+      "safe_to_proceed_later_to_5000": true,
+      "safe_to_proceed_later_to_5000_notes": "Conditional yes for a separate controlled scaling test with cache enabled and the same stop conditions. Latency is material, current provider candidate count is 4986, and exchange coverage remains Nasdaq-dominant, so 5000 should not be treated as a fully representative broad-market production universe."
+    }
+  ],
+  "not_run": [
+    "5000-name stage",
+    "Strategy Factory",
+    "16-strategy migration audit",
+    "16-strategy migration backtests",
+    "ML",
+    "optimizer"
+  ],
+  "required_labels": {
+    "DATA_SOURCE": "YFINANCE_PUBLIC_FALLBACK",
+    "POINT_IN_TIME_STATUS": "CURRENT_MEMBERSHIP_ONLY_PROVISIONAL",
+    "RESEARCH_USE": "PROTOTYPE_ONLY",
+    "NOT_SURVIVOR_BIAS_FREE": true
+  },
+  "largest_successful_scale_so_far": 3000,
+  "latest_stage_status": "complete"
+}

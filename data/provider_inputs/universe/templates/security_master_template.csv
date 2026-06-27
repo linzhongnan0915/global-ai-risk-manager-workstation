@@ -1,0 +1,6 @@
+security_id,ticker,company_name,exchange,asset_type,country,currency,is_active,data_source,last_updated,is_common_stock,is_adr,is_etf,is_reit,is_preferred,is_warrant,is_unit,is_closed_end_fund,is_spac_shell
+SAMPLE-SEC-001,SAMP_A,Sample Template Alpha Corp,NYSE,COMMON_STOCK,US,USD,true,SAMPLE_TEMPLATE_ONLY,2026-06-22,true,false,false,false,false,false,false,false,false
+SAMPLE-SEC-002,SAMP_B,Sample Template Beta Corp,NASDAQ,COMMON_STOCK,US,USD,true,SAMPLE_TEMPLATE_ONLY,2026-06-22,true,false,false,false,false,false,false,false,false
+SAMPLE-SEC-003,SAMP_C,Sample Template Gamma REIT,NYSE,REIT_COMMON_EQUITY,US,USD,true,SAMPLE_TEMPLATE_ONLY,2026-06-22,false,false,false,true,false,false,false,false,false
+SAMPLE-SEC-004,SAMP_D,Sample Template Delta ETF,NYSE,ETF,US,USD,true,SAMPLE_TEMPLATE_ONLY,2026-06-22,false,false,true,false,false,false,false,false,false
+SAMPLE-SEC-005,SAMP_E,Sample Template Epsilon Corp,NASDAQ,COMMON_STOCK,US,USD,false,SAMPLE_TEMPLATE_ONLY,2026-06-22,true,false,false,false,false,false,false,false,false

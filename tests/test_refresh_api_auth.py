@@ -902,7 +902,7 @@ def test_refresh_includes_applied_paper_rebalance_costs_in_paper_only_rows(intra
     assert by_id["S2"]["applied_paper_target_weight"] == pytest.approx(0.4)
 
 
-def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal_artifact, tmp_path: Path):
+def test_refresh_partial_provider_coverage_below_threshold_fails(intraday_cfg, minimal_artifact, tmp_path: Path):
     _write_canonical_holdings(tmp_path)
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
@@ -942,11 +942,12 @@ def test_refresh_partial_provider_coverage_returns_warning(intraday_cfg, minimal
 
     result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_partial)
 
-    assert result["ok"] is True
-    assert result["warnings"]
-    assert result["paper_performance_update"]["refresh_status"] == "partial"
-    snapshot = read_latest_snapshot(intraday_cfg)
-    assert snapshot["warnings"]
+    assert result["ok"] is False
+    assert "insufficient ticker coverage" in result["error"]
+    update = result.get("paper_performance_update") or {}
+    assert update.get("reason") == "refresh_failed"
+    assert update.get("portfolio_row_updated") is False
+    assert update.get("strategy_rows_updated") == 0
 
 
 def test_refresh_rate_limit_returns_stale_cooldown_with_previous_snapshot(intraday_cfg, minimal_artifact, tmp_path: Path):

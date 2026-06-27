@@ -1,0 +1,23 @@
+LOW_VOL_DEFENSIVE_V0:
+  default_universe: US_LARGE_CAP_CORE
+  expansion_universe: US_BROAD_MARKET
+  requires_sector_neutrality: true
+  min_adv_20d: 20000000
+
+SMALL_CAP_NEGLECTED_V0:
+  default_universe: US_SMALL_CAP
+  expansion_universe: US_ALL_COMMON_RESEARCH
+  requires_liquidity_gate: true
+  min_adv_20d: 2000000
+
+SHORT_REVERSAL_LIQUIDITY_V0:
+  default_universe: US_BROAD_MARKET
+  expansion_universe: US_ALL_COMMON_RESEARCH
+  requires_cost_sensitivity_test: true
+  min_adv_20d: 5000000
+
+ML_ALPHA_CANDIDATE_V0:
+  default_universe: US_ALL_COMMON_RESEARCH
+  deployment_universe: US_TRADABLE_LIQUID
+  requires_walk_forward: true
+  requires_feature_timestamp_audit: true

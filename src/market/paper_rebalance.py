@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from src.market.approved_rebalance_plan import approved_rebalance_plan_snapshot_payload
+from src.market.monthly_rebalance_proposal import monthly_rebalance_proposal_snapshot_payload
+from src.market.recommendation_review_draft import recommendation_review_snapshot_payload
+
 
 SCHEMA_VERSION = "paper_rebalance_v1"
 SOURCE_LABEL = "user_adjusted_paper_target"
@@ -366,6 +370,8 @@ def paper_rebalance_snapshot_payload(root: Path) -> dict[str, Any]:
             "current_paper_target_weights": "data/paper_rebalance/current_paper_target_weights.json",
             "paper_rebalance_plans": "data/paper_rebalance/paper_rebalance_plans.json",
             "paper_rebalance_costs": "data/paper_rebalance/paper_rebalance_costs.json",
+            "approved_rebalance_plans": "data/paper_rebalance/approved_rebalance_plans.json",
+            "monthly_rebalance_proposals": "data/paper_rebalance/monthly_rebalance_proposals.json",
         },
         "current_paper_target": current,
         "plans": plans,
@@ -373,6 +379,9 @@ def paper_rebalance_snapshot_payload(root: Path) -> dict[str, Any]:
         "latest_plan": latest_plan,
         "latest_applied": latest_applied,
         "latest_cost_record": costs[-1] if costs else None,
+        "recommendation_review": recommendation_review_snapshot_payload(root),
+        "monthly_proposal": monthly_rebalance_proposal_snapshot_payload(root),
+        "approved_rebalance": approved_rebalance_plan_snapshot_payload(root),
         "paper_only": True,
         "execution_mode": EXECUTION_MODE,
         "live_brokerage_fill": LIVE_BROKERAGE_FILL,

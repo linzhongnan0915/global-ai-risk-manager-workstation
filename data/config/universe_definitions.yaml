@@ -1,0 +1,121 @@
+global_settings:
+  max_universe_size: 5000
+  chunk_size: 250
+  stale_data_threshold_days: 5
+  data_source_label: YFINANCE_PUBLIC_FALLBACK
+  point_in_time_default_status: CURRENT_MEMBERSHIP_ONLY_PROVISIONAL
+  research_use: PROTOTYPE_ONLY
+  not_survivor_bias_free: true
+  yfinance_price_period: 4mo
+  yfinance_fundamentals_max_tickers: 5000
+  retry_policy:
+    max_attempts: 3
+    backoff_seconds: [1, 3, 5]
+    request_timeout_seconds: 30
+  source_priority:
+    - boss_provided_api
+    - existing_internal_artifacts
+    - yfinance_or_public_fallback_provisional_only
+
+universes:
+  US_LARGE_CAP_CORE:
+    description: S&P 500-style large-cap U.S. equity core universe.
+    benchmark_family: SP500_STYLE
+    intended_use: Large-cap research coverage, benchmark comparison, and provisional workflow testing; not direct optimizer input.
+    min_price: 5
+    min_adv_20d: 20000000
+    min_adv_60d: 15000000
+    include_asset_types:
+      - COMMON_STOCK
+      - REIT_COMMON_EQUITY
+    exclude_asset_types:
+      - ETF
+      - ADR
+      - PREFERRED
+      - WARRANT
+      - UNIT
+      - CLOSED_END_FUND
+      - SPAC_SHELL
+    refresh_frequency: daily_prices_weekly_membership_check
+
+  US_BROAD_MARKET:
+    description: Russell 3000-style broad U.S. equity research universe.
+    benchmark_family: RUSSELL_3000_STYLE
+    intended_use: Broad current-listed U.S. common-equity research coverage and pipeline testing; not direct optimizer input.
+    min_price: 3
+    min_adv_20d: 5000000
+    min_adv_60d: 3000000
+    include_asset_types:
+      - COMMON_STOCK
+      - REIT_COMMON_EQUITY
+    exclude_asset_types:
+      - ETF
+      - ADR
+      - PREFERRED
+      - WARRANT
+      - UNIT
+      - CLOSED_END_FUND
+      - SPAC_SHELL
+    refresh_frequency: daily_prices_weekly_membership_check
+
+  US_SMALL_CAP:
+    description: Russell 2000-style / small-cap U.S. equity research subset.
+    benchmark_family: RUSSELL_2000_STYLE
+    intended_use: Small-cap research subset and provisional workflow testing; not direct optimizer input.
+    min_price: 3
+    min_adv_20d: 2000000
+    min_adv_60d: 1000000
+    max_market_cap: 10000000000
+    include_asset_types:
+      - COMMON_STOCK
+      - REIT_COMMON_EQUITY
+    exclude_asset_types:
+      - ETF
+      - ADR
+      - PREFERRED
+      - WARRANT
+      - UNIT
+      - CLOSED_END_FUND
+      - SPAC_SHELL
+    refresh_frequency: daily_prices_weekly_membership_check
+
+  US_ALL_COMMON_RESEARCH:
+    description: Broadest U.S. common-stock research candidate universe.
+    benchmark_family: ALL_US_COMMON_STOCKS
+    intended_use: Research discovery, AI strategy search, and pipeline testing only; not a direct optimizer or trading universe.
+    min_price: 1
+    min_adv_20d: 500000
+    min_adv_60d: 250000
+    include_asset_types:
+      - COMMON_STOCK
+      - REIT_COMMON_EQUITY
+    exclude_asset_types:
+      - ETF
+      - ADR
+      - PREFERRED
+      - WARRANT
+      - UNIT
+      - CLOSED_END_FUND
+      - SPAC_SHELL
+    refresh_frequency: daily_prices_weekly_membership_check
+
+  US_TRADABLE_LIQUID:
+    description: Tradable liquid subset for portfolio simulation and allocation.
+    benchmark_family: FILTERED_US_EQUITY
+    intended_use: Filtered tradable research subset for simulation and future approved strategy-specific universes; still provisional with yfinance fallback.
+    min_price: 5
+    min_adv_20d: 10000000
+    min_adv_60d: 7500000
+    min_market_cap: 500000000
+    include_asset_types:
+      - COMMON_STOCK
+      - REIT_COMMON_EQUITY
+    exclude_asset_types:
+      - ETF
+      - ADR
+      - PREFERRED
+      - WARRANT
+      - UNIT
+      - CLOSED_END_FUND
+      - SPAC_SHELL
+    refresh_frequency: daily

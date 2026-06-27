@@ -56,10 +56,11 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
+def test_canonical_fixture_snapshot_fields_identity_costs_exposure_and_contributor_scale():
+    """Canonical JSON fixture preserves the historical pre-Strategy-Factory membership shape."""
     canonical = _canonical()
     snapshot = build_operational_snapshot(canonical, generated_at="2026-06-14T12:00:00+00:00")
-    assert snapshot["snapshot_version"] == "3.6.7"
+    assert snapshot["snapshot_version"] == "3.6.9"
     assert snapshot["official_daily"]["accounting_label"] == "OFFICIAL_DAILY"
     assert snapshot["official_daily"]["latest_official_close_date"] == "2026-06-12"
     assert snapshot["official_daily"]["missing_dates"] == []
@@ -79,9 +80,11 @@ def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
     assert snapshot["strategies"][0]["display_id"] == "#COMBINED"
     assert [row["display_id"] for row in snapshot["strategies"][1:-1]] == [f"#{i:06d}" for i in range(1, 17)]
     assert snapshot["strategies"][-1]["display_id"] == "#000018"
+    fixture_top_level_count = snapshot["strategy_entity_inventory"]["top_level_active_count"]
+    fixture_starting_capital = snapshot["capital_reconciliation"]["initial_shadow_capital"] / fixture_top_level_count
     assert all(row["display_name"] != row["internal_id"] for row in snapshot["strategies"])
     assert snapshot["strategies"][0]["display_name"] == "Combined"
-    assert snapshot["strategies"][0]["sleeve_weight"] == pytest.approx(1 / 17)
+    assert snapshot["strategies"][0]["sleeve_weight"] == pytest.approx(1 / fixture_top_level_count)
     assert snapshot["strategies"][0]["constituent_count"] == 16
     assert snapshot["strategies"][0]["constituent_equal_weight"] == pytest.approx(1 / 16)
     assert snapshot["strategies"][0]["daily_pnl"] is not None
@@ -115,7 +118,7 @@ def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
     assert snapshot["cost_reconciliation"]["trade_to_portfolio_residual"] == pytest.approx(0, abs=1e-8)
     assert snapshot["cost_reconciliation"]["status"] == "RECONCILED"
     assert snapshot["cost_reconciliation"]["excluded_rows"] == 0
-    assert snapshot["capital_reconciliation"]["starting_capital_per_sleeve"] == pytest.approx(1_000_000 / 17)
+    assert snapshot["capital_reconciliation"]["starting_capital_per_sleeve"] == pytest.approx(fixture_starting_capital)
     assert snapshot["capital_reconciliation"]["top_level_active_sleeves"] == 17
     assert snapshot["strategy_entity_inventory"]["ordinary_entities"] == 16
     assert snapshot["strategy_entity_inventory"]["ordinary_operational_ledgers"] == 16
@@ -142,7 +145,7 @@ def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
         assert strategy["observation_count"] > 1
         assert len([row for row in snapshot["strategy_daily"] if row["strategy_id"] == strategy["internal_id"]]) == strategy["observation_count"]
         history = [row for row in snapshot["strategy_daily"] if row["strategy_id"] == strategy["internal_id"]]
-        assert history[0]["beginning_sleeve_nav"] == pytest.approx(1_000_000 / 17)
+        assert history[0]["beginning_sleeve_nav"] == pytest.approx(fixture_starting_capital)
         assert strategy["current_drawdown"] == pytest.approx(history[-1]["current_drawdown"])
         assert strategy["max_drawdown"] == pytest.approx(min(row["current_drawdown"] for row in history))
 
@@ -150,6 +153,68 @@ def test_snapshot_fields_identity_costs_exposure_and_contributor_scale():
     denominator = max(abs(row["daily_pnl"]) for row in visible)
     assert max(row["bar_width_percent"] for row in visible) == pytest.approx(100)
     assert all(row["bar_width_percent"] == pytest.approx(abs(row["daily_pnl"]) / denominator * 100) for row in visible)
+
+
+def _latest_collection_item(path: Path, collection_key: str) -> dict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = payload.get(collection_key) or []
+    return rows[-1] if rows else {}
+
+
+def _line_items(row: dict) -> list[dict]:
+    return row.get("rows") or row.get("line_items") or row.get("recommendations") or []
+
+
+def test_root_runtime_snapshot_merges_user_ui_active_unallocated_and_uses_dynamic_sleeve_basis():
+    snapshot = load_operational_snapshot_for_response(ROOT)
+    inventory = snapshot["strategy_entity_inventory"]
+    capital = snapshot["capital_reconciliation"]
+    top_level_count = inventory["top_level_active_count"]
+    ordinary_count = inventory["ordinary_active_count"]
+    combined_count = inventory["combined_active_count"]
+
+    assert top_level_count == ordinary_count + combined_count
+    assert inventory["active_unallocated_count"] >= 1
+    assert inventory["pending_approval_count"] == 0
+    assert capital["top_level_sleeve_denominator"] == top_level_count
+    assert capital["starting_capital_denominator"] == top_level_count
+    assert capital["top_level_sleeve_weight"] == pytest.approx(1 / top_level_count)
+    assert capital["starting_capital_per_sleeve"] == pytest.approx(
+        capital["initial_shadow_capital"] / top_level_count
+    )
+
+    active_rows = [
+        row for row in snapshot["strategies"]
+        if row.get("membership_state") == "executed"
+    ]
+    assert len(active_rows) == top_level_count
+    for row in active_rows:
+        assert row.get("sleeve_weight") == pytest.approx(capital["top_level_sleeve_weight"])
+
+    active_unallocated = [
+        row for row in active_rows
+        if row.get("current_operational_status") == "ACTIVE_UNALLOCATED"
+    ]
+    assert len(active_unallocated) == inventory["active_unallocated_count"]
+    for row in active_unallocated:
+        assert row["strategy_uid"]
+        assert row["strategy_uid"] != row.get("display_label")
+        assert row["current_weight"] == pytest.approx(0.0)
+        assert row["target_weight"] == pytest.approx(0.0)
+        assert row["activation_source"] == "USER_UI"
+        assert row["activation_confirmation"] is True
+        assert row["nav_pnl_impact"] == "NONE_WHILE_CURRENT_WEIGHT_ZERO"
+        assert row["effective_weight_basis"] == "DYNAMIC_CURRENT_UNIVERSE_EQUAL_WEIGHT_ZERO_CURRENT_WEIGHT"
+
+    assert not any(row.get("SMOKE_ONLY") or row.get("TEST_ARTIFACT") for row in active_rows)
+
+    monthly = _latest_collection_item(ROOT / "data/paper_rebalance/monthly_rebalance_proposals.json", "proposals")
+    draft = _latest_collection_item(ROOT / "data/paper_rebalance/recommendation_review_drafts.json", "drafts")
+    approved = _latest_collection_item(ROOT / "data/paper_rebalance/approved_rebalance_plans.json", "plans")
+    assert len(_line_items(monthly)) == top_level_count
+    assert len(_line_items(draft)) == top_level_count
+    assert len(_line_items(approved)) == top_level_count
+    assert approved["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
 
 
 def test_paper_execution_fields_use_real_reference_price_and_five_bps_cost():
@@ -758,7 +823,10 @@ def test_portfolio_start_dates_are_derived_and_accounting_is_unchanged():
     assert snapshot["portfolio_dates"]["reconstructed_portfolio_start_date"] == "2026-06-03"
     assert snapshot["portfolio_dates"]["verified_shadow_portfolio_start_date"] is None
     assert snapshot["portfolio_summary"]["verified_shadow_start_label"] == "Not Yet Established"
-    assert snapshot["capital_reconciliation"]["starting_capital_per_sleeve"] == pytest.approx(1_000_000 / 17)
+    capital = snapshot["capital_reconciliation"]
+    assert capital["starting_capital_per_sleeve"] == pytest.approx(
+        capital["initial_shadow_capital"] / capital["starting_capital_denominator"]
+    )
     assert snapshot["cost_reconciliation"]["portfolio_daily_total"] == pytest.approx(666.2656485968413)
 
 

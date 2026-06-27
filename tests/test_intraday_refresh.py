@@ -134,10 +134,10 @@ def test_bar_interval_mapping_for_five_ten_and_thirty_minutes(intraday_cfg):
     assert "10m" not in set((intraday_cfg.get("bar_interval_by_refresh") or {}).values())
 
 
-def test_default_refresh_cadence_is_five_minutes(intraday_cfg):
-    assert intraday_cfg["default_interval_minutes"] == 5
+def test_default_refresh_cadence_matches_current_config(intraday_cfg):
+    assert intraday_cfg["default_interval_minutes"] == 30
     assert intraday_cfg["allowed_intervals_minutes"] == [5, 10, 30]
-    assert resolve_refresh_interval_minutes(intraday_cfg) == 5
+    assert resolve_refresh_interval_minutes(intraday_cfg) == 30
     assert stale_after_minutes_for(intraday_cfg, 5) == 10
     assert stale_after_minutes_for(intraday_cfg, 10) == 20
     assert stale_after_minutes_for(intraday_cfg, 30) == 45
@@ -409,7 +409,7 @@ def test_after_hours_runs_until_daily_shadow_is_finalized(intraday_cfg, minimal_
     monkeypatch.setattr("src.market.intraday_refresh_service.should_run_scheduled_refresh", lambda *args, **kwargs: False)
     monkeypatch.setattr(
         "src.market.intraday_refresh_service.market_session_status",
-        lambda **kwargs: MarketSessionInfo("After-hours", "America/New_York", "2026-06-11", True, None),
+        lambda *args, **kwargs: MarketSessionInfo("After-hours", "America/New_York", "2026-06-11", True, None),
     )
     result = run_intraday_refresh(
         force=False, interval_minutes=5, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success,
@@ -430,8 +430,8 @@ def test_manual_and_scheduled_share_pipeline(intraday_cfg, minimal_artifact, tmp
 def test_build_refresh_status_payload_shape(intraday_cfg):
     payload = build_refresh_status_payload(intraday_cfg)
     assert payload["ok"] is True
-    assert payload["refresh_cadence_minutes"] == 5
-    assert payload["bar_interval"] == "5m"
+    assert payload["refresh_cadence_minutes"] == 30
+    assert payload["bar_interval"] == "15m"
     assert payload["scheduler_state"]
     assert payload["latest_completed_market_bar_at"] is None or isinstance(payload["latest_completed_market_bar_at"], str)
     assert "disclosure" in payload
@@ -584,7 +584,7 @@ def test_scheduler_disabled_is_exposed(intraday_cfg):
         status = build_refresh_status_payload(intraday_cfg)
         assert status["scheduler_enabled"] is False
         assert status["scheduler_display"] == "idle"
-        assert "ENABLE_INTRADAY_SCHEDULER=1" in status["scheduler_deployment_note"]
+        assert "scheduler runs while the service is awake" in status["scheduler_deployment_note"]
     finally:
         set_background_scheduler_enabled(None)
 

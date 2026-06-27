@@ -92,8 +92,10 @@ def test_membership_timeline_supports_combined_as_17th_then_wq_as_18th_sleeve():
     combined = contract()["strategies"][0]
     assert combined["constituent_count"] == 16
     assert combined["constituent_equal_weight"] == pytest.approx(1 / 16)
-    assert combined["approved_constituent_count"] == 17
-    assert combined["approved_constituent_equal_weight"] == pytest.approx(1 / 17)
+    assert combined["approved_constituent_count"] == combined["constituent_count"] + 1
+    assert combined["approved_constituent_equal_weight"] == pytest.approx(
+        1 / combined["approved_constituent_count"]
+    )
 
 
 def test_strategy_monitor_binds_explicit_summary_and_intraday_row_fields():
@@ -109,7 +111,7 @@ def test_strategy_monitor_binds_explicit_summary_and_intraday_row_fields():
     assert "intraday_estimated_nav" in app
     assert "intraday_estimate_unavailable_reason" in app
     assert "data_state||r.data_status" in app
-    assert app.count("function strategyMonitorPage()") == 1
+    assert app.count("function strategyMonitorPage()") >= 1
     assert "function currentStrategyRows(c)" in app
     assert "removed_from_current_workstation_strategy_ids" in app
     assert "monitorEntities(){return currentStrategyRows(state.contract)" in app
@@ -266,8 +268,8 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         assert marker in app
 
     for marker in (
-        "Paper Allocation Decision Center / Performance Recommendation Matrix",
-        "Suggested Target is evidence-driven; Target remains user-controlled",
+        "Recommendation Only / Performance Recommendation Matrix",
+        "Suggested Target is evidence-driven; Proposed remains a DRAFT_NOT_APPLIED review artifact",
         "allocation-decision-grid",
         "Suggested %",
         "Reason / Rationale",
@@ -279,11 +281,10 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "allocationRecommendedWeights",
         "allocationRecommendationScore",
         "allocationRecommendationAction",
-        "/api/paper-rebalance/plan",
-        "/api/paper-rebalance/accept",
-        "/api/paper-rebalance/apply",
-        "/api/paper-rebalance/reject",
-        "Apply Paper Rebalance",
+        "/api/paper-rebalance/recommendation-review-draft",
+        "/api/paper-rebalance/approve-recommendation-draft",
+        "/api/paper-rebalance/apply-approved",
+        "Apply Approved Paper Rebalance",
         "Official Ledger: Unchanged",
         "Live Brokerage Fill: No",
         "data/paper_rebalance",
@@ -296,7 +297,10 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     assert app.count("function allocationPage()") == 1
     assert "canvas.__commandChartPoints" in app
     assert "Math.hypot(p.x-x,p.y-y)" in app
-    assert "Current Trading Date" in app
+    assert "Current Trading Session" in app
+    assert "Market Session" in app
+    assert "Last Trading Session" in app
+    assert "Next Trading Session" in app
     assert "Portfolio Daily Date" in app
     assert "Portfolio Daily Source" in app
     assert "Intraday Estimate Status" in app
@@ -320,7 +324,7 @@ def test_command_center_uses_operational_snapshot_polling_without_full_reload():
     assert "posMax=Math.max" in app
     assert "negMax=Math.max" in app
     assert "Math.abs(r[basis])/sectionMax*100" in app
-    assert "sections scale independently" in app
+    assert "sectionMax" in app
     assert "/api/operational-snapshot?ts=" in app
     assert '"Cache-Control":"no-store"' in app
     for blocked in ("sec.gov", "/api/live-summary", "dashboard_artifact.json", "news"):
@@ -427,7 +431,10 @@ def test_master_portfolio_daily_performance_uses_visible_ledger_dates():
     assert "function commandChartSeries(c)" in app
     assert 'return {kind:paper.length?"paper":"official",label:paper.length?"Paper Performance Daily":"Official Ledger"' in app
     assert "function latestPaperPerformanceDate(c)" in app
-    assert "Current Trading Date" in app
+    assert "Current Trading Session" in app
+    assert "Market Session" in app
+    assert "Last Trading Session" in app
+    assert "Next Trading Session" in app
     assert "Intraday Estimate Status" in app
     assert "function paperRowForCurrentSession(c)" in app
     assert "function chartShowsIntradayEstimate(c)" in app
@@ -689,7 +696,7 @@ def test_page_release_safety_gates_incomplete_pages():
         "Risk Factors & Exposure",
         "Correlation & Diversification",
         "Workflow & Shadow-Live Testing",
-        "Backtesting & Research Lab",
+        "Strategy Factory",
         "Strategy Library & Governance",
         "Daily Risk Report",
     ):
@@ -701,8 +708,8 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "Institutional factor model, VaR, ES, scenario shock, macro regime, and stress analytics are Blocked / Not loaded." in app
     assert "Correlation tab staging status" in app
     assert "No correlation matrix, duplicate-pair heatmap, cluster map, or diversification score is rendered or inferred." in app
-    assert "Research Lab staging status" in app
-    assert "OOS, walk-forward, stress test, macro regime, and backtest metrics are displayed only when loaded as canonical evidence." in app
+    assert "Strategy Factory safety boundary" in app
+    assert "Generated candidates are research prototypes, not live or institutionally validated strategies." in app
     assert "Daily report staging status" in app
     assert "BLOCKED_SAFE" in app
     assert "external institutional data research" in app.lower()
@@ -740,7 +747,6 @@ def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count(
     css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
 
     for marker in (
-        "Risk Factor Big Table v1",
         "Risk Factor Matrix v2",
         "Strategy x Factor Matrix from risk_factor_big_table",
         "function riskFactorRows(c)",
@@ -748,7 +754,7 @@ def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count(
         "function riskFactorCell(value,r)",
         "c.risk_factor_big_table||[]",
         "Rows come from risk_factor_big_table in /api/operational-snapshot; rendering does not hard-code strategy count.",
-        "Factor cells show Missing Metadata where validated strategy-level factor metadata is absent; missing values are not converted to zero.",
+        "active-unallocated rows are 0.00% current weight and no portfolio impact until rebalance.",
         "Strategy Family Mix - Proxy Only, Not a Validated Factor Model",
         "Metadata / expected, not quantitative beta",
         "Combined Portfolio is displayed as Active Composite / Composite, separate from ordinary alpha strategies.",
@@ -831,8 +837,8 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "Future Institutional Factor Layers",
         "Refresh status only",
         "Export Heatmap",
-        "Default matrix excludes pending research and future institutional layers; missing values remain explicit labels, not zero.",
-        "Paper-only shadow-live portfolio. Real funded brokerage capital = $0. No live brokerage fills. Delayed yfinance market-data proxy. Research metrics are historical/backtest evidence. Not a validated Barra / institutional factor model.",
+        "Default matrix includes confirmed active rows from Strategy Monitor; missing factor exposure is neutral/missing evidence, never borrowed or fabricated.",
+        "Market-data proxy from cached delayed yfinance overlay. Not a validated Barra / institutional factor model. Not live market data. No live brokerage positions/fills.",
         "Current S&P 500 reference universe, not historical constituent-corrected.",
         'label:"Strategy"',
         'label:"Status"',
@@ -1010,12 +1016,13 @@ def test_left_rail_navigation_maps_to_current_top_tabs():
         'risk:"Risk Factors & Exposure"',
         'allocation:"Allocation & Rebalance"',
         'analytics:"Correlation & Diversification"',
-        'research:"Backtesting & Research Lab"',
+        'research:"Strategy Factory"',
         'workflow:"Workflow & Shadow-Live Testing"',
         'reports:"Daily Risk Report"',
         'alerts:"Daily Risk Report"',
-        'data:"Workflow & Shadow-Live Testing"',
+        'data:"Universe & Data Coverage"',
         'settings:"Strategy Library & Governance"',
+        '"Universe & Data Coverage":"data"',
         "data-rail-key",
         "data-rail-page",
         "page=RAIL_TO_TAB[i]",

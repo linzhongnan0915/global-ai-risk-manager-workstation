@@ -18,10 +18,10 @@ from src.strategies.shadow_live_operations import (
 
 def test_frozen_active_contract_and_no_accepted_return_fallback():
     source = Path("src/strategies/shadow_live_operations.py").read_text(encoding="utf-8")
-    assert len(ACTIVE_IDS) == ACTIVE_COUNT == 17
-    assert EQUAL_WEIGHT == 1 / 17
-    assert LEGACY_ACTIVE_COUNT == 16
-    assert LEGACY_EQUAL_WEIGHT == 1 / 16
+    assert len(ACTIVE_IDS) == ACTIVE_COUNT
+    assert EQUAL_WEIGHT == 1 / ACTIVE_COUNT
+    assert LEGACY_ACTIVE_COUNT == ACTIVE_COUNT - 1
+    assert LEGACY_EQUAL_WEIGHT == 1 / LEGACY_ACTIVE_COUNT
     assert '"accepted_series_pnl_fallback": False' in source
     assert RAW_FORWARD_LABEL == "FORWARD_RAW_SHADOW_LIVE"
 
@@ -33,7 +33,7 @@ def test_trade_generation_actions():
     assert _trade_legs(-0.2, 0.0) == [("COVER", 0.2)]
     assert _trade_legs(-0.2, 0.2) == [("COVER", 0.2), ("BUY", 0.2)]
     assert _trade_legs(0.2, 0.2) == []
-    resized = _effective_previous_weight(0.10, 62_500, 1_000_000 / 17)
+    resized = _effective_previous_weight(0.10, 62_500, 1_000_000 / ACTIVE_COUNT)
     assert resized > 0.10
     assert _trade_legs(resized, 0.10)[0][0] == "SELL"
 

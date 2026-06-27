@@ -35,6 +35,11 @@ from src.market.intraday_refresh_service import (
     set_refresh_cadence,
 )
 from src.market.live_refresh import build_live_overlay, write_live_overlay
+from src.market.approved_rebalance_plan import apply_approved_rebalance_plan, create_approved_rebalance_plan
+from src.market.monthly_rebalance_proposal import (
+    create_monthly_rebalance_proposal,
+    create_review_draft_from_monthly_proposal,
+)
 from src.market.paper_rebalance import (
     accept_paper_rebalance_plan,
     apply_paper_rebalance_plan,
@@ -42,6 +47,7 @@ from src.market.paper_rebalance import (
     paper_rebalance_snapshot_payload,
     reject_paper_rebalance_plan,
 )
+from src.market.recommendation_review_draft import create_recommendation_review_draft
 from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_refresh_request
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
@@ -55,6 +61,40 @@ from src.reporting.operational_snapshot import (
 )
 from src.risk.limits import load_risk_limits
 from src.strategies.shadow_mvp import initialize_database, platform_strategy_registry
+from src.strategies.strategy_factory_admission import (
+    activate_portfolio_candidate as activate_variant_portfolio_candidate,
+    add_candidate as add_variant_candidate,
+    add_portfolio_candidate as add_variant_portfolio_candidate,
+    add_to_paper_sandbox as add_variant_to_paper_sandbox,
+    apply_to_paper as apply_variant_to_paper,
+    generate_allocation_draft as generate_variant_allocation_draft,
+    get_admission_status as strategy_factory_admission_status,
+    get_portfolio_candidates_status as strategy_factory_portfolio_candidates_status,
+    get_sandbox_status as strategy_factory_sandbox_status,
+    run_risk_review as run_variant_risk_review,
+)
+from src.strategies.strategy_factory_plugin import (
+    UploadedMaterial,
+    add_to_candidate_portfolio,
+    apply_to_paper_portfolio,
+    base_state as strategy_factory_state,
+    generate_allocation_draft,
+    get_candidate as strategy_factory_candidate,
+    list_candidates as strategy_factory_candidates,
+    report_text as strategy_factory_report,
+    remove_from_candidate_portfolio,
+    run_current_run_backtest_ml,
+    run_factory as run_strategy_factory,
+    run_full_current_run,
+    save_uploaded_materials,
+)
+from src.strategies.strategy_factory_data import PublicFallbackDataLoader, data_status, load_inventory
+from src.universe.universe_refresh_service import (
+    load_universe_quality,
+    load_universe_snapshot,
+    universe_members_payload,
+    universe_summary_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +285,17 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             compress=True,
         )
 
+    def _send_markdown_file(self, path: Path) -> None:
+        if not path.is_file():
+            self._send_json({"ok": False, "error": "strategy factory artifact not found"}, status=404)
+            return
+        self._write_response(
+            path.read_bytes(),
+            content_type="text/markdown; charset=utf-8",
+            cache_control="no-store, no-cache, must-revalidate",
+            compress=True,
+        )
+
     def _send_redirect(self, location: str, *, status: int = 302) -> None:
         self.send_response(status)
         self.send_header("Location", location)
@@ -271,6 +322,34 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw.decode("utf-8") or "{}")
+
+    def _read_upload_materials(self) -> list[UploadedMaterial]:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw = self.rfile.read(length) if length else b""
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            filename = self.headers.get("X-Filename", "upload.txt")
+            return [UploadedMaterial(filename=filename, content=raw)]
+        boundary_match = [part for part in content_type.split(";") if "boundary=" in part]
+        if not boundary_match:
+            raise ValueError("multipart boundary required")
+        boundary = boundary_match[0].split("=", 1)[1].strip().strip('"').encode("utf-8")
+        materials: list[UploadedMaterial] = []
+        for part in raw.split(b"--" + boundary):
+            if not part or part in {b"--\r\n", b"--"}:
+                continue
+            header_blob, _, body = part.partition(b"\r\n\r\n")
+            headers = header_blob.decode("utf-8", errors="replace")
+            if "filename=" not in headers:
+                continue
+            filename = headers.split("filename=", 1)[1].split(";", 1)[0].split("\r\n", 1)[0].strip().strip('"')
+            body = body.rstrip(b"\r\n")
+            if body.endswith(b"--"):
+                body = body[:-2].rstrip(b"\r\n")
+            materials.append(UploadedMaterial(filename=filename, content=body))
+        if not materials:
+            raise ValueError("no uploaded files found")
+        return materials
 
     def _paper_rebalance_response(self, extra: dict | None = None) -> dict:
         payload = {
@@ -371,6 +450,151 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {"/api/strategy-factory", "/api/strategy-factory/"}:
+            try:
+                state = strategy_factory_state(self.server_root)
+                if "monitoring_portfolio" not in state:
+                    monitoring = strategy_factory_sandbox_status(self.server_root)
+                    sleeves = monitoring.get("sandboxes") or []
+                    state["monitoring_portfolio"] = {
+                        "schema_version": "strategy_factory_monitoring_portfolio_v1",
+                        "state": monitoring.get("state") or "NOT_ADDED",
+                        "sleeves": sleeves,
+                        "strategy_count": len(sleeves),
+                        "total_target_weight": sum(float(row.get("target_weight") or 0.0) for row in sleeves),
+                        "latest_monitoring_refresh_status": "PENDING_FIRST_REFRESH"
+                        if sleeves
+                        else "NO_MONITORED_RESEARCH_STRATEGIES",
+                        "live_trading": False,
+                        "brokerage_execution": False,
+                    }
+                if "portfolio_candidates" not in state:
+                    state["portfolio_candidates"] = strategy_factory_portfolio_candidates_status(self.server_root)
+                self._send_json(state)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory")
+            return
+        if parsed.path in {"/api/strategy-factory/data/status", "/api/strategy-factory/data/status/"}:
+            try:
+                self._send_json(data_status())
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-data-status")
+            return
+        if parsed.path in {"/api/strategy-factory/data/inventory", "/api/strategy-factory/data/inventory/"}:
+            try:
+                self._send_json(load_inventory())
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-data-inventory")
+            return
+        if parsed.path in {"/api/strategy-factory/admission/status", "/api/strategy-factory/admission/status/"}:
+            try:
+                query = parse_qs(parsed.query)
+                self._send_json(
+                    strategy_factory_admission_status(
+                        self.server_root,
+                        run_id=(query.get("run_id") or [None])[0],
+                        variant_id=(query.get("variant_id") or [None])[0],
+                        candidate_id=(query.get("candidate_id") or [None])[0],
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-admission-status")
+            return
+        if parsed.path in {"/api/strategy-factory/sandbox/status", "/api/strategy-factory/sandbox/status/"}:
+            try:
+                query = parse_qs(parsed.query)
+                self._send_json(
+                    strategy_factory_sandbox_status(
+                        self.server_root,
+                        run_id=(query.get("run_id") or [None])[0],
+                        variant_id=(query.get("variant_id") or [None])[0],
+                        sandbox_id=(query.get("sandbox_id") or [None])[0],
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-sandbox-status")
+            return
+        if parsed.path in {"/api/strategy-factory/portfolio-candidates/status", "/api/strategy-factory/portfolio-candidates/status/"}:
+            try:
+                query = parse_qs(parsed.query)
+                self._send_json(
+                    strategy_factory_portfolio_candidates_status(
+                        self.server_root,
+                        run_id=(query.get("run_id") or [None])[0],
+                        variant_id=(query.get("variant_id") or [None])[0],
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-portfolio-candidates-status")
+            return
+        if parsed.path in {"/api/strategy-factory/variants/ranking-report", "/api/strategy-factory/variants/ranking-report/"}:
+            try:
+                query = parse_qs(parsed.query)
+                run_id = (query.get("run_id") or [""])[0].strip()
+                if not run_id:
+                    state = strategy_factory_state(self.server_root)
+                    run_id = ((state.get("variant_review") or {}).get("run_id") or "").strip()
+                if not run_id:
+                    self._send_json({"ok": False, "error": "run_id required"}, status=400)
+                    return
+                path = self.server_root / "output" / "strategy_factory" / "runs" / run_id / "variants" / "variant_ranking_report.md"
+                self._send_markdown_file(path)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-variant-ranking-report")
+            return
+        if parsed.path.startswith("/api/strategy-factory/variants/") and parsed.path.rstrip("/").endswith("/evidence"):
+            try:
+                parts = [unquote(part) for part in parsed.path.strip("/").split("/")]
+                if len(parts) != 5:
+                    self.send_error(404, "Not found")
+                    return
+                variant_id = parts[3]
+                query = parse_qs(parsed.query)
+                run_id = (query.get("run_id") or [""])[0].strip()
+                if not run_id:
+                    state = strategy_factory_state(self.server_root)
+                    run_id = ((state.get("variant_review") or {}).get("run_id") or "").strip()
+                if not run_id:
+                    self._send_json({"ok": False, "error": "run_id required"}, status=400)
+                    return
+                path = self.server_root / "output" / "strategy_factory" / "runs" / run_id / "variants" / variant_id / "evaluation" / "variant_evidence_report.md"
+                self._send_markdown_file(path)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-variant-evidence")
+            return
+        if parsed.path in {"/api/strategy-factory/candidates", "/api/strategy-factory/candidates/"}:
+            try:
+                self._send_json({"ok": True, "candidates": strategy_factory_candidates(self.server_root)})
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-candidates")
+            return
+        if parsed.path.startswith("/api/strategy-factory/candidates/"):
+            strategy_id = unquote(parsed.path.rstrip("/").split("/")[-1])
+            try:
+                candidate = strategy_factory_candidate(self.server_root, strategy_id)
+                if candidate is None:
+                    self._send_json({"ok": False, "error": "strategy candidate not found"}, status=404)
+                    return
+                self._send_json({"ok": True, "candidate": candidate})
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-candidate")
+            return
+        if parsed.path.startswith("/api/strategy-factory/report/"):
+            strategy_id = unquote(parsed.path.rstrip("/").split("/")[-1])
+            try:
+                report = strategy_factory_report(self.server_root, strategy_id)
+                if report is None:
+                    self._send_json({"ok": False, "error": "strategy report not found"}, status=404)
+                    return
+                self._write_response(
+                    report.encode("utf-8"),
+                    content_type="text/markdown; charset=utf-8",
+                    cache_control="no-store, no-cache, must-revalidate",
+                    compress=True,
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-report")
+            return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
                 refresh_lifecycle = WorkstationHandler.maybe_start_intraday_bootstrap(self.server_root)
@@ -379,6 +603,42 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_precomputed_json(body or b"{}")
             except Exception as exc:
                 self._send_safe_error(exc, context="operational-snapshot")
+            return
+        if parsed.path in {"/api/universe/summary", "/api/universe/summary/"}:
+            try:
+                self._send_json(universe_summary_payload(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="universe-summary")
+            return
+        if parsed.path in {"/api/universe/snapshot", "/api/universe/snapshot/"}:
+            try:
+                self._send_json(load_universe_snapshot(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="universe-snapshot")
+            return
+        if parsed.path in {"/api/universe/quality", "/api/universe/quality/"}:
+            try:
+                self._send_json(load_universe_quality(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="universe-quality")
+            return
+        if parsed.path in {"/api/universe/members", "/api/universe/members/"}:
+            try:
+                query = parse_qs(parsed.query or "")
+                universe_name = (query.get("universe") or [""])[0].strip()
+                if not universe_name:
+                    self._send_json({"ok": False, "error": "universe query parameter required"}, status=400)
+                    return
+                as_of_date = (query.get("as_of_date") or [None])[0]
+                self._send_json(
+                    universe_members_payload(
+                        self.server_root,
+                        universe_name=universe_name,
+                        as_of_date=as_of_date,
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="universe-members")
             return
         if parsed.path in {"/api/decisions", "/api/decisions/"}:
             try:
@@ -473,6 +733,227 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
+            try:
+                body = self._read_json_body()
+                symbols = body.get("symbols") if isinstance(body, dict) else None
+                result = PublicFallbackDataLoader().refresh_proxies(
+                    symbols=list(symbols) if symbols else None,
+                    start=str(body.get("start") or "2018-01-01"),
+                    end=body.get("end"),
+                )
+                self._send_json(result, status=201 if result.get("ok") else 503)
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-refresh-proxies")
+            return
+        if parsed.path in {"/api/strategy-factory/upload", "/api/strategy-factory/upload/"}:
+            try:
+                self._send_json(save_uploaded_materials(self.server_root, self._read_upload_materials()), status=201)
+            except ValueError as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-upload")
+            return
+        if parsed.path in {"/api/strategy-factory/run", "/api/strategy-factory/run/"}:
+            try:
+                body = self._read_json_body()
+                self._send_json(
+                    run_strategy_factory(
+                        self.server_root,
+                        selected_material_ids=list(body.get("selected_material_ids") or []),
+                        batch_id=body.get("batch_id"),
+                    ),
+                    status=201,
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-run")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/backtest-current-run",
+            "/api/strategy-factory/backtest-current-run/",
+        }:
+            try:
+                body = self._read_json_body()
+                self._send_json(
+                    run_current_run_backtest_ml(self.server_root, run_id=body.get("run_id")),
+                    status=201,
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-backtest-current-run")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/portfolio-candidates/add",
+            "/api/strategy-factory/portfolio-candidates/add/",
+            "/api/strategy-factory/portfolio-candidates/activate",
+            "/api/strategy-factory/portfolio-candidates/activate/",
+        }:
+            try:
+                body = self._read_json_body()
+                run_id = str(body.get("run_id") or "").strip()
+                variant_id = str(body.get("variant_id") or "").strip()
+                if not run_id or not variant_id:
+                    self._send_json({"ok": False, "error": "run_id and variant_id required"}, status=400)
+                    return
+                endpoint = parsed.path.rstrip("/").split("/")[-1]
+                if endpoint == "add":
+                    result = add_variant_portfolio_candidate(
+                        self.server_root,
+                        run_id,
+                        variant_id,
+                        user_confirmation=body.get("user_confirmation") is True,
+                        user_action_id=body.get("user_action_id"),
+                    )
+                    self._send_json(result, status=201 if result.get("ok") else 400)
+                    return
+                if endpoint == "activate":
+                    result = activate_variant_portfolio_candidate(
+                        self.server_root,
+                        run_id,
+                        variant_id,
+                        user_confirmation=body.get("user_confirmation") is True,
+                        user_action_id=body.get("user_action_id"),
+                        activation_source=str(body.get("activation_source") or "USER_UI"),
+                        smoke_only=body.get("smoke_only") is True,
+                    )
+                    self._send_json(result, status=201 if result.get("ok") else 400)
+                    return
+                self.send_error(404, "Not found")
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-portfolio-candidates-action")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/jobs/run-full-current-run",
+            "/api/strategy-factory/jobs/run-full-current-run/",
+        }:
+            try:
+                body = self._read_json_body()
+                self._send_json(
+                    run_full_current_run(self.server_root, run_id=body.get("run_id")),
+                    status=201,
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-full-current-run")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/admission/add-candidate",
+            "/api/strategy-factory/admission/add-candidate/",
+            "/api/strategy-factory/admission/run-risk-review",
+            "/api/strategy-factory/admission/run-risk-review/",
+            "/api/strategy-factory/admission/generate-allocation-draft",
+            "/api/strategy-factory/admission/generate-allocation-draft/",
+            "/api/strategy-factory/admission/apply-to-paper",
+            "/api/strategy-factory/admission/apply-to-paper/",
+        }:
+            try:
+                body = self._read_json_body()
+                run_id = str(body.get("run_id") or "").strip()
+                variant_id = str(body.get("variant_id") or "").strip()
+                target_weight = body.get("target_weight")
+                if not run_id or not variant_id:
+                    self._send_json({"ok": False, "error": "run_id and variant_id required"}, status=400)
+                    return
+                if target_weight is not None:
+                    target_weight = float(target_weight)
+                endpoint = parsed.path.rstrip("/").split("/")[-1]
+                if endpoint == "add-candidate":
+                    result = add_variant_candidate(self.server_root, run_id, variant_id, target_weight=target_weight)
+                    self._send_json(result, status=201 if result.get("ok") else 400)
+                    return
+                if endpoint == "run-risk-review":
+                    result = run_variant_risk_review(self.server_root, run_id, variant_id)
+                    self._send_json(result, status=201 if result.get("ok") else 400)
+                    return
+                if endpoint == "generate-allocation-draft":
+                    result = generate_variant_allocation_draft(
+                        self.server_root,
+                        run_id,
+                        variant_id,
+                        target_weight=target_weight,
+                    )
+                    self._send_json(result, status=201)
+                    return
+                if endpoint == "apply-to-paper":
+                    result = apply_variant_to_paper(
+                        self.server_root,
+                        run_id,
+                        variant_id,
+                        user_confirmation=body.get("user_confirmation") is True,
+                    )
+                    self._send_json(result, status=201)
+                    return
+                self.send_error(404, "Not found")
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-admission-action")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/sandbox/add",
+            "/api/strategy-factory/sandbox/add/",
+            "/api/strategy-factory/sandbox/add-to-paper-sandbox",
+            "/api/strategy-factory/sandbox/add-to-paper-sandbox/",
+        }:
+            try:
+                body = self._read_json_body()
+                run_id = str(body.get("run_id") or "").strip()
+                variant_id = str(body.get("variant_id") or "").strip()
+                if not run_id or not variant_id:
+                    self._send_json({"ok": False, "error": "run_id and variant_id required"}, status=400)
+                    return
+                target_weight = body.get("target_weight")
+                result = add_variant_to_paper_sandbox(
+                    self.server_root,
+                    run_id,
+                    variant_id,
+                    user_confirmation=body.get("user_confirmation") is True,
+                    override_reason=body.get("override_reason"),
+                    target_weight=float(target_weight) if target_weight is not None else None,
+                )
+                self._send_json(result, status=201 if result.get("ok") else 400)
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-sandbox-action")
+            return
+        if parsed.path.startswith("/api/strategy-factory/candidates/"):
+            parts = [unquote(part) for part in parsed.path.strip("/").split("/")]
+            if len(parts) != 5:
+                self.send_error(404, "Not found")
+                return
+            strategy_id, action = parts[3], parts[4]
+            try:
+                body = self._read_json_body()
+                if action == "add-to-candidate-portfolio":
+                    self._send_json(add_to_candidate_portfolio(self.server_root, strategy_id), status=201)
+                    return
+                if action == "generate-allocation-draft":
+                    self._send_json(generate_allocation_draft(self.server_root, strategy_id), status=201)
+                    return
+                if action == "remove-from-candidate-portfolio":
+                    self._send_json(remove_from_candidate_portfolio(self.server_root, strategy_id))
+                    return
+                if action == "apply-to-paper-portfolio":
+                    self._send_json(
+                        apply_to_paper_portfolio(self.server_root, strategy_id, bool(body.get("confirmed"))),
+                        status=201,
+                    )
+                    return
+                self.send_error(404, "Not found")
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-action")
+            return
         if parsed.path in {"/api/refresh", "/api/refresh/"}:
             try:
                 result = refresh_operational_snapshot(self.server_root)
@@ -506,6 +987,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         if parsed.path in {
             "/api/paper-rebalance/plan",
             "/api/paper-rebalance/plan/",
+            "/api/paper-rebalance/recommendation-review-draft",
+            "/api/paper-rebalance/recommendation-review-draft/",
+            "/api/paper-rebalance/monthly-proposal",
+            "/api/paper-rebalance/monthly-proposal/",
+            "/api/paper-rebalance/monthly-proposal/review-draft",
+            "/api/paper-rebalance/monthly-proposal/review-draft/",
+            "/api/paper-rebalance/approve-recommendation-draft",
+            "/api/paper-rebalance/approve-recommendation-draft/",
+            "/api/paper-rebalance/apply-approved",
+            "/api/paper-rebalance/apply-approved/",
             "/api/paper-rebalance/accept",
             "/api/paper-rebalance/accept/",
             "/api/paper-rebalance/apply",
@@ -515,6 +1006,74 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         }:
             try:
                 body = self._read_json_body()
+                if parsed.path.rstrip("/").endswith("/recommendation-review-draft"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    nav = body.get("portfolio_nav") or (snapshot.get("portfolio_summary") or {}).get("nav")
+                    draft = create_recommendation_review_draft(
+                        self.server_root,
+                        body.get("recommendation_rows") or [],
+                        portfolio_nav=nav,
+                        source_recommendation_artifact=body.get("source_recommendation_artifact"),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"recommendation_review_draft": draft}), status=201)
+                    return
+                if parsed.path.rstrip("/").endswith("/monthly-proposal"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    nav = body.get("portfolio_nav") or (snapshot.get("portfolio_summary") or {}).get("nav")
+                    proposal = create_monthly_rebalance_proposal(
+                        self.server_root,
+                        body.get("recommendation_rows") or [],
+                        portfolio_nav=nav,
+                        session_state=snapshot.get("session_state") or body.get("session_state"),
+                        source_recommendation_artifact=body.get("source_recommendation_artifact"),
+                        source_strategy_universe_snapshot=body.get("source_strategy_universe_snapshot")
+                        or snapshot.get("snapshot_id"),
+                        force=bool(body.get("force")),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"monthly_rebalance_proposal": proposal}), status=201)
+                    return
+                if parsed.path.rstrip("/").endswith("/monthly-proposal/review-draft"):
+                    draft = create_review_draft_from_monthly_proposal(
+                        self.server_root,
+                        proposal_id=body.get("proposal_id"),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"recommendation_review_draft": draft}), status=201)
+                    return
+                if parsed.path.rstrip("/").endswith("/approve-recommendation-draft"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    plan = create_approved_rebalance_plan(
+                        self.server_root,
+                        snapshot=snapshot,
+                        draft_id=body.get("draft_id") or body.get("proposal_id"),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"approved_rebalance_plan": plan}), status=201)
+                    return
+                if parsed.path.rstrip("/").endswith("/apply-approved"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    result = apply_approved_rebalance_plan(
+                        self.server_root,
+                        snapshot=snapshot,
+                        plan_id=body.get("plan_id"),
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"paper_apply_result": result}))
+                    return
                 if parsed.path.rstrip("/").endswith("/plan"):
                     snapshot = load_operational_snapshot_for_response(
                         self.server_root,

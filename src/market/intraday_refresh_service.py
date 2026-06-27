@@ -655,6 +655,9 @@ def run_intraday_refresh(
             if not tickers:
                 tickers = collect_shadow_position_tickers(shadow_database)
                 position_source = "shadow_database" if tickers else "missing"
+            if not tickers and bool(cfg.get("allow_artifact_position_fallback")):
+                tickers = collect_refresh_tickers(artifact)
+                position_source = "legacy_artifact_position_fallback" if tickers else "missing"
             if not tickers:
                 raise ValueError("no committed SHADOW holdings available for Refresh Scheme B")
             bar_interval = bar_interval_for_refresh(cfg, interval)
@@ -702,8 +705,8 @@ def run_intraday_refresh(
             if successful <= 0:
                 raise ValueError("no ticker coverage from delayed market-data provider")
             if ratio < min_ratio:
-                refresh_warnings.append(
-                    f"partial ticker coverage ({successful}/{requested}, below {min_ratio:.0%}); stale/missing ticker labels preserved"
+                raise ValueError(
+                    f"insufficient ticker coverage ({successful}/{requested}, below {min_ratio:.0%})"
                 )
             refresh_coverage_status = "partial" if refresh_warnings or fetch_result.get("missing_tickers") or fetch_result.get("stale_tickers") else "fresh"
             trading_date = (

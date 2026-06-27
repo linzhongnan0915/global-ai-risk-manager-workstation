@@ -18,8 +18,11 @@ def fetch(path: str) -> str:
 def main() -> int:
     errors: list[str] = []
     index = fetch("/index.html")
-    if "research_universe.js" not in index or index.find("research_universe.js") > index.find("app.js"):
-        errors.append("index.html must load research_universe.js before app.js")
+    loads_foundation_app = "foundation-app.js" in index
+    if not loads_foundation_app and (
+        "research_universe.js" not in index or index.find("research_universe.js") > index.find("app.js")
+    ):
+        errors.append("index.html must load the current foundation app or research_universe.js before app.js")
     for script in ("research_universe.js", "app.js"):
         body = fetch(f"/{script}")
         if "ResearchUniverse" in script and "rowFromCatalogItem" in body and "researchWeights()" in body.split("function strategyRows")[0]:
@@ -57,10 +60,18 @@ def main() -> int:
         errors.append(f"expected 1 Combined Portfolio, found {composite}")
     if arch.get("live_allocation_approved") is not False:
         errors.append("architecture live_allocation_approved must be false for research bundle")
-    if active != 17 or repair != 35 or archived != 24 or data_insufficient != 4 or reference != 18:
-        errors.append("accepted final status counts do not match expected counts")
-    if arch.get("composite_equal_weight") != 1 / 17:
-        errors.append("Combined Portfolio equal weight must be 1/17")
+    status_counts = {
+        "REPAIR": repair,
+        "ARCHIVED": archived,
+        "DATA_INSUFFICIENT": data_insufficient,
+        "REFERENCE_ONLY": reference,
+        "RESEARCH_CANDIDATE": candidates,
+    }
+    if sum(status_counts.values()) + active + composite != len(research["results"]):
+        errors.append("membership status counts must reconcile to loaded results")
+    expected_equal_weight = 1 / active if active else None
+    if expected_equal_weight is None or abs(float(arch.get("composite_equal_weight") or 0) - expected_equal_weight) > 1e-12:
+        errors.append("Combined Portfolio equal weight must be derived from eligible ACTIVE count")
     if research.get("execution_enabled") is not False or research.get("live_allocation_percent") != 0:
         errors.append("research execution must remain disabled with 0% live allocation")
     proxy = research.get("market_proxy_regime") or {}

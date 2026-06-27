@@ -13,6 +13,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
+from src.market.intraday_config import load_intraday_config
 from src.market.market_hours import market_session_status
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.market.paper_portfolio_ledger import (
@@ -22,11 +23,12 @@ from src.market.paper_portfolio_ledger import (
     upsert_paper_portfolio_daily,
     upsert_paper_strategy_daily,
 )
+from src.market.trading_session import build_trading_session_state
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.strategies.display_metadata import strategy_display_metadata
 
 
-SNAPSHOT_VERSION = "3.6.7"
+SNAPSHOT_VERSION = "3.6.9"
 MARKET_PROXY_MIN_OBSERVATIONS = 20
 MARKET_PROXY_DISCLOSURE = (
     "Market Data Proxy; Delayed yfinance overlay where cached in operational artifacts; "
@@ -38,10 +40,6 @@ INTRADAY_OVERLAY_SCHEMA_VERSION = "intraday_overlay_v1"
 INTRADAY_OVERLAY_STALE_AFTER_SECONDS = 10 * 60
 REFRESH_INTERVAL_SECONDS = 300
 INITIAL_SHADOW_CAPITAL = 1_000_000.0
-EXPECTED_ORDINARY_ACTIVE_SLEEVES = 16
-TOP_LEVEL_ACTIVE_SLEEVES = 17
-PENDING_POST_ADMISSION_SLEEVES = 18
-INITIAL_SLEEVE_CAPITAL = INITIAL_SHADOW_CAPITAL / TOP_LEVEL_ACTIVE_SLEEVES
 PROVENANCE_STATES = {
     "VERIFIED_SHADOW_EXECUTION",
     "RECONSTRUCTED_PAPER_BACKFILL",
@@ -67,6 +65,139 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
     temp = path.with_suffix(path.suffix + ".tmp")
     temp.write_text(json.dumps(payload, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
     os.replace(temp, path)
+
+
+def _strategy_factory_portfolio_candidates_root(root: Path) -> Path:
+    return root / "output" / "strategy_factory" / "portfolio_candidates"
+
+
+def _strategy_factory_activation_confirmed(row: dict[str, Any]) -> bool:
+    return bool(
+        row.get("user_confirmed_at")
+        and row.get("activation_confirmed_at")
+        and row.get("user_action_id")
+        and row.get("activation_source") == "USER_UI"
+        and row.get("activation_confirmation") is True
+        and row.get("TEST_ARTIFACT") is not True
+        and row.get("SMOKE_ONLY") is not True
+        and row.get("EXCLUDE_FROM_ACTIVE_UNIVERSE") is not True
+        and row.get("status") in {"ACTIVE_UNALLOCATED", "ACTIVE_PENDING_REBALANCE"}
+    )
+
+
+def _strategy_factory_active_unallocated_records(root: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(_strategy_factory_portfolio_candidates_root(root).glob("*/activation_record.json")):
+        activation = _read_json(path, {})
+        if not activation or not _strategy_factory_activation_confirmed(activation):
+            continue
+        uid = str(activation.get("strategy_uid") or activation.get("strategy_id") or "").strip()
+        if not uid or uid.startswith("#"):
+            continue
+        rows.append(activation)
+    deduped: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        deduped[str(row.get("strategy_uid") or row.get("strategy_id"))] = row
+    return list(deduped.values())
+
+
+def _strategy_factory_snapshot_row(activation: dict[str, Any]) -> dict[str, Any]:
+    uid = str(activation.get("strategy_uid") or activation.get("strategy_id"))
+    name = activation.get("strategy_name") or activation.get("variant_id") or uid
+    display_label = activation.get("display_label") or activation.get("display_id") or "Display only"
+    activated_date = str(activation.get("activated_at") or activation.get("created_at") or "")[:10] or None
+    return {
+        "internal_id": uid,
+        "strategy_id": uid,
+        "strategy_uid": uid,
+        "display_id": display_label,
+        "display_label": display_label,
+        "name": name,
+        "display_name": name,
+        "ui_name": name,
+        "family": activation.get("theme") or "Strategy Factory",
+        "membership_state": "executed",
+        "source_system": "Strategy Factory",
+        "source": "Strategy Factory",
+        "strategy_factory_phase2": True,
+        "portfolio_candidate_id": activation.get("candidate_id"),
+        "source_run_id": activation.get("source_run_id") or activation.get("run_id"),
+        "run_id": activation.get("run_id"),
+        "variant_id": activation.get("variant_id"),
+        "source_material_hash": activation.get("source_material_hash"),
+        "strategy_effective_date": activated_date,
+        "effective_from": activated_date,
+        "current_operational_status": "ACTIVE_UNALLOCATED",
+        "current_operational_label": "ACTIVE_UNALLOCATED / WAITING_REBALANCE",
+        "operational_state": "ACTIVE_UNALLOCATED",
+        "action_status": "STARTER_RECOMMENDATION_REVIEW_REQUIRED",
+        "optimizer_status": "OPTIMIZER_ELIGIBLE",
+        "rebalance_status": "WAITING_REBALANCE",
+        "rebalance_reason": "USER_UI-approved Strategy Factory strategy; paper-only until approved rebalance reaches effective date.",
+        "data_status": "ACTIVE_UNALLOCATED_WAITING_REBALANCE",
+        "data_state": "ACTIVE_UNALLOCATED_WAITING_REBALANCE",
+        "data_quality_status": activation.get("data_quality_status") or "Missing Evidence",
+        "evidence_status": activation.get("evidence_status") or "Missing Evidence",
+        "backtest_status": activation.get("backtest_status") or "Missing Evidence",
+        "ml_evidence_status": activation.get("ml_evidence_status") or "MISSING_EVIDENCE",
+        "ml_status": activation.get("ml_status") or "No ML evidence available",
+        "validation_status": "USER_UI_APPROVED_ACTIVE_UNALLOCATED",
+        "pnl_status": "ZERO_WEIGHT_NO_NAV_PNL_IMPACT",
+        "current_weight": 0.0,
+        "target_weight": 0.0,
+        "recommended_weight": activation.get("recommended_weight") or "RECOMMENDATION_PENDING",
+        "proposed_weight": activation.get("proposed_weight") or "RECOMMENDATION_PENDING",
+        "eligible_for_optimizer": True,
+        "eligible_for_rebalance": True,
+        "daily_pnl": 0.0,
+        "cumulative_pnl": 0.0,
+        "combined_portfolio_contribution": 0.0,
+        "daily_return": None,
+        "cumulative_return": None,
+        "current_drawdown": None,
+        "max_drawdown": None,
+        "daily_turnover": None,
+        "annualized_turnover": None,
+        "daily_cost": 0.0,
+        "cumulative_cost": 0.0,
+        "total_cost": 0.0,
+        "gross_exposure": 0.0,
+        "net_exposure": 0.0,
+        "long_count": 0,
+        "short_count": 0,
+        "holdings_count": 0,
+        "trade_count": 0,
+        "observation_count": 0,
+        "last_signal": "Pending rebalance allocation",
+        "last_rebalance": "Pending rebalance",
+        "last_execution": "No paper fill",
+        "ending_nav": None,
+        "intraday_estimated_nav": None,
+        "intraday_estimated_pnl": None,
+        "estimated_strategy_nav": None,
+        "estimated_daily_pnl": None,
+        "intraday_estimate_unavailable_reason": "Active unallocated; no current holdings",
+        "latest_delayed_price_as_of": None,
+        "price_coverage": {"priced": 0, "total": 0, "status": "N/A"},
+        "live_trading": False,
+        "brokerage_execution": False,
+        "execution_enabled": False,
+        "live_allocation_approved": False,
+        "nav_pnl_impact": "NONE_WHILE_CURRENT_WEIGHT_ZERO",
+        "activation_source": activation.get("activation_source"),
+        "user_action_id": activation.get("user_action_id"),
+        "user_confirmed_at": activation.get("user_confirmed_at"),
+        "activation_confirmed_at": activation.get("activation_confirmed_at"),
+        "activation_confirmation": activation.get("activation_confirmation"),
+        "research_evidence": {
+            "research_status": "Strategy Factory active-unallocated evidence pending rebalance",
+            "research_metrics": {
+                "evidence_status": activation.get("evidence_status") or "Missing Evidence",
+                "data_quality_status": activation.get("data_quality_status") or "Missing Evidence",
+                "ml_evidence_status": activation.get("ml_evidence_status") or "MISSING_EVIDENCE",
+            },
+        },
+    }
 
 
 @contextmanager
@@ -181,9 +312,13 @@ def _first_date(rows: list[dict[str, Any]], *, status: str | None = None) -> str
     return min(dates) if dates else None
 
 
-def _correct_strategy_history(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _dynamic_sleeve_capital(active_top_level_count: int) -> float | None:
+    return INITIAL_SHADOW_CAPITAL / active_top_level_count if active_top_level_count else None
+
+
+def _correct_strategy_history(rows: list[dict[str, Any]], *, sleeve_capital: float) -> list[dict[str, Any]]:
     """Rebuild operational analytics from the correct independent top-level sleeve capital."""
-    nav = INITIAL_SLEEVE_CAPITAL
+    nav = sleeve_capital
     peak = nav
     corrected = []
     for source in sorted(rows, key=lambda row: row.get("date") or ""):
@@ -197,13 +332,13 @@ def _correct_strategy_history(rows: list[dict[str, Any]]) -> list[dict[str, Any]
         nav = beginning + daily_pnl
         peak = max(peak, nav)
         row.update({
-            "capital_basis": "TOP_LEVEL_17_AVAILABLE_LEDGER_ANALYTICS",
+            "capital_basis": "DYNAMIC_TOP_LEVEL_ACTIVE_AVAILABLE_LEDGER_ANALYTICS",
             "beginning_sleeve_nav": beginning,
             "ending_sleeve_nav": nav,
             "daily_pnl": daily_pnl,
             "net_return": daily_pnl / beginning if beginning else None,
-            "cumulative_pnl": nav - INITIAL_SLEEVE_CAPITAL,
-            "cumulative_return": nav / INITIAL_SLEEVE_CAPITAL - 1,
+            "cumulative_pnl": nav - sleeve_capital,
+            "cumulative_return": nav / sleeve_capital - 1,
             "running_peak": peak,
             "current_drawdown": nav / peak - 1,
         })
@@ -214,6 +349,8 @@ def _correct_strategy_history(rows: list[dict[str, Any]]) -> list[dict[str, Any]
 def _combined_strategy_history(
     histories_by_id: dict[str, list[dict[str, Any]]],
     member_ids: list[str],
+    *,
+    sleeve_capital: float,
 ) -> list[dict[str, Any]]:
     """Derive Combined from ordinary operational net returns without adding trade cost rows."""
     members = [strategy_id for strategy_id in member_ids if strategy_id in histories_by_id]
@@ -224,7 +361,7 @@ def _combined_strategy_history(
         for row in histories_by_id[strategy_id]:
             if row.get("date") and row.get("net_return") is not None:
                 rows_by_date.setdefault(row["date"], {})[strategy_id] = row
-    nav = INITIAL_SLEEVE_CAPITAL
+    nav = sleeve_capital
     peak = nav
     derived = []
     for date_value in sorted(rows_by_date):
@@ -252,15 +389,15 @@ def _combined_strategy_history(
                 "record_label": "DERIVED_FROM_ORDINARY_OPERATIONAL_LEDGERS",
                 "execution_provenance": provenance,
                 "execution_provenance_label": PROVENANCE_LABELS[provenance],
-                "capital_basis": "TOP_LEVEL_17_AVAILABLE_LEDGER_DERIVED_COMBINED_OPERATIONAL_LEDGER",
+                "capital_basis": "DYNAMIC_AVAILABLE_LEDGER_DERIVED_COMBINED_OPERATIONAL_LEDGER",
                 "beginning_sleeve_nav": beginning,
                 "ending_sleeve_nav": nav,
                 "gross_return": net_return,
                 "transaction_cost": None,
                 "daily_pnl": daily_pnl,
                 "net_return": net_return,
-                "cumulative_pnl": nav - INITIAL_SLEEVE_CAPITAL,
-                "cumulative_return": nav / INITIAL_SLEEVE_CAPITAL - 1,
+                "cumulative_pnl": nav - sleeve_capital,
+                "cumulative_return": nav / sleeve_capital - 1,
                 "running_peak": peak,
                 "current_drawdown": nav / peak - 1,
                 "constituent_count": len(members),
@@ -277,14 +414,16 @@ def _entity_inventory(
     trade_by_id: dict[str, list[dict[str, Any]]],
     holding_by_id: dict[str, list[dict[str, Any]]],
 ) -> dict[str, Any]:
-    expected_slots = [f"#{index:06d}" for index in range(1, EXPECTED_ORDINARY_ACTIVE_SLEEVES + 1)]
-    by_display = {row.get("display_id"): row for row in strategies}
     entities: list[dict[str, Any]] = []
     missing: list[dict[str, Any]] = []
-    for display_id in expected_slots:
-        row = by_display.get(display_id)
-        if not row:
-            continue
+    ordinary_rows = [
+        row for row in strategies
+        if row.get("membership_state") == "executed"
+        and row.get("internal_id") != "COMBINED_PORTFOLIO"
+        and row.get("internal_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+    ]
+    for row in ordinary_rows:
+        display_id = row.get("display_id") or "Display only"
         strategy_id = row["internal_id"]
         entities.append({
             "display_id": display_id,
@@ -297,7 +436,11 @@ def _entity_inventory(
             "has_holdings_position_rows": bool(holding_by_id.get(strategy_id)),
             "has_research_artifacts": bool(row.get("research_evidence")),
             "effective_date": row.get("strategy_effective_date"),
-            "blocker": None if history_by_id.get(strategy_id) else "No operational daily ledger rows are present.",
+            "blocker": (
+                "Active unallocated; no portfolio impact until approved rebalance is effective."
+                if row.get("strategy_factory_phase2")
+                else None if history_by_id.get(strategy_id) else "No operational daily ledger rows are present."
+            ),
         })
     combined = next((row for row in strategies if row["internal_id"] == "COMBINED_PORTFOLIO"), None)
     if combined:
@@ -335,12 +478,28 @@ def _entity_inventory(
         row for row in entities
         if row["entity_type"] == "ORDINARY_STRATEGY" and row["has_operational_daily_ledger"]
     ]
+    active_unallocated = [
+        row for row in entities
+        if row["entity_type"] == "ORDINARY_STRATEGY"
+        and row["current_operational_status"] in {"ACTIVE_UNALLOCATED", "ACTIVE_PENDING_REBALANCE"}
+    ]
+    combined_count = 1 if combined else 0
     return {
         "entities": entities,
-        "ordinary_entities": len(expected_slots),
+        "ordinary_entities": len(ordinary_rows),
+        "ordinary_active_count": len(ordinary_rows),
         "ordinary_operational_ledgers": len(ordinary_with_ledger),
-        "combined": 1 if combined else 0,
+        "combined": combined_count,
+        "combined_active_count": combined_count,
+        "top_level_active_count": len(ordinary_rows) + combined_count,
+        "active_unallocated_strategies": len(active_unallocated),
+        "active_unallocated_count": len(active_unallocated),
         "pending_candidates": sum(row["entity_type"] == "PENDING_CANDIDATE" for row in entities),
+        "pending_approval_count": sum(
+            1 for row in strategies
+            if "PENDING" in str(row.get("current_operational_status") or row.get("operational_state") or "").upper()
+            and row.get("membership_state") != "executed"
+        ),
         "total_registry_entities": len(entities),
         "missing_ordinary_ledger": missing,
         "status": "PASS" if not missing else "FAIL_WITH_DATA_BLOCKER",
@@ -425,7 +584,12 @@ def _trading_session_lifecycle(
             row for row in strategy_daily
             if row.get("date") == current_session and row.get("strategy_id") != "COMBINED_PORTFOLIO"
         ]
-        if len({row.get("strategy_id") for row in ordinary_rows}) < EXPECTED_ORDINARY_ACTIVE_SLEEVES:
+        expected_ordinary_ids = {
+            row.get("strategy_id")
+            for row in strategy_daily
+            if row.get("strategy_id") and row.get("strategy_id") != "COMBINED_PORTFOLIO"
+        }
+        if expected_ordinary_ids and len({row.get("strategy_id") for row in ordinary_rows}) < len(expected_ordinary_ids):
             blockers.append("Missing complete ordinary strategy daily rows for the current trading session.")
         if not any(row.get("execution_date") == current_session for row in trades):
             blockers.append("Missing paper fill rows for the current trading session.")
@@ -486,6 +650,31 @@ def _trading_session_lifecycle(
         "promotion_condition": "Promotion requires a canonical portfolio_daily row generated from real NEXT_OPEN_TO_OPEN inputs; delayed estimates are never written to the official ledger.",
         "chart_behavior": "Official portfolio_daily.date records are solid; delayed estimates are dashed and excluded when the session is official-promoted.",
     }
+
+
+def _session_config() -> dict[str, Any]:
+    try:
+        return load_intraday_config()
+    except Exception:
+        return {"timezone": "America/New_York", "market_holidays": []}
+
+
+def _canonical_session_state(
+    *,
+    generated_at: str | datetime | None,
+    latest_quote_asof: str | None,
+    daily_ledger_date: str | None,
+    market_session_status_hint: str | None = None,
+) -> dict[str, object]:
+    config = _session_config()
+    return build_trading_session_state(
+        calendar_now=generated_at,
+        latest_quote_asof=latest_quote_asof,
+        daily_ledger_date=daily_ledger_date,
+        timezone=str(config.get("timezone") or "America/New_York"),
+        holidays=config.get("market_holidays") or [],
+        market_session_status_hint=market_session_status_hint,
+    )
 
 
 def official_promotion_readiness(snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -1402,6 +1591,7 @@ def _risk_factor_big_table(strategies: list[dict[str, Any]], canonical: dict[str
 def build_operational_snapshot(
     canonical: dict[str, Any],
     *,
+    root: Path | None = None,
     intraday: dict[str, Any] | None = None,
     market_proxy_cache: dict[str, Any] | None = None,
     decisions: list[dict[str, Any]] | None = None,
@@ -1450,6 +1640,22 @@ def build_operational_snapshot(
     metadata = strategy_display_metadata(canonical["strategies"])
     metadata_by_id = {row["internal_id"]: row for row in metadata}
     research_by_id = strategy_research_details or {}
+    base_active_ids = {
+        row.get("internal_id")
+        for row in canonical["strategies"]
+        if row.get("membership_state") == "executed"
+    }
+    strategy_factory_activations = _strategy_factory_active_unallocated_records(root) if root is not None else []
+    existing_canonical_ids = {row.get("internal_id") for row in canonical["strategies"]}
+    strategy_factory_activations = [
+        row for row in strategy_factory_activations
+        if str(row.get("strategy_uid") or row.get("strategy_id") or "") not in existing_canonical_ids
+    ]
+    dynamic_top_level_active_count = len(base_active_ids) + len(strategy_factory_activations)
+    dynamic_top_level_sleeve_weight = 1 / dynamic_top_level_active_count if dynamic_top_level_active_count else None
+    dynamic_sleeve_capital = _dynamic_sleeve_capital(dynamic_top_level_active_count)
+    if dynamic_sleeve_capital is None:
+        raise ValueError("Cannot build operational snapshot without active top-level strategies")
     raw_strategy_daily = deepcopy(canonical["strategy_daily"])
     raw_history_by_id: dict[str, list[dict]] = {}
     for row in raw_strategy_daily:
@@ -1457,7 +1663,7 @@ def build_operational_snapshot(
     strategy_daily = [
         row
         for strategy_id, rows in raw_history_by_id.items()
-        for row in _correct_strategy_history(rows)
+        for row in _correct_strategy_history(rows, sleeve_capital=dynamic_sleeve_capital)
     ]
     corrected_history_by_id: dict[str, list[dict]] = {}
     for row in strategy_daily:
@@ -1471,7 +1677,13 @@ def build_operational_snapshot(
         for strategy_id in combined_source.get("constituent_internal_ids", [])
         if strategy_id != "COMBINED_PORTFOLIO" and strategy_id != "WQ_ALPHA_018"
     ]
-    strategy_daily.extend(_combined_strategy_history(corrected_history_by_id, combined_member_ids))
+    strategy_daily.extend(
+        _combined_strategy_history(
+            corrected_history_by_id,
+            combined_member_ids,
+            sleeve_capital=dynamic_sleeve_capital,
+        )
+    )
     daily_by_id = {row["strategy_id"]: row for row in strategy_daily}
     history_by_id: dict[str, list[dict]] = {}
     for row in strategy_daily:
@@ -1569,10 +1781,15 @@ def build_operational_snapshot(
         strategy_record = {
                 **deepcopy(source),
                 **metadata_by_id[internal_id],
-                "sleeve_weight": None if source.get("membership_state") == "approved_pending" else 1 / TOP_LEVEL_ACTIVE_SLEEVES,
+                "sleeve_weight": None if source.get("membership_state") == "approved_pending" else dynamic_top_level_sleeve_weight,
                 "current_weight": None if source.get("membership_state") == "approved_pending" else source.get("current_weight"),
+                "effective_weight_basis": (
+                    None
+                    if source.get("membership_state") == "approved_pending"
+                    else "DYNAMIC_CURRENT_UNIVERSE_EQUAL_WEIGHT"
+                ),
                 "combined_portfolio_contribution": None,
-                "initial_sleeve_capital": INITIAL_SLEEVE_CAPITAL,
+                "initial_sleeve_capital": dynamic_sleeve_capital,
                 "first_reconstructed_record_date": first_reconstructed,
                 "first_verified_shadow_execution_date": first_verified,
                 "strategy_effective_date": strategy_effective,
@@ -1651,7 +1868,8 @@ def build_operational_snapshot(
         if internal_id == wq_gate["strategy_id"]:
             strategy_record["admission_gate"] = deepcopy(wq_gate)
             strategy_record["exact_blocker"] = wq_gate["exact_blocker"]
-            strategy_record["proposed_post_admission_sleeve_weight"] = 1 / PENDING_POST_ADMISSION_SLEEVES
+            pending_post_admission_sleeves = dynamic_top_level_active_count + 1
+            strategy_record["proposed_post_admission_sleeve_weight"] = 1 / pending_post_admission_sleeves
             strategy_record["current_operational_label"] = "APPROVED_PENDING / PRE_OPERATIONAL"
             strategy_record["paper_fill_status"] = "No Paper Fill"
             strategy_record["live_brokerage_fill"] = "Disabled / No Live Brokerage Fill"
@@ -1660,6 +1878,23 @@ def build_operational_snapshot(
         strategies[-1]["max_drawdown"] = _max_drawdown(
             [{"current_drawdown": row.get("current_drawdown")} for row in strategy_history]
         )
+
+    existing_strategy_ids = {row.get("internal_id") for row in strategies}
+    if root is not None:
+        for activation in strategy_factory_activations:
+            uid = str(activation.get("strategy_uid") or activation.get("strategy_id") or "")
+            if not uid or uid in existing_strategy_ids:
+                continue
+            active_unallocated_row = _strategy_factory_snapshot_row(activation)
+            active_unallocated_row.update(
+                {
+                    "sleeve_weight": dynamic_top_level_sleeve_weight,
+                    "initial_sleeve_capital": dynamic_sleeve_capital,
+                    "effective_weight_basis": "DYNAMIC_CURRENT_UNIVERSE_EQUAL_WEIGHT_ZERO_CURRENT_WEIGHT",
+                }
+            )
+            strategies.append(active_unallocated_row)
+            existing_strategy_ids.add(uid)
 
     top_contributors, top_detractors = _official_contributors(strategies)
     official_close_dates = sorted({row.get("official_close_date") for row in portfolio_daily if row.get("official_close_date")})
@@ -1680,6 +1915,11 @@ def build_operational_snapshot(
         or row.get("date") >= effective_by_id[row["strategy_id"]]
     ]
     entity_inventory = _entity_inventory(strategies, history_by_id, trade_by_id, holding_by_id)
+    ordinary_active_count = entity_inventory["ordinary_active_count"]
+    combined_active_count = entity_inventory["combined_active_count"]
+    top_level_active_count = entity_inventory["top_level_active_count"]
+    active_unallocated_count = entity_inventory["active_unallocated_count"]
+    pending_post_admission_sleeves = top_level_active_count + 1 if top_level_active_count else None
     latest = portfolio_daily[-1] if portfolio_daily else {}
     official = {
         "accounting_label": "OFFICIAL_DAILY",
@@ -1726,6 +1966,12 @@ def build_operational_snapshot(
         official=official,
         intraday_estimate=intraday_estimate,
         refresh_meta=refresh_meta,
+    )
+    session_state = _canonical_session_state(
+        generated_at=generated,
+        latest_quote_asof=intraday_estimate.get("market_data_as_of"),
+        daily_ledger_date=latest.get("date"),
+        market_session_status_hint=refresh_meta.get("market_session_status"),
     )
     official_readiness = official_promotion_readiness({"trading_session_lifecycle": trading_session_lifecycle})
     decision_rows = decisions or []
@@ -1799,6 +2045,7 @@ def build_operational_snapshot(
         "refresh_status": refresh_status,
         "data_freshness": refresh_meta.get("data_freshness") or ("DELAYED" if intraday else "OFFICIAL_CLOSE"),
         "market_session_status": trading_session_lifecycle["market_session_status"],
+        "session_state": session_state,
         "market_data_as_of": intraday_estimate["market_data_as_of"],
         "latest_official_ledger_date": trading_session_lifecycle["latest_official_ledger_date"],
         "official_close_as_of": trading_session_lifecycle["official_close_as_of"],
@@ -1881,19 +2128,25 @@ def build_operational_snapshot(
         "portfolio_dates": portfolio_dates,
         "capital_reconciliation": {
             "initial_shadow_capital": INITIAL_SHADOW_CAPITAL,
-            "top_level_active_sleeves": TOP_LEVEL_ACTIVE_SLEEVES,
-            "top_level_sleeve_weight": 1 / TOP_LEVEL_ACTIVE_SLEEVES,
-            "starting_capital_per_sleeve": INITIAL_SLEEVE_CAPITAL,
-            "combined_internal_constituents": len(combined_member_ids),
-            "combined_internal_weight": 1 / len(combined_member_ids) if combined_member_ids else None,
-            "combined_starting_capital": INITIAL_SLEEVE_CAPITAL,
-            "expected_ordinary_active_sleeves": EXPECTED_ORDINARY_ACTIVE_SLEEVES,
+            "top_level_active_sleeves": top_level_active_count,
+            "top_level_sleeve_weight": dynamic_top_level_sleeve_weight,
+            "top_level_sleeve_denominator": top_level_active_count,
+            "starting_capital_per_sleeve": dynamic_sleeve_capital,
+            "starting_capital_denominator": top_level_active_count,
+            "sleeve_basis": "DYNAMIC_CURRENT_UNIVERSE_TOP_LEVEL_ACTIVE",
+            "combined_internal_constituents": ordinary_active_count,
+            "combined_internal_weight": 1 / ordinary_active_count if ordinary_active_count else None,
+            "combined_starting_capital": dynamic_sleeve_capital,
+            "expected_ordinary_active_sleeves": ordinary_active_count,
             "ordinary_operational_ledgers": entity_inventory["ordinary_operational_ledgers"],
-            "pending_post_admission_sleeves": PENDING_POST_ADMISSION_SLEEVES,
-            "pending_post_admission_sleeve_weight": 1 / PENDING_POST_ADMISSION_SLEEVES,
+            "pending_post_admission_sleeves": pending_post_admission_sleeves,
+            "pending_post_admission_sleeve_weight": 1 / pending_post_admission_sleeves if pending_post_admission_sleeves else None,
+            "ordinary_active_count": ordinary_active_count,
+            "combined_active_count": combined_active_count,
+            "active_unallocated_count": active_unallocated_count,
             "portfolio_ending_nav": official["nav"],
             "portfolio_residual": None,
-            "basis": "Top-level strategy analytics use the 17 current active sleeves: 16 ordinary active strategies plus the active Combined strategy. Removed non-operating research candidates are not part of the current workstation operating set.",
+            "basis": "Top-level strategy analytics use dynamic active sleeves: ordinary active strategies plus the active Combined strategy. Active-unallocated Strategy Factory rows have 0% current weight and no NAV/P&L impact until an approved rebalance reaches its effective date.",
         },
         "strategy_entity_inventory": entity_inventory,
         "strategy_cost_reconciliation": strategy_cost_reconciliation,
@@ -1969,6 +2222,7 @@ def load_or_build_operational_snapshot(root: Path) -> dict[str, Any]:
     research = load_strategy_research_artifacts(root, canonical["strategies"])
     snapshot = build_operational_snapshot(
         canonical,
+        root=root,
         intraday=None,
         market_proxy_cache=market_proxy_cache,
         sp500_reference_universe=sp500_reference_universe,
@@ -2320,8 +2574,26 @@ def _attach_intraday_runtime_fields(
     scheduler_enabled: bool,
     available: bool,
     refresh_lifecycle: dict[str, Any] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     enriched = deepcopy(snapshot)
+    quote_asof = (overlay or {}).get("delayed_estimate_as_of") or enriched.get("market_data_as_of")
+    daily_ledger_date = (
+        (enriched.get("paper_performance_daily_metadata") or {}).get("latest_date")
+        or (enriched.get("portfolio_daily") or [{}])[-1].get("date")
+        or enriched.get("latest_official_ledger_date")
+    )
+    market_status = (
+        (refresh_lifecycle or {}).get("market_status")
+        or (overlay or {}).get("market_session_status")
+        or enriched.get("market_session_status")
+    )
+    enriched["session_state"] = _canonical_session_state(
+        generated_at=now or datetime.now(timezone.utc),
+        latest_quote_asof=quote_asof,
+        daily_ledger_date=daily_ledger_date,
+        market_session_status_hint=market_status,
+    )
     runtime_status = _runtime_status_from_lifecycle(status, refresh_lifecycle)
     enriched["intraday_runtime_status"] = runtime_status
     enriched["intraday_overlay_available"] = available
@@ -2364,6 +2636,7 @@ def _snapshot_from_latest_refresh(
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     merged = build_operational_snapshot(
         canonical,
+        root=root,
         intraday=intraday,
         market_proxy_cache=market_proxy_cache or intraday.get("risk_factor_market_proxy_cache"),
         sp500_reference_universe=sp500_reference_universe,
@@ -2409,6 +2682,7 @@ def load_operational_snapshot_for_response(
             scheduler_enabled=scheduler_enabled,
             available=False,
             refresh_lifecycle=refresh_lifecycle,
+            now=now,
         )
     if overlay.get("status") == "ERROR":
         return _attach_intraday_runtime_fields(
@@ -2418,6 +2692,7 @@ def load_operational_snapshot_for_response(
             scheduler_enabled=scheduler_enabled,
             available=False,
             refresh_lifecycle=refresh_lifecycle,
+            now=now,
         )
     if overlay.get("status") != "LOADED" or _is_overlay_stale(overlay, now=now):
         latest = _snapshot_from_latest_refresh(
@@ -2435,6 +2710,7 @@ def load_operational_snapshot_for_response(
             scheduler_enabled=scheduler_enabled,
             available=False,
             refresh_lifecycle=refresh_lifecycle,
+            now=now,
         )
     intraday = _intraday_from_overlay(overlay)
     if intraday is None:
@@ -2448,6 +2724,7 @@ def load_operational_snapshot_for_response(
             scheduler_enabled=scheduler_enabled,
             available=False,
             refresh_lifecycle=refresh_lifecycle,
+            now=now,
         )
     canonical = _read_json(_paths(root)["canonical"], {})
     market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
@@ -2455,6 +2732,7 @@ def load_operational_snapshot_for_response(
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     merged = build_operational_snapshot(
         canonical,
+        root=root,
         intraday=intraday,
         market_proxy_cache=market_proxy_cache or overlay.get("risk_factor_market_proxy_cache"),
         sp500_reference_universe=sp500_reference_universe,
@@ -2471,6 +2749,7 @@ def load_operational_snapshot_for_response(
         scheduler_enabled=scheduler_enabled,
         available=True,
         refresh_lifecycle=refresh_lifecycle,
+        now=now,
     )
 
 
@@ -2658,6 +2937,7 @@ def refresh_operational_snapshot(
                 }
             merged = build_operational_snapshot(
                 canonical,
+                root=root,
                 intraday=intraday,
                 market_proxy_cache=market_proxy_cache,
                 sp500_reference_universe=_read_json(paths["sp500_reference_universe"], None),
@@ -2824,6 +3104,7 @@ def persist_decision(root: Path, payload: dict[str, Any]) -> dict[str, Any]:
     source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
     snapshot = build_operational_snapshot(
         canonical,
+        root=root,
         intraday=None,
         sp500_reference_universe=_read_json(_paths(root)["sp500_reference_universe"], None),
         decisions=decisions,

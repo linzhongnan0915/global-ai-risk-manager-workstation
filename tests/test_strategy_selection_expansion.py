@@ -45,9 +45,9 @@ def test_bundle_statuses_and_active_only_composite():
     active += [strategy_id for strategy_id, value in EVENT_PANEL_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     active += [strategy_id for strategy_id, value in WORLDQUANT_ALPHA_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     assert composite["constituent_ids"] == active
-    assert composite["N"] == 17
+    assert composite["N"] == len(active)
     assert sum(composite["weights"].values()) == pytest.approx(1.0)
-    assert all(weight == pytest.approx(1 / 17) for weight in composite["weights"].values())
+    assert all(weight == pytest.approx(1 / len(active)) for weight in composite["weights"].values())
     assert composite["membership_effective_date"] == "2026-06-15"
     assert composite["prospective_only"] is True
 

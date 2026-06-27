@@ -76,6 +76,12 @@ def applied_paper_rebalance_for_date(root: Path, trading_date: str | None) -> di
     intended_effective_date = target.get("intended_effective_date") or (matched_plan or {}).get("intended_effective_date")
     cost_applies = bool(trading_date and intended_effective_date == trading_date)
     cost_by_strategy: dict[str, float] = {}
+    if cost_applies and isinstance(target.get("cost_by_strategy"), dict):
+        cost_by_strategy = {
+            str(strategy_id): float(cost)
+            for strategy_id, cost in target.get("cost_by_strategy", {}).items()
+            if _to_float(cost) is not None
+        }
     if cost_applies and matched_plan:
         for item in matched_plan.get("line_items") or []:
             strategy_id = _strategy_id(item)

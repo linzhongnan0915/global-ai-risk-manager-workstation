@@ -106,16 +106,16 @@ def main() -> int:
             page.on("console", capture_console)
             page.goto(BASE_URL, wait_until="load", timeout=120000)
             page.wait_for_timeout(1500)
+            page.wait_for_selector("button", timeout=30000)
 
-            if page.locator('button[data-page="Allocation & Rebalance"]').count() > 0:
+            if page.locator('button[data-tab="Allocation & Rebalance"]').count() == 0:
                 for tab in (
                     "Allocation & Rebalance",
                     "Daily Risk Report",
                     "Risk Factors & Exposure",
-                    "Backtesting & Research Lab",
                     "Strategy Monitor",
                 ):
-                    page.click(f'button[data-page="{tab}"]')
+                    page.locator(f'button:has-text("{tab}")').first.click()
                     page.wait_for_timeout(250)
                     report["checks"][f"foundation_tab_{tab}"] = page.locator("main.main-stage").inner_text() != ""
                 report["checks"]["foundation_no_console_errors"] = len(report["console_errors"]) == 0

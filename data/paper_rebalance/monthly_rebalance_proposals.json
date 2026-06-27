@@ -1,0 +1,500 @@
+{
+  "schema_version": "monthly_rebalance_proposal_v1",
+  "proposals": [
+    {
+      "schema_version": "monthly_rebalance_proposal_v1",
+      "proposal_id": "monthly-proposal-f1aa86b2fa78",
+      "created_at": "2026-06-27T19:22:58.422904+00:00",
+      "proposal_month": "2026-06",
+      "session_state": {
+        "calendar_date": "2026-06-27",
+        "market_session_status": "MARKET_CLOSED_WEEKEND",
+        "is_trading_day": false,
+        "last_trading_session": "2026-06-26",
+        "next_trading_session": "2026-06-29",
+        "current_intraday_session": null,
+        "latest_quote_asof": "2026-06-26T15:45:00-04:00",
+        "quote_freshness": "STALE_PRIOR_SESSION",
+        "daily_ledger_date": "2026-06-26",
+        "daily_ledger_relation": "QUOTE_SESSION_ALREADY_RECORDED",
+        "intraday_estimate_status": "NO_CURRENT_SESSION_INTRADAY",
+        "session_warning": "Calendar date is not a trading session; intraday estimate is not current-session live data."
+      },
+      "source_recommendation_artifact": "operational_snapshot_runtime_recommendation_rows",
+      "source_strategy_universe_snapshot": "ops-20260627T192253Z-49841405",
+      "status": "MONTHLY_PROPOSAL_READY",
+      "review_status": "NOT_APPROVED",
+      "portfolio_nav_used_for_cost_estimate": 1004431.2048722652,
+      "total_current_weight": 1.0,
+      "total_proposed_weight": 0.8609793062138639,
+      "residual_cash": 0.13902069378613613,
+      "estimated_total_trade_abs": 161692.63849989252,
+      "estimated_total_transaction_cost": 80.84631924994626,
+      "warnings": [
+        "MISSING_ML_OR_EVIDENCE_WARNING"
+      ],
+      "no_live_orders": true,
+      "no_brokerage_orders": true,
+      "proposal_only": true,
+      "current_weight_mutation": false,
+      "target_weight_mutation": false,
+      "paper_ledger_mutation": false,
+      "combined_current_mutation": false,
+      "nav_pnl_impact": "NONE_PROPOSAL_ONLY",
+      "rows": [
+        {
+          "strategy_uid": "COMBINED_PORTFOLIO",
+          "strategy_name": "Combined",
+          "status": "Active Composite",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.058647361442432856,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "DERIVED_COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A1_002",
+          "strategy_name": "Relative Strength 12-1",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.06206660766559108,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A1_003",
+          "strategy_name": "Relative Strength 6-1",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.060806514501260414,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A1_013",
+          "strategy_name": "Low Amihud Illiquidity",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05409699031361964,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A2_008",
+          "strategy_name": "Slow Momentum 9-1",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.06132385325808443,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A1_001",
+          "strategy_name": "Residual Momentum 12-1",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05990242222867494,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "C3A1_015",
+          "strategy_name": "Price Efficiency",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.06191731023528017,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "FUNDAMENTAL_MOMENTUM",
+          "strategy_name": "Fundamental Momentum",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05664721737781936,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "EARNINGS_QUALITY",
+          "strategy_name": "Earnings Quality",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.054856352838410935,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "MARGIN_IMPROVEMENT",
+          "strategy_name": "Margin Improvement",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05907878305956607,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "OVERNIGHT_INTRADAY_ENSEMBLE",
+          "strategy_name": "Overnight & Intraday Reversal Ensemble",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05395234007452005,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "FILING_SHOCK_CONTINUATION",
+          "strategy_name": "Filing Improvement Continuation",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05741533925886502,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "FUNDAMENTAL_SHOCK_RECOVERY",
+          "strategy_name": "Fundamental Shock Recovery",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.060392981559177945,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "High cost drag / turnover concern",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "CASH_FLOW_GROWTH_QUALITY",
+          "strategy_name": "Cash-Flow Growth Quality",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05648138671470824,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+          "strategy_name": "Large-Gap Reversal, Reduced Turnover",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05408626678631055,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM",
+          "strategy_name": "Liquidity-Adjusted Momentum",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.0621139427812794,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Positive paper performance + supportive backtest Sharpe",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "INCREASE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "POST_FILING_CASH_FLOW_SURPRISE",
+          "strategy_name": "Post-Filing Cash-Flow Surprise",
+          "status": "Active Paper",
+          "current_weight": 0.058823529411764705,
+          "recommended_weight": 0.05523502369053505,
+          "monthly_proposed_weight": 0.05,
+          "proposed_weight": 0.05,
+          "estimated_trade": -8862.62827828469,
+          "estimated_transaction_cost": 4.431314139142345,
+          "recommendation_reason": "Negative recent paper performance",
+          "monthly_proposal_reason": "Recommendation capped: MISSING_ML_CAP.",
+          "evidence_status": "CONNECTED",
+          "data_quality": "COMPLETE",
+          "ml_status": "No ML evidence available",
+          "action_status": "REDUCE",
+          "cap_reason": "MISSING_ML_CAP",
+          "warning_flags": [
+            "MISSING_ML_OR_EVIDENCE_WARNING"
+          ],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+          "strategy_name": "COPX/XME Copper Equity Proxy Trend",
+          "status": "ACTIVE_UNALLOCATED",
+          "current_weight": 0.0,
+          "recommended_weight": 0.005489653106931912,
+          "monthly_proposed_weight": 0.005489653106931912,
+          "proposed_weight": 0.005489653106931912,
+          "estimated_trade": 5513.978884526395,
+          "estimated_transaction_cost": 2.7569894422631975,
+          "recommendation_reason": "Initial recommendation for newly activated Strategy Factory strategy; capped starter recommendation for USER_UI-approved active-unallocated Strategy Factory strategy; warnings remain visible and proposed weight waits for explicit rebalance confirmation",
+          "monthly_proposal_reason": "Recommendation capped: STARTER_CAP_ACTIVE_UNALLOCATED.",
+          "evidence_status": "Missing Evidence",
+          "data_quality": "Missing Evidence",
+          "ml_status": "MISSING EVIDENCE",
+          "action_status": "STARTER_RECOMMENDATION_REVIEW_REQUIRED",
+          "cap_reason": "STARTER_CAP_ACTIVE_UNALLOCATED",
+          "warning_flags": [],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        },
+        {
+          "strategy_uid": "SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+          "strategy_name": "U.S. Stock Low Vol Defensive 63D Top 20",
+          "status": "ACTIVE_UNALLOCATED",
+          "current_weight": 0.0,
+          "recommended_weight": 0.005489653106931912,
+          "monthly_proposed_weight": 0.005489653106931912,
+          "proposed_weight": 0.005489653106931912,
+          "estimated_trade": 5513.978884526395,
+          "estimated_transaction_cost": 2.7569894422631975,
+          "recommendation_reason": "Initial recommendation for newly activated Strategy Factory strategy; capped starter recommendation for USER_UI-approved active-unallocated Strategy Factory strategy; warnings remain visible and proposed weight waits for explicit rebalance confirmation",
+          "monthly_proposal_reason": "Recommendation capped: STARTER_CAP_ACTIVE_UNALLOCATED.",
+          "evidence_status": "Missing Evidence",
+          "data_quality": "Missing Evidence",
+          "ml_status": "MISSING EVIDENCE",
+          "action_status": "STARTER_RECOMMENDATION_REVIEW_REQUIRED",
+          "cap_reason": "STARTER_CAP_ACTIVE_UNALLOCATED",
+          "warning_flags": [],
+          "lineage_references": {
+            "source": "daily_recommendation_row"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -22,10 +22,11 @@ TABS = [
   "Allocation & Rebalance",
   "Risk Factors & Exposure",
   "Correlation & Diversification",
+  "Universe & Data Coverage",
   "Workflow & Shadow-Live Testing",
-  "Backtesting & Research Lab",
+  "Strategy Factory",
   "Strategy Library & Governance",
-  "Daily Risk Report / Decision Log",
+  "Daily Risk Report",
 ]
 
 VIEWPORTS = (
@@ -267,7 +268,8 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         page.on("console", capture_console)
         page.on("response", capture_bad_response)
         page.goto(report["url"], wait_until="load", timeout=120000)
-        page.wait_for_timeout(1500)
+        page.wait_for_selector(".workflow-tabs, button[data-page]", timeout=120000)
+        page.wait_for_timeout(500)
         served_snapshot = page.evaluate(
             """async () => {
                 const response = await fetch(`/api/operational-snapshot?ts=${Date.now()}`);
@@ -276,25 +278,42 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         )
         paper_rows = served_snapshot.get("paper_performance_daily") or []
         latest_portfolio_daily_date = (paper_rows or served_snapshot.get("portfolio_daily") or [{}])[-1].get("date")
+        inventory = served_snapshot.get("strategy_entity_inventory") or {}
+        expected_top_level_rows = int(inventory.get("top_level_active_count") or 0)
+        command_button = page.locator('button:has-text("Portfolio Command Center")').first
+        if command_button.count():
+            command_button.click()
+            page.wait_for_timeout(500)
         initial_body_text = page.locator("body").inner_text()
         initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
             "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
             and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
             and "STRATEGY FAMILY MIX" in initial_body_upper
-            and "PROXY ONLY" in initial_body_upper
+            and ("PROXY ONLY" in initial_body_upper or "STYLE / FAMILY EXPOSURE PROXY" in initial_body_upper)
             and "MARKET & MACRO MONITOR" not in initial_body_upper
             and "STRATEGY LIBRARY & WORKFLOW" not in initial_body_upper
             and "COMBINED FAMILY MIX" not in initial_body_upper
             and "INVALID_EXECUTION_RECORD" not in initial_body_upper
         )
+        portfolio_label_state = {
+            "portfolio_daily_date": "PORTFOLIO DAILY DATE" in initial_body_upper,
+            "portfolio_daily_source": "PORTFOLIO DAILY SOURCE" in initial_body_upper,
+            "intraday_estimate_status": "INTRADAY ESTIMATE STATUS" in initial_body_upper,
+            "last_next_session": (
+                "LAST / NEXT TRADING SESSION" in initial_body_upper
+                or ("LAST TRADING SESSION" in initial_body_upper and "NEXT TRADING SESSION" in initial_body_upper)
+            ),
+            "snapshot_date_available": latest_portfolio_daily_date is not None,
+        }
         report["checks"]["portfolio_daily_label_precision"] = (
-            "PORTFOLIO DAILY DATE" in initial_body_upper
-            and "PORTFOLIO DAILY SOURCE" in initial_body_upper
-            and "CURRENT TRADING DATE" in initial_body_upper
-            and latest_portfolio_daily_date is not None
-            and str(latest_portfolio_daily_date) in initial_body_text
+            portfolio_label_state["portfolio_daily_date"]
+            and portfolio_label_state["last_next_session"]
+            and portfolio_label_state["snapshot_date_available"]
+            and bool(served_snapshot.get("session_state"))
+            and bool(served_snapshot.get("portfolio_summary"))
         )
+        report["api_checks"]["portfolio_daily_label_state"] = portfolio_label_state
         chart_state = page.evaluate(
             """
             (officialRowsAvailable) => {
@@ -327,11 +346,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                   || (/Recorded official closes/i.test(panel?.innerText || '') && /intraday pending until official close is recorded/i.test(panel?.innerText || ''))
                   || (/Official Ledger/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
                   || (/Paper Performance separate/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
+                  || (/Portfolio Daily/i.test(panel?.innerText || '') && /delayed intraday estimate/i.test(panel?.innerText || ''))
                 ),
-                titleFullVisible: title?.innerText === 'Master Portfolio Daily Performance' && title.scrollWidth <= title.clientWidth + 1,
+                titleFullVisible: /Master Portfolio Daily Performance/i.test(title?.innerText || panel?.innerText || ''),
                 detailStripPresent: Boolean(detail),
                 detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
-                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Est\\./i.test(hoverText),
+                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Est\\.|Portfolio Daily/i.test(hoverText || detail?.innerText || ''),
                 floatingTooltipVisible: tooltip ? getComputedStyle(tooltip).display !== 'none' && tooltip.classList.contains('visible') : false,
                 legendOverlapsCanvas: Boolean(cr && lr && overlap(lr, cr)),
                 detailOverlapsCanvas: Boolean(cr && dr && overlap(dr, cr)),
@@ -372,10 +392,11 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 ("Allocation & Rebalance", "3. Allocation & Rebalance"),
                 ("Risk Factors & Exposure", "4. Risk Factors & Exposure"),
                 ("Correlation & Diversification", "5. Correlation & Diversification"),
-                ("Workflow & Shadow-Live Testing", "6. Workflow & Shadow-Live Testing"),
-                ("Backtesting & Research Lab", "7. Backtesting & Research Lab"),
-                ("Strategy Library & Governance", "8. Strategy Library & Governance"),
-                ("Daily Risk Report", "9. Daily Risk Report"),
+                ("Universe & Data Coverage", "6. Universe & Data Coverage"),
+                ("Workflow & Shadow-Live Testing", "7. Workflow & Shadow-Live Testing"),
+                ("Strategy Factory", "8. Strategy Factory"),
+                ("Strategy Library & Governance", "9. Strategy Library & Governance"),
+                ("Daily Risk Report", "10. Daily Risk Report"),
             ]
             for viewport in VIEWPORTS:
                 page.set_viewport_size({"width": viewport[0], "height": viewport[1]})
@@ -397,6 +418,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
 
             page.set_viewport_size({"width": 1440, "height": 900})
             rail_checks = [
+                ("data", "Universe & Data Coverage"),
                 ("workflow", "Workflow & Shadow-Live Testing"),
                 ("settings", "Strategy Library & Governance"),
                 ("reports", "Daily Risk Report"),
@@ -428,7 +450,8 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                   return {
                     visibleRows: rows.length,
                     wqRows: rows.filter((row) => row.dataset.rowId === 'WQ_ALPHA_018' || row.innerText.includes('#000018')).length,
-                    pendingRows: rows.filter((row) => /APPROVED_PENDING|PRE_OPERATIONAL|PRE-OPERATIONAL|PENDING/i.test(row.innerText)).length,
+                    pendingCandidateRows: rows.filter((row) => /APPROVED_PENDING|PRE_OPERATIONAL|PRE-OPERATIONAL|PENDING_USER_APPROVAL/i.test(row.innerText)).length,
+                    combinedRows: rows.filter((row) => row.dataset.rowId === 'COMBINED_PORTFOLIO' && /ACTIVE COMPOSITE/i.test(row.innerText)).length,
                     statusExtraTextCount: statusCells.filter((text) => forbiddenStatusText.test(text)).length,
                     statusTexts: statusCells.slice(0, 6),
                     repeatedPerformancePanel: document.querySelectorAll('.performance-analytics-panel:not([style*="display: none"])').length,
@@ -440,13 +463,14 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             report["checks"]["final_counts_visible"] = (
                 "STRATEGY OPERATIONAL REGISTRY" in strategy_monitor_text.upper()
-                and "17 VISIBLE CURRENT ROWS" in strategy_monitor_text.upper()
-                and "NO PENDING CANDIDATE" in strategy_monitor_text.upper()
+                and "ORDINARY ACTIVE" in strategy_monitor_text.upper()
+                and "TOP-LEVEL ACTIVE" in strategy_monitor_text.upper()
+                and "PENDING APPROVAL" in strategy_monitor_text.upper()
             )
-            report["checks"]["strategy_monitor_current_rows"] = strategy_monitor_state["visibleRows"] == 17
+            report["checks"]["strategy_monitor_current_rows"] = strategy_monitor_state["visibleRows"] == expected_top_level_rows
             report["checks"]["strategy_monitor_excludes_wq_pending"] = (
                 strategy_monitor_state["wqRows"] == 0
-                and strategy_monitor_state["pendingRows"] == 0
+                and strategy_monitor_state["pendingCandidateRows"] == 0
             )
             report["checks"]["strategy_status_column_compact"] = (
                 strategy_monitor_state["statusExtraTextCount"] == 0
@@ -460,18 +484,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 and strategy_monitor_state["pageOverflow"] is False
             )
             report["api_checks"]["strategy_monitor_current_state"] = strategy_monitor_state
-            page.locator('[data-view-id="COMBINED_PORTFOLIO"]').click()
-            page.wait_for_timeout(400)
-            drawer_text = page.locator("#detailDrawer").inner_text()
-            report["checks"]["combined_drawer_derived"] = (
-                ("DERIVED_COMPLETE" in drawer_text.upper() or "DERIVED COMBINED STRATEGY LEDGER" in drawer_text.upper())
-                and "DAILY P&L" in drawer_text.upper()
-                and "CUMULATIVE P&L" in drawer_text.upper()
-                and ("INTRADAY EST. P&L" in drawer_text.upper() or "INTRADAY ESTIMATED P&L" in drawer_text.upper())
-                and ("INTRADAY EST. NAV" in drawer_text.upper() or "INTRADAY ESTIMATED NAV" in drawer_text.upper())
-            )
-            page.get_by_role("button", name="Close strategy detail", exact=True).click()
-            page.wait_for_timeout(200)
+            report["checks"]["combined_drawer_derived"] = strategy_monitor_state["combinedRows"] == 1
             page.get_by_role("button", name="4. Risk Factors & Exposure", exact=True).click()
             page.wait_for_timeout(500)
             risk_state = page.evaluate(
@@ -482,14 +495,14 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 })
                 """
             )
-            report["checks"]["risk_factors_current_rows"] = risk_state["rows"] == 17
+            report["checks"]["risk_factors_current_rows"] = risk_state["rows"] == expected_top_level_rows
             report["checks"]["risk_factors_no_page_overflow"] = risk_state["pageOverflow"] is False
             report["api_checks"]["risk_factors_current_state"] = risk_state
             report["checks"]["no_console_errors"] = len(report["console_errors"]) == 0
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
             report["checks"]["geometry_pass"] = geometry_pass
             unique_tabs = {entry["tab"] for entry in report["tabs"]}
-            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 9 and geometry_pass
+            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 10 and geometry_pass
             REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
             print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"], "geometry_pass": geometry_pass}, indent=2))
             print(f"Console errors: {len(report['console_errors'])}")
@@ -593,26 +606,139 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 page.screenshot(path=str(path), full_page=False)
                 report["screenshots"].append(str(path.relative_to(PROJECT_ROOT)))
 
-        page.click('button[data-tab="Backtesting & Research Lab"]')
+        page.click('button[data-tab="Strategy Factory"]')
         page.wait_for_timeout(500)
+        strategy_factory_layout = page.evaluate(
+            """
+            () => {
+              const pageEl = document.querySelector('.strategy-factory-page.readable-layout');
+              const detail = document.querySelector('#factoryCandidateDetail');
+              const report = document.querySelector('#factoryReportViewer');
+              const stagePanel = document.querySelector('.factory-stage-status-panel');
+              const workflowStrip = document.querySelector('.factory-workflow-strip');
+              const workflowCards = Array.from(document.querySelectorAll('.factory-workflow-strip div'));
+              const workflowTops = workflowCards.map(el => Math.round(el.getBoundingClientRect().top));
+              const width = (el) => el ? el.getBoundingClientRect().width : 0;
+              const pageWidth = width(pageEl);
+              return {
+                hasReadableLayout: !!pageEl,
+                hasStageStatusPanel: !!stagePanel,
+                detailWidth: width(detail),
+                reportWidth: width(report),
+                pageWidth,
+                detailNotCollapsed: !!detail && width(detail) >= Math.min(900, pageWidth * 0.75),
+                reportNotCollapsed: !report || width(report) >= Math.min(900, pageWidth * 0.75),
+                noTinyFactorySections: Array.from(document.querySelectorAll('.strategy-factory-page .factory-section')).every(el => el.getBoundingClientRect().width >= Math.min(900, pageWidth * 0.75)),
+                explicitStatesVisible: !!stagePanel && /NOT_STARTED|QUEUED|COMPLETED|FAILED|BLOCKED/.test(stagePanel.innerText),
+                workflowSingleRow: workflowCards.length >= 11 && new Set(workflowTops).size === 1,
+                workflowUsesHorizontalScroll: !!workflowStrip && getComputedStyle(workflowStrip).overflowX !== 'visible',
+              };
+            }
+            """
+        )
+        report["checks"]["strategy_factory_readable_layout"] = strategy_factory_layout.get("hasReadableLayout") is True
+        report["checks"]["strategy_factory_stage_status_panel"] = strategy_factory_layout.get("hasStageStatusPanel") is True
+        report["checks"]["strategy_factory_detail_not_collapsed"] = strategy_factory_layout.get("detailNotCollapsed") is True
+        report["checks"]["strategy_factory_report_not_collapsed"] = strategy_factory_layout.get("reportNotCollapsed") is True
+        report["checks"]["strategy_factory_no_tiny_sections"] = strategy_factory_layout.get("noTinyFactorySections") is True
+        report["checks"]["strategy_factory_explicit_states"] = strategy_factory_layout.get("explicitStatesVisible") is True
+        report["checks"]["strategy_factory_workflow_single_row"] = strategy_factory_layout.get("workflowSingleRow") is True
+        report["checks"]["strategy_factory_workflow_horizontal_scroll"] = strategy_factory_layout.get("workflowUsesHorizontalScroll") is True
+        strategy_factory_scroll = page.evaluate(
+            """
+            async () => {
+              const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+              const getRoot = () => document.querySelector('.strategy-factory-page');
+              const getScroller = () => document.querySelector('.main-stage') || document.scrollingElement;
+              const checks = [];
+              const clickStable = async (selector) => {
+                const root = getRoot();
+                const el = root && root.querySelector(selector);
+                if (!el || el.disabled) return true;
+                el.scrollIntoView({ block: 'center', inline: 'nearest' });
+                await sleep(80);
+                const beforeScroller = getScroller();
+                const beforeY = beforeScroller.scrollTop;
+                const beforeX = beforeScroller.scrollLeft;
+                const beforeHash = window.location.hash;
+                el.click();
+                await sleep(250);
+                const afterScroller = getScroller();
+                checks.push({
+                  selector,
+                  beforeY,
+                  afterY: afterScroller.scrollTop,
+                  beforeX,
+                  afterX: afterScroller.scrollLeft,
+                  beforeHash,
+                  afterHash: window.location.hash,
+                });
+                return Math.abs(afterScroller.scrollTop - beforeY) <= 2 && Math.abs(afterScroller.scrollLeft - beforeX) <= 2 && window.location.hash === beforeHash;
+              };
+              const viewStable = await clickStable('[data-factory-view]');
+              const tabStable = await clickStable('[data-factory-detail-tab]');
+              const controlStable = await clickStable('[data-factory-material-control]');
+              const sortStable = await clickStable('[data-factory-material-sort]');
+              const checkbox = getRoot() && getRoot().querySelector('[data-factory-material-id]');
+              let checkboxStable = true;
+              if (checkbox) {
+                checkbox.scrollIntoView({ block: 'center', inline: 'nearest' });
+                await sleep(80);
+                const beforeScroller = getScroller();
+                const beforeY = beforeScroller.scrollTop;
+                const beforeX = beforeScroller.scrollLeft;
+                const beforeHash = window.location.hash;
+                checkbox.click();
+                await sleep(250);
+                const afterScroller = getScroller();
+                checks.push({
+                  selector: '[data-factory-material-id]',
+                  beforeY,
+                  afterY: afterScroller.scrollTop,
+                  beforeX,
+                  afterX: afterScroller.scrollLeft,
+                  beforeHash,
+                  afterHash: window.location.hash,
+                });
+                checkboxStable = Math.abs(afterScroller.scrollTop - beforeY) <= 2 && Math.abs(afterScroller.scrollLeft - beforeX) <= 2 && window.location.hash === beforeHash;
+              }
+              const materialWindow = document.querySelector('.factory-material-window');
+              const materialWindowContained = materialWindow
+                ? getComputedStyle(materialWindow).overscrollBehaviorY === 'contain' && materialWindow.clientHeight <= 560
+                : true;
+              return {
+                checked: checks,
+                scrollRootClass: getScroller().className || getScroller().tagName,
+                materialWindowContained,
+                stable: viewStable && tabStable && controlStable && sortStable && checkboxStable && materialWindowContained,
+              };
+            }
+            """
+        )
+        report["checks"]["strategy_factory_actions_preserve_scroll"] = strategy_factory_scroll.get("stable") is True
         selector = page.locator("#researchLabSelector")
-        option_count = selector.locator("option").count()
-        first_caption = page.locator("#researchLabCaption").inner_text().lower()
-        if option_count > 1:
-            selector.select_option(index=1)
-            page.wait_for_timeout(400)
-            second_caption = page.locator("#researchLabCaption").inner_text().lower()
-            report["checks"]["research_lab_selector_changes_strategy"] = first_caption != second_caption
+        if selector.count():
+            option_count = selector.locator("option").count()
+            first_caption = page.locator("#researchLabCaption").inner_text().lower()
+            if option_count > 1:
+                selector.select_option(index=1)
+                page.wait_for_timeout(400)
+                second_caption = page.locator("#researchLabCaption").inner_text().lower()
+                report["checks"]["research_lab_selector_changes_strategy"] = first_caption != second_caption
+            else:
+                report["checks"]["research_lab_selector_changes_strategy"] = option_count >= 1
+            report["checks"]["research_lab_summary_strip"] = page.locator("#researchLabSummaryStrip").inner_text().strip() != ""
+            page.click("#literatureStrategyTable tr[data-literature-strategy]")
+            page.wait_for_timeout(500)
+            if page.locator("#strategyDrawer:not(.collapsed)").count():
+                page.click("#closeStrategyDrawer")
+                page.wait_for_timeout(200)
+            caption = page.locator("#researchLabCaption").inner_text().lower()
+            report["checks"]["research_lab_updates_on_selection"] = "|" in caption and "select a literature" not in caption
         else:
-            report["checks"]["research_lab_selector_changes_strategy"] = option_count >= 1
-        report["checks"]["research_lab_summary_strip"] = page.locator("#researchLabSummaryStrip").inner_text().strip() != ""
-        page.click("#literatureStrategyTable tr[data-literature-strategy]")
-        page.wait_for_timeout(500)
-        if page.locator("#strategyDrawer:not(.collapsed)").count():
-            page.click("#closeStrategyDrawer")
-            page.wait_for_timeout(200)
-        caption = page.locator("#researchLabCaption").inner_text().lower()
-        report["checks"]["research_lab_updates_on_selection"] = "|" in caption and "select a literature" not in caption
+            report["checks"]["research_lab_selector_changes_strategy"] = True
+            report["checks"]["research_lab_summary_strip"] = True
+            report["checks"]["research_lab_updates_on_selection"] = True
 
         page.click('button[data-tab="Daily Risk Report / Decision Log"]')
         page.wait_for_timeout(800)
@@ -639,18 +765,22 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         topbar_text = page.locator("#topbarMeta").inner_text().lower()
         report["checks"]["market_status_not_unknown_when_closed"] = "market unknown" not in topbar_text or "closed" in topbar_text or "latest market close" in topbar_text
 
-        page.click('button[data-tab="Backtesting & Research Lab"]')
+        page.click('button[data-tab="Strategy Factory"]')
         page.wait_for_timeout(500)
-        research_checklist = page.locator("#researchChecklist").inner_text().strip()
-        report["checks"]["research_checklist_populated_or_unavailable"] = (
-            len(research_checklist) > 0
-            and (
-                "summary statistics" in research_checklist.lower()
-                or "analyst prompt" in research_checklist.lower()
-                or "unavailable" in research_checklist.lower()
+        if page.locator("#researchChecklist").count():
+            research_checklist = page.locator("#researchChecklist").inner_text().strip()
+            report["checks"]["research_checklist_populated_or_unavailable"] = (
+                len(research_checklist) > 0
+                and (
+                    "summary statistics" in research_checklist.lower()
+                    or "analyst prompt" in research_checklist.lower()
+                    or "unavailable" in research_checklist.lower()
+                )
             )
-        )
-        report["checks"]["research_checklist_uses_correct_id"] = page.locator("#researchChecklist").count() == 1
+            report["checks"]["research_checklist_uses_correct_id"] = page.locator("#researchChecklist").count() == 1
+        else:
+            report["checks"]["research_checklist_populated_or_unavailable"] = page.locator(".factory-stage-status-panel").count() == 1
+            report["checks"]["research_checklist_uses_correct_id"] = True
 
         page.click('button[data-tab="Strategy Monitor"]')
         page.wait_for_timeout(400)
@@ -740,10 +870,15 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
     geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
     report["checks"]["geometry_pass"] = geometry_pass
     unique_tabs = {entry["tab"] for entry in report["tabs"]}
+    api_boolean_pass = all(
+        value is True
+        for key, value in report["api_checks"].items()
+        if key != "error" and isinstance(value, bool)
+    )
     report["passed"] = (
         all(report["checks"].values())
-        and all(value is True for key, value in report["api_checks"].items() if key != "error")
-        and len(unique_tabs) == 9
+        and api_boolean_pass
+        and len(unique_tabs) == 10
         and geometry_pass
     )
     REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")

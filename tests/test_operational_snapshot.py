@@ -21,6 +21,7 @@ from src.reporting.operational_snapshot import (
     refresh_operational_snapshot,
     snapshot_refresh_lock,
 )
+from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.market.paper_portfolio_ledger import (
     backfill_paper_portfolio_daily_from_canonical,
@@ -163,6 +164,171 @@ def _latest_collection_item(path: Path, collection_key: str) -> dict:
 
 def _line_items(row: dict) -> list[dict]:
     return row.get("rows") or row.get("line_items") or row.get("recommendations") or []
+
+
+def _write_durable_activation(root: Path, *, suffix: str, display_label: str) -> dict:
+    candidate_id = f"SF_CAND_RUNTIME_ALIGNMENT_{suffix}"
+    strategy_uid = f"SF_STRATEGY_UID_RUNTIME_ALIGNMENT_{suffix}"
+    activation = {
+        "schema_version": "strategy_factory_active_unallocated_strategy_v1",
+        "candidate_id": candidate_id,
+        "strategy_uid": strategy_uid,
+        "strategy_id": strategy_uid,
+        "strategy_name": f"Runtime Alignment Strategy {suffix}",
+        "variant_id": f"RUNTIME_ALIGNMENT_VARIANT_{suffix}",
+        "run_id": f"SF_RUN_RUNTIME_ALIGNMENT_{suffix}",
+        "source_run_id": f"SF_RUN_RUNTIME_ALIGNMENT_{suffix}",
+        "source_material_hash": f"runtime-alignment-material-{suffix}",
+        "display_id": display_label,
+        "display_label": display_label,
+        "status": "ACTIVE_UNALLOCATED",
+        "state": "ACTIVE_UNALLOCATED",
+        "membership_state": "active_unallocated",
+        "current_weight": 0.0,
+        "target_weight": 0.0,
+        "recommended_weight": "RECOMMENDATION_PENDING",
+        "proposed_weight": "RECOMMENDATION_PENDING",
+        "eligible_for_optimizer": True,
+        "eligible_for_rebalance": True,
+        "nav_pnl_impact": "NONE_WHILE_CURRENT_WEIGHT_ZERO",
+        "user_confirmed_at": "2026-06-27T12:00:00+00:00",
+        "activation_confirmed_at": "2026-06-27T12:00:00+00:00",
+        "user_action_id": f"USER_UI_RUNTIME_ALIGNMENT_{suffix}",
+        "activation_source": "USER_UI",
+        "activation_confirmation": True,
+        "TEST_ARTIFACT": False,
+        "SMOKE_ONLY": False,
+        "EXCLUDE_FROM_ACTIVE_UNIVERSE": False,
+        "live_trading": False,
+        "brokerage_execution": False,
+        "created_at": "2026-06-27T12:00:00+00:00",
+        "activated_at": "2026-06-27T12:00:00+00:00",
+    }
+    candidate = {
+        "schema_version": "strategy_factory_portfolio_candidate_v1",
+        "candidate_id": candidate_id,
+        "strategy_uid": strategy_uid,
+        "strategy_id": strategy_uid,
+        "strategy_name": activation["strategy_name"],
+        "variant_id": activation["variant_id"],
+        "run_id": activation["run_id"],
+        "source_run_id": activation["source_run_id"],
+        "status": "ACTIVE_UNALLOCATED",
+        "state": "ACTIVE_UNALLOCATED",
+        "current_weight": 0.0,
+        "target_weight": 0.0,
+        "user_confirmed": True,
+        "user_confirmed_at": activation["user_confirmed_at"],
+        "active_strategy": True,
+        "live_trading": False,
+        "brokerage_execution": False,
+    }
+    destination = root / "data" / "strategy_factory" / "portfolio_candidates" / candidate_id
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / "activation_record.json").write_text(json.dumps(activation, indent=2), encoding="utf-8")
+    (destination / "portfolio_candidate.json").write_text(json.dumps(candidate, indent=2), encoding="utf-8")
+    return activation
+
+
+def test_production_like_snapshot_uses_durable_strategy_factory_activations_without_output(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    first = _write_durable_activation(root, suffix="A", display_label="#000017")
+    second = _write_durable_activation(root, suffix="B", display_label="#000018")
+
+    assert not (root / "output" / "strategy_factory" / "portfolio_candidates").exists()
+
+    snapshot = build_operational_snapshot(
+        json.loads((root / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8")),
+        root=root,
+        generated_at="2026-06-27T12:00:00+00:00",
+    )
+    inventory = snapshot["strategy_entity_inventory"]
+    capital = snapshot["capital_reconciliation"]
+    active_unallocated = [
+        row for row in snapshot["strategies"]
+        if row.get("current_operational_status") == "ACTIVE_UNALLOCATED"
+    ]
+
+    assert inventory["ordinary_active_count"] == 18
+    assert inventory["combined_active_count"] == 1
+    assert inventory["top_level_active_count"] == 19
+    assert inventory["active_unallocated_count"] == 2
+    assert inventory["pending_approval_count"] == 0
+    assert capital["top_level_sleeve_denominator"] == 19
+    assert capital["starting_capital_denominator"] == 19
+    assert capital["top_level_sleeve_weight"] == pytest.approx(1 / 19)
+    assert capital["starting_capital_per_sleeve"] == pytest.approx(
+        capital["initial_shadow_capital"] / 19
+    )
+    assert {row["strategy_uid"] for row in active_unallocated} == {
+        first["strategy_uid"],
+        second["strategy_uid"],
+    }
+    for row in active_unallocated:
+        assert row["strategy_uid"] != row.get("display_label")
+        assert row["activation_source"] == "USER_UI"
+        assert row["activation_confirmation"] is True
+        assert row["current_weight"] == pytest.approx(0.0)
+        assert row["target_weight"] == pytest.approx(0.0)
+        assert row["daily_pnl"] == pytest.approx(0.0)
+        assert row["nav_pnl_impact"] == "NONE_WHILE_CURRENT_WEIGHT_ZERO"
+        assert row["pnl_status"] == "ZERO_WEIGHT_NO_NAV_PNL_IMPACT"
+        assert row["live_trading"] is False
+        assert row["brokerage_execution"] is False
+
+
+def test_paper_rebalance_and_operational_snapshot_universe_counts_align_from_durable_activations(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    _write_durable_activation(root, suffix="A", display_label="#000017")
+    _write_durable_activation(root, suffix="B", display_label="#000018")
+    snapshot = build_operational_snapshot(
+        json.loads((root / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8")),
+        root=root,
+        generated_at="2026-06-27T12:00:00+00:00",
+    )
+    active_rows = [row for row in snapshot["strategies"] if row.get("membership_state") == "executed"]
+    proposal = {
+        "schema_version": "monthly_rebalance_proposal_v1",
+        "proposal_id": "monthly-proposal-runtime-alignment",
+        "status": "MONTHLY_PROPOSAL_READY",
+        "review_status": "NOT_APPROVED",
+        "rows": [
+            {
+                "strategy_uid": row.get("strategy_uid") or row["internal_id"],
+                "strategy_name": row.get("strategy_name") or row["display_name"],
+                "current_weight": row.get("current_weight") or 0.0,
+                "recommended_weight": 0.0,
+                "proposed_weight": 0.0,
+            }
+            for row in active_rows
+        ],
+    }
+    rebalance_dir = root / "data" / "paper_rebalance"
+    rebalance_dir.mkdir(parents=True, exist_ok=True)
+    (rebalance_dir / "monthly_rebalance_proposals.json").write_text(
+        json.dumps({"schema_version": "monthly_rebalance_proposal_v1", "proposals": [proposal]}, indent=2),
+        encoding="utf-8",
+    )
+
+    paper = paper_rebalance_snapshot_payload(root)
+    latest_proposal = paper["monthly_proposal"]["latest_proposal"]
+
+    assert len(latest_proposal["rows"]) == snapshot["strategy_entity_inventory"]["top_level_active_count"]
+    assert len(latest_proposal["rows"]) == snapshot["capital_reconciliation"]["top_level_sleeve_denominator"]
+
+
+def test_snapshot_active_unallocated_loader_is_not_release_name_hardcoded():
+    source = (ROOT / "src/reporting/operational_snapshot.py").read_text(encoding="utf-8")
+    forbidden_release_artifacts = [
+        "COPX/XME",
+        "Copper Equity Proxy Trend",
+        "U.S. Stock Low Vol Defensive",
+        "SF_STRATEGY_UID_32B00A3F65A3",
+        "SF_STRATEGY_UID_BB17380C36CE",
+    ]
+
+    for value in forbidden_release_artifacts:
+        assert value not in source
 
 
 def test_root_runtime_snapshot_merges_user_ui_active_unallocated_and_uses_dynamic_sleeve_basis():

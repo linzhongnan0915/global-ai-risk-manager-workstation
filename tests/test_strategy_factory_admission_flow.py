@@ -715,6 +715,23 @@ def test_confirmed_portfolio_candidate_activation_creates_active_unallocated(tmp
     assert result["selected"]["strategy_id"] == activation["strategy_uid"]
     assert result["selected"]["current_weight"] == 0.0
     assert result["selected"]["target_weight"] == 0.0
+    durable_dir = (
+        tmp_path
+        / "data"
+        / "strategy_factory"
+        / "portfolio_candidates"
+        / candidate_id_for(RUN_ID, BLOCKED_VARIANT)
+    )
+    durable_activation = json.loads((durable_dir / "activation_record.json").read_text(encoding="utf-8"))
+    durable_candidate = json.loads((durable_dir / "portfolio_candidate.json").read_text(encoding="utf-8"))
+    assert durable_activation["strategy_uid"] == activation["strategy_uid"]
+    assert durable_activation["activation_source"] == "USER_UI"
+    assert durable_activation["activation_confirmation"] is True
+    assert durable_activation["current_weight"] == 0.0
+    assert durable_activation["target_weight"] == 0.0
+    assert durable_activation["live_trading"] is False
+    assert durable_activation["brokerage_execution"] is False
+    assert durable_candidate["strategy_uid"] == activation["strategy_uid"]
 
     status = get_portfolio_candidates_status(tmp_path, RUN_ID, BLOCKED_VARIANT)
     assert status["state"] == "ACTIVE_UNALLOCATED"

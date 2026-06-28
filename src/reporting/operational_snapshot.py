@@ -67,8 +67,11 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
     os.replace(temp, path)
 
 
-def _strategy_factory_portfolio_candidates_root(root: Path) -> Path:
-    return root / "output" / "strategy_factory" / "portfolio_candidates"
+def _strategy_factory_portfolio_candidates_roots(root: Path) -> list[Path]:
+    return [
+        root / "data" / "strategy_factory" / "portfolio_candidates",
+        root / "output" / "strategy_factory" / "portfolio_candidates",
+    ]
 
 
 def _strategy_factory_activation_confirmed(row: dict[str, Any]) -> bool:
@@ -87,14 +90,16 @@ def _strategy_factory_activation_confirmed(row: dict[str, Any]) -> bool:
 
 def _strategy_factory_active_unallocated_records(root: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for path in sorted(_strategy_factory_portfolio_candidates_root(root).glob("*/activation_record.json")):
-        activation = _read_json(path, {})
-        if not activation or not _strategy_factory_activation_confirmed(activation):
-            continue
-        uid = str(activation.get("strategy_uid") or activation.get("strategy_id") or "").strip()
-        if not uid or uid.startswith("#"):
-            continue
-        rows.append(activation)
+    for candidates_root in _strategy_factory_portfolio_candidates_roots(root):
+        for path in sorted(candidates_root.glob("*/activation_record.json")):
+            activation = _read_json(path, {})
+            if not activation or not _strategy_factory_activation_confirmed(activation):
+                continue
+            uid = str(activation.get("strategy_uid") or activation.get("strategy_id") or "").strip()
+            if not uid or uid.startswith("#"):
+                continue
+            activation = {**activation, "activation_artifact_path": str(path.relative_to(root))}
+            rows.append(activation)
     deduped: dict[str, dict[str, Any]] = {}
     for row in rows:
         deduped[str(row.get("strategy_uid") or row.get("strategy_id"))] = row

@@ -65,6 +65,10 @@ def _factory_root(root: Path) -> Path:
     return root / "output" / "strategy_factory"
 
 
+def _durable_factory_root(root: Path) -> Path:
+    return root / "data" / "strategy_factory"
+
+
 def _runs_dir(root: Path) -> Path:
     return _factory_root(root) / "runs"
 
@@ -77,8 +81,24 @@ def _portfolio_candidates_root(root: Path) -> Path:
     return _factory_root(root) / "portfolio_candidates"
 
 
+def _durable_portfolio_candidates_root(root: Path) -> Path:
+    return _durable_factory_root(root) / "portfolio_candidates"
+
+
+def _portfolio_candidates_roots(root: Path) -> list[Path]:
+    return [_portfolio_candidates_root(root), _durable_portfolio_candidates_root(root)]
+
+
 def _portfolio_candidate_dir(root: Path, candidate_id: str) -> Path:
     return _portfolio_candidates_root(root) / candidate_id
+
+
+def _durable_portfolio_candidate_dir(root: Path, candidate_id: str) -> Path:
+    return _durable_portfolio_candidates_root(root) / candidate_id
+
+
+def _portfolio_candidate_dirs(root: Path, candidate_id: str) -> list[Path]:
+    return [_portfolio_candidate_dir(root, candidate_id), _durable_portfolio_candidate_dir(root, candidate_id)]
 
 
 def _safe_id(value: str) -> str:
@@ -302,10 +322,11 @@ def _canonical_active_count_breakdown(root: Path) -> dict[str, int]:
 
 def _activation_records(root: Path) -> list[dict]:
     rows: list[dict] = []
-    for path in sorted(_portfolio_candidates_root(root).glob("*/activation_record.json")):
-        payload = _read_json(path, {})
-        if payload:
-            rows.append(payload)
+    for candidates_root in _portfolio_candidates_roots(root):
+        for path in sorted(candidates_root.glob("*/activation_record.json")):
+            payload = _read_json(path, {})
+            if payload:
+                rows.append(payload)
     return rows
 
 
@@ -418,7 +439,8 @@ def add_portfolio_candidate(root: Path, run_id: str, variant_id: str, user_confi
     existing = _read_json(_portfolio_candidate_dir(root, candidate_id) / "portfolio_candidate.json", {})
     if existing.get("status") in {"IN_PORTFOLIO_CANDIDATES", "ACTIVE_UNALLOCATED", "ACTIVE_PENDING_REBALANCE"}:
         candidate = {**existing, "updated_at": _now()}
-    _write_json(_portfolio_candidate_dir(root, candidate_id) / "portfolio_candidate.json", candidate)
+    for directory in _portfolio_candidate_dirs(root, candidate_id):
+        _write_json(directory / "portfolio_candidate.json", candidate)
     _portfolio_candidate_log(root, candidate_id, {"event": "portfolio_candidate_added", "status": "IN_PORTFOLIO_CANDIDATES"})
     return {
         "ok": True,
@@ -524,8 +546,9 @@ def activate_portfolio_candidate(
     )
     if is_smoke:
         candidate["status"] = "PENDING_USER_APPROVAL"
-    _write_json(candidate_path, candidate)
-    _write_json(activation_path, activation)
+    for directory in _portfolio_candidate_dirs(root, candidate_id):
+        _write_json(directory / "portfolio_candidate.json", candidate)
+        _write_json(directory / "activation_record.json", activation)
     _portfolio_candidate_log(root, candidate_id, {"event": "strategy_activated", "status": active_status, "display_id": display_id, "smoke_only": is_smoke})
     return {
         "ok": True,
@@ -548,38 +571,48 @@ def activate_portfolio_candidate(
 
 def get_portfolio_candidates_status(root: Path, run_id: str | None = None, variant_id: str | None = None) -> dict:
     rows: list[dict] = []
-    for path in sorted(_portfolio_candidates_root(root).glob("*/portfolio_candidate.json")):
-        payload = _read_json(path, {})
-        if payload:
-            cid = payload.get("candidate_id") or path.parent.name
-            activation = _read_json(path.parent / "activation_record.json", {})
-            confirmed = payload.get("user_confirmed") is True
-            activation_confirmed = _has_real_activation_consent(activation) if activation else False
-            row = {**payload, "activation": activation or None, "artifacts": _portfolio_candidate_artifacts(root, cid)}
-            display_label = row.get("display_label") or row.get("display_id") or activation.get("display_label") or activation.get("display_id")
-            row["display_label"] = display_label
-            row["strategy_uid"] = row.get("strategy_uid") or activation.get("strategy_uid") or _strategy_uid(str(row.get("run_id") or ""), str(row.get("variant_id") or ""))
-            row["strategy_id"] = row["strategy_uid"]
-            if activation and not activation_confirmed:
-                row = {
-                    **row,
-                    "status": "PENDING_USER_APPROVAL",
-                    "state": "PENDING_USER_APPROVAL",
-                    "active_strategy": False,
-                    "pending_user_approval": True,
-                    "eligible_for_optimizer": False,
-                    "eligible_for_rebalance": False,
-                    "nav_pnl_impact": "NONE_PENDING_USER_APPROVAL",
-                }
-            elif not confirmed:
-                row = {
-                    **row,
-                    "status": "NEEDS_USER_CONFIRMATION",
-                    "state": "NEEDS_USER_CONFIRMATION",
-                    "active_strategy": False,
-                    "legacy_unconfirmed": True,
-                }
-            rows.append(row)
+    by_candidate_id: dict[str, dict] = {}
+    for candidates_root in _portfolio_candidates_roots(root):
+        for path in sorted(candidates_root.glob("*/portfolio_candidate.json")):
+            payload = _read_json(path, {})
+            if payload:
+                by_candidate_id[payload.get("candidate_id") or path.parent.name] = {"payload": payload, "path": path}
+    for cid, source in sorted(by_candidate_id.items()):
+        path = source["path"]
+        payload = source["payload"]
+        activation = _read_json(path.parent / "activation_record.json", {})
+        if not activation:
+            for candidate_dir in _portfolio_candidate_dirs(root, cid):
+                activation = _read_json(candidate_dir / "activation_record.json", {})
+                if activation:
+                    break
+        confirmed = payload.get("user_confirmed") is True
+        activation_confirmed = _has_real_activation_consent(activation) if activation else False
+        row = {**payload, "activation": activation or None, "artifacts": _portfolio_candidate_artifacts(root, cid)}
+        display_label = row.get("display_label") or row.get("display_id") or activation.get("display_label") or activation.get("display_id")
+        row["display_label"] = display_label
+        row["strategy_uid"] = row.get("strategy_uid") or activation.get("strategy_uid") or _strategy_uid(str(row.get("run_id") or ""), str(row.get("variant_id") or ""))
+        row["strategy_id"] = row["strategy_uid"]
+        if activation and not activation_confirmed:
+            row = {
+                **row,
+                "status": "PENDING_USER_APPROVAL",
+                "state": "PENDING_USER_APPROVAL",
+                "active_strategy": False,
+                "pending_user_approval": True,
+                "eligible_for_optimizer": False,
+                "eligible_for_rebalance": False,
+                "nav_pnl_impact": "NONE_PENDING_USER_APPROVAL",
+            }
+        elif not confirmed:
+            row = {
+                **row,
+                "status": "NEEDS_USER_CONFIRMATION",
+                "state": "NEEDS_USER_CONFIRMATION",
+                "active_strategy": False,
+                "legacy_unconfirmed": True,
+            }
+        rows.append(row)
     candidate_id = candidate_id_for(run_id, variant_id) if run_id and variant_id else None
     selected = next((row for row in rows if row.get("candidate_id") == candidate_id), None) if candidate_id else (rows[-1] if rows else None)
     active = [row for row in rows if row.get("status") in {"ACTIVE_UNALLOCATED", "ACTIVE_PENDING_REBALANCE"} and _has_real_activation_consent(row.get("activation") or row)]

@@ -1,0 +1,673 @@
+{
+  "EXCLUDE_FROM_ACTIVE_UNIVERSE": false,
+  "SMOKE_ONLY": false,
+  "TEST_ARTIFACT": false,
+  "activation_confirmation": true,
+  "activation_confirmed_at": "2026-06-27T06:36:51+00:00",
+  "activation_source": "USER_UI",
+  "active_strategy": true,
+  "benchmark": "SPY",
+  "brokerage_execution": false,
+  "candidate_allowed": false,
+  "candidate_id": "SF_CAND_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1_ACDE308E01",
+  "confirmation_text": "I confirm adding this Strategy Factory result to Portfolio Candidates for simulated research monitoring. No live trading or brokerage execution.",
+  "created_at": "2026-06-26T21:36:50+00:00",
+  "current_weight": 0.0,
+  "display_id": "#000019",
+  "display_label": "#000019",
+  "eligible_for_optimizer": true,
+  "eligible_for_rebalance": true,
+  "evidence_metrics": {
+    "annual_return": 0.1716954696818307,
+    "evidence_score": 59.4198,
+    "max_drawdown": -0.25842056427756777,
+    "ml_summary": "Modify",
+    "sharpe": 0.90855170737167
+  },
+  "live_trading": false,
+  "nav_pnl_impact": "NONE_UNTIL_ACTIVATED_AND_REBALANCED",
+  "recommendation": "Watch",
+  "recommended_weight": "RECOMMENDATION_PENDING",
+  "run_id": "SF_RUN_20260626T135231Z_37A53397",
+  "schema_version": "strategy_factory_portfolio_candidate_v1",
+  "signal_formula": "Long equal-weight COPX/XME when both ETFs have positive 63d momentum and COPX outperforms SPY over 63d; flat otherwise.",
+  "simulated": true,
+  "source_run_id": "SF_RUN_20260626T135231Z_37A53397",
+  "source_variant": {
+    "artifact_paths": {
+      "variant_decision": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_decision.json",
+      "variant_evidence_report": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_evidence_report.md",
+      "variant_metrics": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_metrics.json",
+      "variant_ml_diagnostics": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_ml_diagnostics_run.json",
+      "variant_ranking": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\variant_ranking.json",
+      "variant_robustness": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_robustness_run.json",
+      "variant_spec": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\variant_spec.json"
+    },
+    "benchmark": "SPY",
+    "candidate_allowed": false,
+    "data_requirements": [
+      "COPX",
+      "XME",
+      "SPY",
+      "daily adjusted OHLCV"
+    ],
+    "decision": {
+      "candidate": false,
+      "decision": "Watch",
+      "evidence_flags": {
+        "max_drawdown": -0.25842056427756777,
+        "ml_supportive": true,
+        "proxy_only": true,
+        "robustness_overall": "WATCH",
+        "sharpe": 0.90855170737167
+      },
+      "generated_at": "2026-06-26T14:22:30Z",
+      "non_actions": [
+        "NO_LIVE_TRADING",
+        "NO_PAPER_LEDGER_MUTATION",
+        "NO_DEPLOY",
+        "NO_DASHBOARD_LAYOUT_CHANGE",
+        "NO_VARIANT_RANKING"
+      ],
+      "reason": "Pipeline completed, but proxy-only data and incomplete robustness/ML evidence do not support Candidate status.",
+      "recommendation": "Watch",
+      "schema_version": "strategy_factory_variant_decision_v1",
+      "source_run_id": "SF_RUN_20260626T135231Z_37A53397",
+      "status": "COMPLETED",
+      "variant_id": "COPPER_EQUITY_PROXY_TREND_COPX_XME_V1"
+    },
+    "decision_reason": "Pipeline completed, but proxy-only data and incomplete robustness/ML evidence do not support Candidate status.",
+    "features": [
+      "copx_momentum_63d",
+      "xme_momentum_63d",
+      "relative_strength_vs_spy",
+      "equity_beta_proxy"
+    ],
+    "final_recommendation": "Watch",
+    "metrics": {
+      "annual_return": 0.1716954696818307,
+      "average_daily_return": 0.0007050573614754607,
+      "benchmark": "SPY",
+      "benchmark_annual_return": 0.14375275133915433,
+      "cost_assumption_bps_per_side": 5.0,
+      "cost_drag": 0.008,
+      "date_range": {
+        "end": "2026-06-25",
+        "start": "2018-01-03"
+      },
+      "generated_at": "2026-06-26T14:22:30Z",
+      "lookbacks": {
+        "long": 63,
+        "short": 21
+      },
+      "max_drawdown": -0.25842056427756777,
+      "prototype_proxy_only": true,
+      "rows": 2130,
+      "schema_version": "strategy_factory_variant_metrics_v1",
+      "sharpe": 0.90855170737167,
+      "status": "COMPLETED",
+      "turnover": 16.0,
+      "universe": [
+        "COPX",
+        "XME"
+      ],
+      "volatility": 0.19555789026670453,
+      "win_rate": 0.21737089201877935
+    },
+    "ml": {
+      "artifacts": {
+        "daily_returns": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_daily_returns.csv",
+        "feature_importance_csv": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_feature_importance.csv",
+        "feature_importance_json": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_feature_importance.json",
+        "leakage_check": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_leakage_check.json",
+        "ml_diagnostics_run": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_ml_diagnostics_run.json",
+        "prediction_quality": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_prediction_quality.json",
+        "train_test_split": "D:\\Global_Ai\\release_global_ai_risk_manager_workstation\\output\\strategy_factory\\runs\\SF_RUN_20260626T135231Z_37A53397\\variants\\COPPER_EQUITY_PROXY_TREND_COPX_XME_V1\\evaluation\\variant_train_test_split.json"
+      },
+      "direction_quality": {
+        "actual_positive_rate": 0.25967741935483873,
+        "direction_hit_rate": 0.7580645161290323,
+        "probability_spearman_ic": 0.5196783059810769
+      },
+      "feature_importance": [
+        {
+          "coefficient": -0.0016797766915943,
+          "feature": "moving_average_trend_63d",
+          "importance": 0.3355892363884952,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": 0.0012062747297956042,
+          "feature": "momentum_63d",
+          "importance": 0.24099204225927884,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": 0.0009352810295750888,
+          "feature": "momentum_21d",
+          "importance": 0.18685236442104153,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": 0.0005989841016310552,
+          "feature": "realized_volatility_21d",
+          "importance": 0.11966627366666856,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": -0.00021909739698601765,
+          "feature": "benchmark_return",
+          "importance": 0.04377172782380935,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": -0.00020191436315428852,
+          "feature": "relative_strength_21d",
+          "importance": 0.040338866044453046,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        },
+        {
+          "coefficient": -0.0001641263009798759,
+          "feature": "drawdown",
+          "importance": 0.032789489396253375,
+          "model": "ridge_regression_numpy",
+          "status": "AVAILABLE"
+        }
+      ],
+      "feature_importance_available": true,
+      "features_used": [
+        "momentum_21d",
+        "momentum_63d",
+        "realized_volatility_21d",
+        "drawdown",
+        "moving_average_trend_63d",
+        "benchmark_return",
+        "relative_strength_21d"
+      ],
+      "generated_at": "2026-06-26T14:22:30Z",
+      "leakage_check": {
+        "chronological_split": true,
+        "feature_window_uses_only_current_and_prior_returns": true,
+        "generated_at": "2026-06-26T14:22:30Z",
+        "schema_version": "strategy_factory_leakage_check_v0",
+        "shuffle_used": false,
+        "status": "PASS",
+        "target_after_feature_date": true,
+        "target_definition": "next_period_net_return and next_period_direction",
+        "test_min_date": "2024-01-03",
+        "train_max_date": "2024-01-02"
+      },
+      "model": "ridge_regression_numpy",
+      "models": [
+        {
+          "model": "linear_regression_numpy",
+          "prediction_quality": {
+            "direction_hit_rate": 0.3774193548387097,
+            "mae": 0.00715092761001577,
+            "rmse": 0.0140951705794275,
+            "spearman_ic": 0.08245946871807112
+          },
+          "status": "COMPLETED",
+          "target": "next_period_net_return"
+        },
+        {
+          "model": "ridge_regression_numpy",
+          "prediction_quality": {
+            "direction_hit_rate": 0.3774193548387097,
+            "mae": 0.007150018326687704,
+            "rmse": 0.014094951100480884,
+            "spearman_ic": 0.08283386108678262
+          },
+          "status": "COMPLETED",
+          "target": "next_period_net_return"
+        },
+        {
+          "model": "logistic_regression_numpy",
+          "prediction_quality": {
+            "actual_positive_rate": 0.25967741935483873,
+            "direction_hit_rate": 0.7580645161290323,
+            "probability_spearman_ic": 0.5196783059810769
+          },
+          "status": "COMPLETED",
+          "target": "next_period_direction"
+        },
+        {
+          "model": "random_forest_regressor",
+          "reason": "sklearn unavailable: No module named 'sklearn'",
+          "status": "BLOCKED"
+        },
+        {
+          "model": "gradient_boosting_regressor",
+          "reason": "sklearn unavailable: No module named 'sklearn'",
+          "status": "BLOCKED"
+        }
+      ],
+      "prediction_quality": {
+        "direction_hit_rate": 0.3774193548387097,
+        "mae": 0.007150018326687704,
+        "rmse": 0.014094951100480884,
+        "spearman_ic": 0.08283386108678262
+      },
+      "recommendation": "Modify",
+      "sample_count": 2066,
+      "schema_version": "strategy_factory_ml_diagnostics_run_v0",
+      "status": "COMPLETED",
+      "target_definition": "next_period_net_return; direction model uses next_period_direction",
+      "test_count": 620,
+      "test_dates": {
+        "end": "2026-06-24",
+        "start": "2024-01-03"
+      },
+      "train_count": 1446,
+      "train_dates": {
+        "end": "2024-01-02",
+        "start": "2018-04-05"
+      }
+    },
+    "model_plan": {
+      "allowed_models": [
+        "linear_regression",
+        "ridge_regression",
+        "logistic_regression_direction"
+      ],
+      "blocked_models": [
+        {
+          "model": "random_forest_or_gradient_boosting",
+          "reason": "Gate 2 is variant generation only; nonlinear diagnostics require later test gate and package/sample validation."
+        }
+      ],
+      "split_method": "chronological_no_shuffle",
+      "status": "PLANNED_NOT_RUN_GATE2",
+      "target": "next-period return and next-period direction",
+      "variant_model_note": "Model plan should include benchmark-relative features versus SPY."
+    },
+    "ranking": {
+      "candidate_allowed": false,
+      "data_quality_score": 45.0,
+      "economic_logic_score": 58.0,
+      "evidence_score": 59.4198,
+      "final_recommendation": "Watch",
+      "ml_score": 99.8202,
+      "performance_score": 68.3914,
+      "rank": 1,
+      "reason": "proxy-only data prevents Candidate status; risk penalties are material.",
+      "risk_penalty": 55.0105,
+      "robustness_score": 87.0,
+      "source_evidence": {
+        "cost_sensitivity": "PASS",
+        "metrics_status": "COMPLETED",
+        "ml_hit_rate": 0.7580645161290323,
+        "ml_ic": 0.08283386108678262,
+        "ml_status": "COMPLETED",
+        "robustness_overall": "WATCH",
+        "robustness_status": "COMPLETED",
+        "stress_high_vol_sharpe": 0.8786182272535232
+      },
+      "source_metrics": {
+        "annual_return": 0.1716954696818307,
+        "benchmark_annual_return": 0.14375275133915433,
+        "max_drawdown": -0.25842056427756777,
+        "sharpe": 0.90855170737167
+      },
+      "variant_id": "COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+      "variant_name": "COPX/XME Copper Equity Proxy Trend"
+    },
+    "robustness": {
+      "benchmark_comparison": {
+        "benchmark": "SPY",
+        "benchmark_metrics": {
+          "annual_return": 0.14375275133915433,
+          "max_drawdown": -0.33717287366708537,
+          "rows": 2130,
+          "sharpe": 0.796299411135594,
+          "volatility": 0.19191168060395106
+        },
+        "status": "COMPLETED",
+        "strategy_metrics": {
+          "annual_return": 0.1716954696818307,
+          "average_daily_return": 0.0007050573614754607,
+          "benchmark": "SPY",
+          "benchmark_annual_return": 0.14375275133915433,
+          "cost_assumption_bps_per_side": 5.0,
+          "cost_drag": 0.008,
+          "date_range": {
+            "end": "2026-06-25",
+            "start": "2018-01-03"
+          },
+          "generated_at": "2026-06-26T14:22:30Z",
+          "lookbacks": {
+            "long": 63,
+            "short": 21
+          },
+          "max_drawdown": -0.25842056427756777,
+          "prototype_proxy_only": true,
+          "rows": 2130,
+          "schema_version": "strategy_factory_variant_metrics_v1",
+          "sharpe": 0.90855170737167,
+          "status": "COMPLETED",
+          "turnover": 16.0,
+          "universe": [
+            "COPX",
+            "XME"
+          ],
+          "volatility": 0.19555789026670453,
+          "win_rate": 0.21737089201877935
+        }
+      },
+      "cost_sensitivity": [
+        {
+          "cost_bps_per_side": 0.0,
+          "metrics": {
+            "annual_return": 0.17280236721597753,
+            "average_daily_return": 0.0007088132300200617,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 0.0,
+            "cost_drag": 0.0,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 63,
+              "short": 21
+            },
+            "max_drawdown": -0.25842056427756765,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.913352606694364,
+            "status": "COMPLETED",
+            "turnover": 16.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.1955662387733543,
+            "win_rate": 0.21737089201877935
+          },
+          "status": "COMPLETED"
+        },
+        {
+          "cost_bps_per_side": 5.0,
+          "metrics": {
+            "annual_return": 0.1716954696818307,
+            "average_daily_return": 0.0007050573614754607,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 5.0,
+            "cost_drag": 0.008,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 63,
+              "short": 21
+            },
+            "max_drawdown": -0.25842056427756777,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.90855170737167,
+            "status": "COMPLETED",
+            "turnover": 16.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.19555789026670453,
+            "win_rate": 0.21737089201877935
+          },
+          "status": "COMPLETED"
+        },
+        {
+          "cost_bps_per_side": 10.0,
+          "metrics": {
+            "annual_return": 0.1705890651644475,
+            "average_daily_return": 0.0007013014929308597,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 10.0,
+            "cost_drag": 0.016,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 63,
+              "short": 21
+            },
+            "max_drawdown": -0.2584205642775681,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.9037392995096373,
+            "status": "COMPLETED",
+            "turnover": 16.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.19555194325893324,
+            "win_rate": 0.21690140845070421
+          },
+          "status": "COMPLETED"
+        },
+        {
+          "cost_bps_per_side": 25.0,
+          "metrics": {
+            "annual_return": 0.16727280997630056,
+            "average_daily_return": 0.000690033887297057,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 25.0,
+            "cost_drag": 0.04,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 63,
+              "short": 21
+            },
+            "max_drawdown": -0.25842056427756754,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.8892347834874039,
+            "status": "COMPLETED",
+            "turnover": 16.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.19554851297753076,
+            "win_rate": 0.21690140845070421
+          },
+          "status": "COMPLETED"
+        }
+      ],
+      "generated_at": "2026-06-26T14:22:30Z",
+      "lookback_sensitivity": [
+        {
+          "long_lookback": 63,
+          "metrics": {
+            "annual_return": 0.1716954696818307,
+            "average_daily_return": 0.0007050573614754607,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 5.0,
+            "cost_drag": 0.008,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 63,
+              "short": 21
+            },
+            "max_drawdown": -0.25842056427756777,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.90855170737167,
+            "status": "COMPLETED",
+            "turnover": 16.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.19555789026670453,
+            "win_rate": 0.21737089201877935
+          },
+          "short_lookback": 21,
+          "status": "COMPLETED"
+        },
+        {
+          "long_lookback": 126,
+          "metrics": {
+            "annual_return": 0.09592319451130171,
+            "average_daily_return": 0.0004573610218895,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 5.0,
+            "cost_drag": 0.0055,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 126,
+              "short": 21
+            },
+            "max_drawdown": -0.46008601240308444,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.531245230395723,
+            "status": "COMPLETED",
+            "turnover": 11.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.21695249372931014,
+            "win_rate": 0.20704225352112676
+          },
+          "short_lookback": 21,
+          "status": "COMPLETED"
+        },
+        {
+          "long_lookback": 126,
+          "metrics": {
+            "annual_return": 0.09592319451130171,
+            "average_daily_return": 0.0004573610218895,
+            "benchmark": "SPY",
+            "benchmark_annual_return": 0.14375275133915433,
+            "cost_assumption_bps_per_side": 5.0,
+            "cost_drag": 0.0055,
+            "date_range": {
+              "end": "2026-06-25",
+              "start": "2018-01-03"
+            },
+            "generated_at": "2026-06-26T14:22:30Z",
+            "lookbacks": {
+              "long": 126,
+              "short": 63
+            },
+            "max_drawdown": -0.46008601240308444,
+            "prototype_proxy_only": true,
+            "rows": 2130,
+            "schema_version": "strategy_factory_variant_metrics_v1",
+            "sharpe": 0.531245230395723,
+            "status": "COMPLETED",
+            "turnover": 11.0,
+            "universe": [
+              "COPX",
+              "XME"
+            ],
+            "volatility": 0.21695249372931014,
+            "win_rate": 0.20704225352112676
+          },
+          "short_lookback": 63,
+          "status": "COMPLETED"
+        }
+      ],
+      "schema_version": "strategy_factory_variant_robustness_run_v1",
+      "source_run_id": "SF_RUN_20260626T135231Z_37A53397",
+      "status": "COMPLETED",
+      "stress_periods": {
+        "drawdown_window": {
+          "annual_return": -0.25866604671762305,
+          "max_drawdown": -0.25842056427756754,
+          "rows": 59,
+          "sharpe": -0.5489289808716651,
+          "volatility": 0.3987578409664611
+        },
+        "high_vol_period": {
+          "annual_return": 0.261946389788565,
+          "max_drawdown": -0.39512477927446454,
+          "rows": 528,
+          "sharpe": 0.8786182272535232,
+          "volatility": 0.3255835728293707
+        },
+        "recent_period": {
+          "annual_return": 0.8670151518673868,
+          "max_drawdown": -0.23179985118660373,
+          "rows": 252,
+          "sharpe": 2.071764165756434,
+          "volatility": 0.32774673330024684
+        },
+        "worst_drawdown_date": "2022-05-12"
+      },
+      "summary": {
+        "benchmark_status": "PASS",
+        "cost_sensitivity_status": "PASS",
+        "lookback_sensitivity_status": "PASS",
+        "overall_status": "WATCH"
+      },
+      "variant_id": "COPPER_EQUITY_PROXY_TREND_COPX_XME_V1"
+    },
+    "run_id": "SF_RUN_20260626T135231Z_37A53397",
+    "signal_formula": "Long equal-weight COPX/XME when both ETFs have positive 63d momentum and COPX outperforms SPY over 63d; flat otherwise.",
+    "source_material_ids": [
+      "MAT_CONTROLLED_COPPER_STRATEGY_MATERIAL_001_C39E867D88"
+    ],
+    "synthetic_admission_test_only": false,
+    "thesis": "Copper-linked miners and metals equities may express copper trend with equity-market sensitivity.",
+    "universe_or_proxy": [
+      "COPX",
+      "XME"
+    ],
+    "variant_id": "COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+    "variant_name": "COPX/XME Copper Equity Proxy Trend"
+  },
+  "state": "ACTIVE_UNALLOCATED",
+  "status": "ACTIVE_UNALLOCATED",
+  "strategy_id": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+  "strategy_name": "COPX/XME Copper Equity Proxy Trend",
+  "strategy_uid": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+  "target_weight": 0.0,
+  "thesis": "Copper-linked miners and metals equities may express copper trend with equity-market sensitivity.",
+  "universe_or_proxy": [
+    "COPX",
+    "XME"
+  ],
+  "updated_at": "2026-06-27T06:36:51+00:00",
+  "user_confirmed": true,
+  "variant_id": "COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+  "variant_name": "COPX/XME Copper Equity Proxy Trend"
+}

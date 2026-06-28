@@ -276,6 +276,64 @@ def test_operational_snapshot_endpoint_includes_intraday_runtime_fields():
         server.server_close()
 
 
+def test_snapshot_summary_endpoint_is_lightweight_aligned_and_read_only(tmp_path):
+    root = _copy_canonical_root(tmp_path)
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    rebalance_dir = root / "data" / "paper_rebalance"
+    watched = [
+        rebalance_dir / "approved_rebalance_plans.json",
+        rebalance_dir / "applied_rebalance_events.json",
+        rebalance_dir / "current_paper_target_weights.json",
+    ]
+    before = {path.name: path.read_bytes() if path.exists() else b"MISSING" for path in watched}
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        summary_status, summary_headers, summary_body = _fetch(f"http://127.0.0.1:{port}/api/snapshot-summary")
+        snapshot_status, _, snapshot_body = _fetch(f"http://127.0.0.1:{port}/api/operational-snapshot")
+        summary = json.loads(summary_body.decode("utf-8"))
+        snapshot = json.loads(snapshot_body.decode("utf-8"))
+        after = {path.name: path.read_bytes() if path.exists() else b"MISSING" for path in watched}
+
+        assert summary_status == 200
+        assert snapshot_status == 200
+        assert int(summary_headers["content-length"]) == len(summary_body)
+        assert len(summary_body) < 500_000
+        assert len(summary_body) < len(snapshot_body) * 0.1
+        assert summary["detail"]["large_arrays_included"] is False
+        assert "strategies" not in summary
+        assert "holdings" not in summary
+        assert "trades" not in summary
+        assert summary["counts"]["ordinary_active_count"] == snapshot["strategy_entity_inventory"]["ordinary_active_count"]
+        assert summary["counts"]["combined_active_count"] == snapshot["strategy_entity_inventory"]["combined_active_count"]
+        assert summary["counts"]["top_level_active_count"] == snapshot["strategy_entity_inventory"]["top_level_active_count"]
+        assert summary["paper_rebalance"]["approved_plan_status"] == (
+            snapshot["paper_rebalance"]["approved_rebalance"]["latest_plan"] or {}
+        ).get("status")
+        assert summary["operational_automation"]["paper_rebalance_apply"]["mutation_allowed_from_snapshot"] is False
+        assert before == after
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_dashboard_regular_polling_uses_snapshot_summary_endpoint():
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "async function fetchSummaryPayload()" in source
+    assert "/api/snapshot-summary?ts=" in source
+    assert "setInterval(()=>refreshOperational(false),POLL_INTERVAL_MS)" in source
+    assert 'if(manual){const r=await fetch(`/api/refresh-data?ts=${Date.now()}`' in source
+    assert 'const summary=await loadSummary();state.refreshState=summary.refresh_status' in source
+
+
 def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_bytes(tmp_path):
     root = _copy_canonical_root(tmp_path)
     paper_path = root / "dashboard/data/performance/paper_portfolio_daily.json"

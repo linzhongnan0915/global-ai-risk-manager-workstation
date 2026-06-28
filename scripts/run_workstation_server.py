@@ -56,6 +56,7 @@ from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.reporting.operational_snapshot import (
+    build_snapshot_summary,
     load_operational_snapshot_for_response,
     load_or_build_operational_snapshot,
     official_promotion_readiness,
@@ -180,6 +181,17 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 refresh_lifecycle=refresh_lifecycle,
             )
             cls.operational_snapshot_bytes = _json_bytes(snapshot)
+
+    @classmethod
+    def snapshot_summary_payload(cls, root: Path) -> dict:
+        with cls.operational_snapshot_cache_lock:
+            if cls.operational_snapshot_bytes:
+                return build_snapshot_summary(json.loads(cls.operational_snapshot_bytes.decode("utf-8")))
+        snapshot = load_operational_snapshot_for_response(
+            root,
+            scheduler_enabled=bool(getattr(cls, "intraday_scheduler_enabled", False)),
+        )
+        return build_snapshot_summary(snapshot)
 
     @classmethod
     def _run_bootstrap_refresh(cls, root: Path, interval: int) -> None:
@@ -598,6 +610,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 )
             except Exception as exc:
                 self._send_safe_error(exc, context="strategy-factory-report")
+            return
+        if parsed.path in {"/api/snapshot-summary", "/api/snapshot-summary/"}:
+            try:
+                self._send_json(self.snapshot_summary_payload(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="snapshot-summary")
             return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:

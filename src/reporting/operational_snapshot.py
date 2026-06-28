@@ -2788,6 +2788,124 @@ def load_operational_snapshot_for_response(
     )
 
 
+def build_snapshot_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Return the lightweight dashboard polling contract derived from backend truth."""
+    inventory = snapshot.get("strategy_entity_inventory") or {}
+    capital = snapshot.get("capital_reconciliation") or {}
+    portfolio = snapshot.get("portfolio_summary") or {}
+    session = snapshot.get("session_state") or {}
+    intraday = snapshot.get("intraday_estimate") or {}
+    paper = snapshot.get("paper_rebalance") or {}
+    approved = (paper.get("approved_rebalance") or {})
+    latest_plan = approved.get("latest_plan") or {}
+    monthly = (paper.get("monthly_proposal") or {}).get("latest_proposal") or {}
+    review = (paper.get("recommendation_review") or {}).get("latest_draft") or {}
+    automation = (snapshot.get("operational_automation") or {}).get("paper_rebalance_apply") or {}
+    applied_events = approved.get("applied_events") or []
+    costs = paper.get("costs") or []
+    current_target = paper.get("current_paper_target")
+    return {
+        "schema_version": "snapshot_summary_v1",
+        "ok": True,
+        "service": "risk_manager_workstation",
+        "snapshot_version": snapshot.get("snapshot_version"),
+        "snapshot_id": snapshot.get("snapshot_id"),
+        "generated_at": snapshot.get("generated_at"),
+        "refresh_status": snapshot.get("refresh_status"),
+        "data_freshness": snapshot.get("data_freshness"),
+        "market_session_status": snapshot.get("market_session_status"),
+        "session_state": session,
+        "next_refresh": snapshot.get("next_refresh"),
+        "last_successful_refresh": snapshot.get("last_successful_refresh"),
+        "intraday_runtime_status": snapshot.get("intraday_runtime_status"),
+        "intraday_refresh_status": snapshot.get("intraday_refresh_status"),
+        "intraday_refresh_message": snapshot.get("intraday_refresh_message"),
+        "intraday_scheduler_enabled": snapshot.get("intraday_scheduler_enabled"),
+        "intraday_refresh_cadence_minutes": snapshot.get("intraday_refresh_cadence_minutes"),
+        "intraday_estimate": {
+            "estimated_nav": intraday.get("estimated_nav"),
+            "estimated_pnl": intraday.get("estimated_pnl"),
+            "market_data_as_of": intraday.get("market_data_as_of"),
+            "covered_tickers": intraday.get("covered_tickers"),
+            "total_tickers": intraday.get("total_tickers"),
+            "written_to_official_ledger": intraday.get("written_to_official_ledger"),
+        },
+        "portfolio_summary": {
+            "nav": portfolio.get("nav"),
+            "as_of_date": portfolio.get("as_of_date"),
+            "official_daily_nav": portfolio.get("official_daily_nav"),
+            "official_daily_pnl": portfolio.get("official_daily_pnl"),
+            "intraday_estimated_nav": portfolio.get("intraday_estimated_nav"),
+            "intraday_estimated_pnl": portfolio.get("intraday_estimated_pnl"),
+            "gross_exposure": portfolio.get("gross_exposure"),
+            "net_exposure": portfolio.get("net_exposure"),
+        },
+        "counts": {
+            "ordinary_active_count": inventory.get("ordinary_active_count"),
+            "combined_active_count": inventory.get("combined_active_count"),
+            "top_level_active_count": inventory.get("top_level_active_count"),
+            "active_unallocated_count": inventory.get("active_unallocated_count"),
+            "pending_approval_count": inventory.get("pending_approval_count"),
+            "total_registry_entities": inventory.get("total_registry_entities"),
+        },
+        "capital_reconciliation": {
+            "top_level_sleeve_denominator": capital.get("top_level_sleeve_denominator"),
+            "top_level_sleeve_weight": capital.get("top_level_sleeve_weight"),
+            "starting_capital_per_sleeve": capital.get("starting_capital_per_sleeve"),
+        },
+        "paper_rebalance": {
+            "paper_only": paper.get("paper_only"),
+            "execution_mode": paper.get("execution_mode"),
+            "live_brokerage_fill": paper.get("live_brokerage_fill"),
+            "official_ledger_mutation": paper.get("official_ledger_mutation"),
+            "brokerage_execution": paper.get("brokerage_execution"),
+            "monthly_proposal_status": monthly.get("status"),
+            "monthly_proposal_row_count": len(monthly.get("rows") or []),
+            "recommendation_review_status": review.get("status") or review.get("review_status"),
+            "recommendation_review_row_count": len(review.get("line_items") or []),
+            "approved_plan_status": latest_plan.get("status"),
+            "approved_plan_effective_date": latest_plan.get("effective_date"),
+            "approved_plan_row_count": len(latest_plan.get("rows") or []),
+            "applied_event_count": len(applied_events),
+            "transaction_cost_record_count": len(costs),
+            "current_paper_target_exists": bool(current_target),
+            "current_paper_target_apply_key": (current_target or {}).get("apply_key") if isinstance(current_target, dict) else None,
+            "latest_applied_event_apply_key": (applied_events[-1] or {}).get("apply_key") if applied_events else None,
+        },
+        "operational_automation": {
+            "paper_rebalance_apply": automation,
+        },
+        "safety": {
+            "paper_shadow_only": True,
+            "live_orders_created": False,
+            "brokerage_orders_created": False,
+            "live_brokerage_execution": False,
+            "live_fill": "No",
+        },
+        "detail": {
+            "full_snapshot_endpoint": "/api/operational-snapshot",
+            "detail_state": "SUMMARY_ONLY",
+            "large_arrays_included": False,
+        },
+    }
+
+
+def load_snapshot_summary_for_response(
+    root: Path,
+    *,
+    scheduler_enabled: bool = False,
+    now: datetime | None = None,
+    refresh_lifecycle: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    snapshot = load_operational_snapshot_for_response(
+        root,
+        scheduler_enabled=scheduler_enabled,
+        now=now,
+        refresh_lifecycle=refresh_lifecycle,
+    )
+    return build_snapshot_summary(snapshot)
+
+
 def read_operational_intraday_overlay(root: Path) -> dict[str, Any] | None:
     """Public test/audit helper for the runtime delayed estimate overlay."""
     return _read_intraday_overlay(root)

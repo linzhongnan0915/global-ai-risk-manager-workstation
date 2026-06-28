@@ -4,6 +4,7 @@ import hashlib
 import json
 import socket
 import threading
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
@@ -14,6 +15,8 @@ from src.automation import (
     build_allocation_recommendation_artifact,
     build_automation_intelligence_manifest,
     build_daily_recommendation_artifact,
+    build_review_draft_eligibility,
+    create_review_draft_from_allocation_recommendation,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
     write_allocation_recommendation_artifact,
@@ -132,6 +135,81 @@ def _sample_allocation_payload(weights: tuple[float | None, float | None] = (0.6
             },
         ],
     }
+
+
+def _write_allocation_artifact(root: Path, *, sums: bool | None = True, change: bool = True, missing: bool = False) -> Path:
+    path = root / "data/automation/allocation_recommendations/2026-06-28.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    artifact = {
+        "ok": True,
+        "source": "allocation_recommendation_artifact_v0",
+        "generated_at": "2026-06-28T00:00:00+00:00",
+        "as_of_date": "2026-06-28",
+        "paper_shadow_only": True,
+        "financial_state_mutated": False,
+        "optimizer_used": False,
+        "rebalance_plan_created": False,
+        "rebalance_plan_approved": False,
+        "summary": {
+            "strategy_count": 2,
+            "no_change_count": 0,
+            "review_required_count": 0,
+            "increase_candidate_count": 1 if change else 0,
+            "reduce_candidate_count": 0,
+            "missing_ml_evidence_count": 1 if missing else 0,
+            "missing_attribution_evidence_count": 1 if missing else 0,
+            "allocation_change_recommended": change,
+            "review_draft_generation_allowed": change and sums is True and not missing,
+        },
+        "allocation_integrity": {
+            "target_weight_sum": 1.0 if sums is True else (0.8 if sums is False else None),
+            "weight_sum_target": 1.0,
+            "weight_sum_tolerance": 0.000001,
+            "sums_to_100pct": sums,
+            "residual_weight": 0.0 if sums is True else (0.2 if sums is False else None),
+            "denominator_source": "test_only_backend_fixture",
+            "included_strategy_count": 2,
+            "excluded_strategy_count": 0,
+            "warnings": [] if sums is True else ["test-only incomplete allocation"],
+        },
+        "recommendations": [
+            {
+                "strategy_uid": "test-review-a",
+                "display_name": "Test Review A",
+                "current_weight": 0.4,
+                "daily_action": "INCREASE",
+                "allocation_action": "INCREASE_CANDIDATE" if change else "NO_CHANGE",
+                "allocation_change_recommended": change,
+                "included_in_allocation_denominator": True,
+                "proposed_weight": 0.5 if change else 0.4,
+                "weight_delta": 0.1 if change else 0.0,
+                "confidence": "LOW",
+                "reason": "Test-only eligible allocation row.",
+                "blocking_evidence": ["Missing ML Evidence"] if missing else [],
+                "risk_warning": "Missing ML validation evidence" if missing else None,
+                "source_artifacts": [{"kind": "test_fixture", "path": "test-only", "status": "TEST_ONLY"}],
+            },
+            {
+                "strategy_uid": "test-review-b",
+                "display_name": "Test Review B",
+                "current_weight": 0.6,
+                "daily_action": "REDUCE",
+                "allocation_action": "REDUCE_CANDIDATE" if change else "NO_CHANGE",
+                "allocation_change_recommended": change,
+                "included_in_allocation_denominator": True,
+                "proposed_weight": 0.5 if sums is True else 0.3,
+                "weight_delta": -0.1 if change else 0.0,
+                "confidence": "LOW",
+                "reason": "Test-only eligible allocation row.",
+                "blocking_evidence": ["Missing Attribution Evidence"] if missing else [],
+                "risk_warning": "Missing attribution/decomposition evidence" if missing else None,
+                "source_artifacts": [],
+            },
+        ],
+        "warnings": [],
+    }
+    path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return path
 
 
 def test_manifest_builder_returns_valid_schema_with_missing_alpha_files(tmp_path: Path, monkeypatch) -> None:
@@ -541,3 +619,179 @@ def test_dashboard_allocation_recommendation_renders_backend_rows_only() -> None
     assert "target_weight_sum:1" not in source
     assert "frontend_allocation_recommendations" not in source
     assert "allocation_recommendation_status:\"AVAILABLE\"" not in source
+
+
+def test_review_draft_eligibility_blocks_when_allocation_change_false(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    _write_allocation_artifact(root, change=False)
+
+    payload = build_review_draft_eligibility(root)
+    eligibility = payload["eligibility"]
+
+    assert payload["source"] == "review_draft_eligibility_v0"
+    assert payload["paper_shadow_only"] is True
+    assert payload["financial_state_mutated"] is False
+    assert eligibility["review_draft_generation_allowed"] is False
+    assert "ALLOCATION_CHANGE_NOT_RECOMMENDED" in eligibility["blocking_conditions"]
+    assert eligibility["required_conditions"]["allocation_change_recommended"] is False
+
+
+def test_review_draft_eligibility_blocks_when_allocation_does_not_sum_to_100pct(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    _write_allocation_artifact(root, sums=False)
+
+    payload = build_review_draft_eligibility(root)
+    eligibility = payload["eligibility"]
+
+    assert eligibility["review_draft_generation_allowed"] is False
+    assert "ALLOCATION_WEIGHTS_DO_NOT_PROVE_100PCT" in eligibility["blocking_conditions"]
+    assert eligibility["required_conditions"]["sums_to_100pct"] is False
+
+
+def test_review_draft_eligibility_blocks_when_allocation_sum_is_unknown(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    _write_allocation_artifact(root, sums=None)
+
+    payload = build_review_draft_eligibility(root)
+
+    assert payload["eligibility"]["review_draft_generation_allowed"] is False
+    assert payload["eligibility"]["required_conditions"]["sums_to_100pct"] is None
+    assert "ALLOCATION_WEIGHTS_DO_NOT_PROVE_100PCT" in payload["eligibility"]["blocking_conditions"]
+
+
+def test_review_draft_eligibility_blocks_pending_approved_plan_conflict(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    _write_allocation_artifact(root)
+    approved = root / "data/paper_rebalance/approved_rebalance_plans.json"
+    approved.parent.mkdir(parents=True, exist_ok=True)
+    approved.write_text(
+        json.dumps(
+            {
+                "schema_version": "approved_rebalance_plan_v1",
+                "plans": [
+                    {
+                        "plan_id": "test-plan",
+                        "status": "APPROVED_WAITING_EFFECTIVE_DATE",
+                        "effective_date": "2999-01-01",
+                        "rows": [],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_review_draft_eligibility(root)
+
+    assert payload["eligibility"]["review_draft_generation_allowed"] is False
+    assert "APPROVED_PLAN_PENDING_EFFECTIVE_DATE" in payload["eligibility"]["blocking_conditions"]
+    assert payload["eligibility"]["required_conditions"]["no_existing_pending_approved_plan_conflict"] is False
+    assert payload["rebalance_context"]["approved_plan_status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+
+
+def test_review_draft_eligibility_get_endpoint_is_read_only(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    _write_allocation_artifact(root, change=False)
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    before = _hashes(root)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/review-draft-eligibility/latest")
+        after = _hashes(root)
+        assert status == 200
+        assert payload["ok"] is True
+        assert payload["review_draft_eligibility"]["eligibility"]["review_draft_generation_allowed"] is False
+        assert before == after
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_post_review_draft_from_allocation_creates_no_draft_when_blocked(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    _write_allocation_artifact(root, change=False)
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    before = _hashes(root)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        try:
+            _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/review-draft/from-allocation-recommendation")
+            raise AssertionError("blocked POST should return HTTP 409")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 409
+            payload = json.loads(exc.read().decode("utf-8"))
+        after = _hashes(root)
+        assert payload["status"] == "BLOCKED"
+        assert payload["review_draft_created"] is False
+        assert before == after
+        assert not (root / "data/paper_rebalance/recommendation_review_drafts.json").exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_review_draft_from_allocation_helper_returns_blocked_without_write(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    _write_allocation_artifact(root, change=False)
+
+    result = create_review_draft_from_allocation_recommendation(root)
+
+    assert result["status"] == "BLOCKED"
+    assert result["review_draft_created"] is False
+    assert not (root / "data/paper_rebalance/recommendation_review_drafts.json").exists()
+
+
+def test_manifest_reads_review_draft_eligibility_status(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    _write_allocation_artifact(root, change=False)
+
+    manifest = build_automation_intelligence_manifest(root)
+    compact = load_snapshot_summary_for_response(root)["automation_intelligence"]
+
+    assert manifest["review_draft_eligibility"]["status"] == "BLOCKED"
+    assert manifest["review_draft_eligibility"]["review_draft_generation_allowed"] is False
+    assert "ALLOCATION_CHANGE_NOT_RECOMMENDED" in manifest["review_draft_eligibility"]["blocking_conditions"]
+    assert compact["review_draft_eligibility_status"] == "BLOCKED"
+    assert compact["review_draft_generation_allowed"] is False
+
+
+def test_dashboard_review_draft_eligibility_renders_backend_fields_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Review Draft Eligibility" in source
+    assert "review_draft_eligibility_status" in source
+    assert "review_draft_blocking_conditions" in source
+    assert "review_draft_current_approved_plan_status" in source
+    assert "review_draft_effective_date" in source
+    assert "frontend_review_draft_eligibility" not in source
+    assert "review_draft_eligibility_status:\"AVAILABLE\"" not in source
+
+
+def test_review_draft_eligibility_production_logic_has_no_hardcoded_strategy_literals() -> None:
+    source = "\n".join(
+        [
+            (ROOT / "src/automation/review_draft_eligibility.py").read_text(encoding="utf-8"),
+            (ROOT / "src/automation/automation_intelligence_manifest.py").read_text(encoding="utf-8"),
+        ]
+    )
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    assert not any(token in source for token in forbidden)

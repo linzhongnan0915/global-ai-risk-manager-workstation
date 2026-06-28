@@ -15,6 +15,7 @@ from typing import Any
 
 from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.review_draft_eligibility import build_review_draft_eligibility
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.strategy_intelligence import build_strategy_intelligence_payload
 
@@ -207,6 +208,35 @@ def _allocation_recommendation_preview(rows: list[dict[str, Any]]) -> list[dict[
     return preview
 
 
+def _review_draft_eligibility(root: Path) -> dict[str, Any]:
+    payload = build_review_draft_eligibility(root)
+    eligibility = payload.get("eligibility") or {}
+    required = eligibility.get("required_conditions") or {}
+    allowed = eligibility.get("review_draft_generation_allowed")
+    blocking = eligibility.get("blocking_conditions") if isinstance(eligibility.get("blocking_conditions"), list) else []
+    if required.get("allocation_artifact_available") is False:
+        status = "MISSING_ARTIFACT"
+    elif allowed is True:
+        status = "AVAILABLE"
+    elif "MISSING_ML_OR_ATTRIBUTION_EVIDENCE" in blocking:
+        status = "REVIEW_REQUIRED"
+    else:
+        status = "BLOCKED"
+    context = payload.get("rebalance_context") or {}
+    return {
+        "status": status,
+        "review_draft_generation_allowed": allowed,
+        "reason": eligibility.get("reason"),
+        "blocking_conditions": blocking,
+        "latest_allocation_artifact": payload.get("latest_allocation_artifact"),
+        "required_conditions": required,
+        "rebalance_context": context,
+        "current_approved_plan_status": context.get("approved_plan_status"),
+        "effective_date": context.get("effective_date"),
+        "warnings": payload.get("warnings") if isinstance(payload.get("warnings"), list) else [],
+    }
+
+
 def _apply_due_status(latest_plan: dict[str, Any], applied_events: list[dict[str, Any]]) -> tuple[str, bool, str | None]:
     if not latest_plan:
         return "NOT_AVAILABLE", False, None
@@ -354,6 +384,7 @@ def _strategy_intelligence(root: Path) -> dict[str, Any]:
 def _operator_summary(
     daily: dict[str, Any],
     allocation: dict[str, Any],
+    review_eligibility: dict[str, Any],
     rebalance: dict[str, Any],
     strategy_factory: dict[str, Any],
     ml: dict[str, Any],
@@ -369,6 +400,8 @@ def _operator_summary(
         review_items.append("Allocation recommendation artifact has not been generated.")
     if allocation["status"] == "REVIEW_REQUIRED":
         review_items.append("Allocation recommendation artifact is review-required or recommends no allocation change.")
+    if review_eligibility["status"] in {"BLOCKED", "REVIEW_REQUIRED", "MISSING_ARTIFACT"}:
+        review_items.append("Review draft eligibility is blocked or requires review.")
     if rebalance["apply_due_status"] == "DUE_NOT_APPLIED":
         review_items.append("Approved paper rebalance is due but not applied.")
     if strategy_factory["candidate_registry_status"] != "AVAILABLE":
@@ -398,12 +431,13 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
     daily = _daily_recommendation(root_path)
     allocation = _allocation_recommendation(root_path)
+    review_eligibility = _review_draft_eligibility(root_path)
     rebalance = _rebalance(root_path)
     strategy = _strategy_factory(alpha)
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily, allocation, rebalance, strategy, ml, decomposition)
+    operator = _operator_summary(daily, allocation, review_eligibility, rebalance, strategy, ml, decomposition)
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -414,6 +448,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "alpha_research_root": str(alpha),
         "daily_recommendation": daily,
         "allocation_recommendation": allocation,
+        "review_draft_eligibility": review_eligibility,
         "rebalance": rebalance,
         "strategy_factory": strategy,
         "ml_intelligence": ml,
@@ -436,6 +471,7 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     operator = manifest.get("operator_summary") or {}
     daily = manifest.get("daily_recommendation") or {}
     allocation = manifest.get("allocation_recommendation") or {}
+    review_eligibility = manifest.get("review_draft_eligibility") or {}
     rebalance = manifest.get("rebalance") or {}
     strategy = manifest.get("strategy_factory") or {}
     ml = manifest.get("ml_intelligence") or {}
@@ -472,6 +508,13 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "allocation_recommendation_reason": allocation.get("reason"),
         "allocation_recommendation_preview": allocation.get("preview") or [],
         "allocation_integrity": allocation.get("allocation_integrity"),
+        "review_draft_eligibility_status": review_eligibility.get("status") or "NOT_WIRED",
+        "review_draft_generation_allowed": review_eligibility.get("review_draft_generation_allowed"),
+        "review_draft_eligibility_reason": review_eligibility.get("reason"),
+        "review_draft_blocking_conditions": review_eligibility.get("blocking_conditions") or [],
+        "review_draft_latest_allocation_artifact": review_eligibility.get("latest_allocation_artifact"),
+        "review_draft_current_approved_plan_status": review_eligibility.get("current_approved_plan_status"),
+        "review_draft_effective_date": review_eligibility.get("effective_date"),
         "rebalance_status": rebalance.get("apply_due_status") or rebalance.get("approved_plan_status") or "NOT_AVAILABLE",
         "strategy_factory_status": strategy.get("status") or "NOT_AVAILABLE",
         "ml_intelligence_status": ml.get("status") or "NOT_AVAILABLE",

@@ -10,6 +10,8 @@ __all__ = [
     "build_allocation_recommendation_artifact",
     "build_daily_recommendation_artifact",
     "compact_automation_intelligence_summary",
+    "build_review_draft_eligibility",
+    "create_review_draft_from_allocation_recommendation",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
     "write_allocation_recommendation_artifact",
@@ -27,6 +29,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "build_automation_intelligence_manifest": build_automation_intelligence_manifest,
             "compact_automation_intelligence_summary": compact_automation_intelligence_summary,
+        }
+        return exports[name]
+    if name in {
+        "build_review_draft_eligibility",
+        "create_review_draft_from_allocation_recommendation",
+    }:
+        from src.automation.review_draft_eligibility import (
+            build_review_draft_eligibility,
+            create_review_draft_from_allocation_recommendation,
+        )
+
+        exports = {
+            "build_review_draft_eligibility": build_review_draft_eligibility,
+            "create_review_draft_from_allocation_recommendation": create_review_draft_from_allocation_recommendation,
         }
         return exports[name]
     if name in {

@@ -24,6 +24,8 @@ from scripts.validate_deployment_artifact import DeploymentArtifactError, valida
 from src.allocation.rebalance_simulation import simulate_rebalance
 from src.automation import (
     build_automation_intelligence_manifest,
+    build_review_draft_eligibility,
+    create_review_draft_from_allocation_recommendation,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
     write_allocation_recommendation_artifact,
@@ -653,6 +655,23 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="allocation-recommendations-latest")
             return
+        if parsed.path in {
+            "/api/automation-intelligence/review-draft-eligibility/latest",
+            "/api/automation-intelligence/review-draft-eligibility/latest/",
+        }:
+            try:
+                self._send_json(
+                    {
+                        "ok": True,
+                        "status": "AVAILABLE",
+                        "review_draft_eligibility": build_review_draft_eligibility(self.server_root),
+                        "paper_shadow_only": True,
+                        "financial_state_mutated": False,
+                    }
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="review-draft-eligibility-latest")
+            return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
                 refresh_lifecycle = WorkstationHandler.maybe_start_intraday_bootstrap(self.server_root)
@@ -808,6 +827,18 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(write_allocation_recommendation_artifact(self.server_root), status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="allocation-recommendations-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/review-draft/from-allocation-recommendation",
+            "/api/automation-intelligence/review-draft/from-allocation-recommendation/",
+        }:
+            try:
+                result = create_review_draft_from_allocation_recommendation(self.server_root)
+                if result.get("review_draft_created"):
+                    self.warm_operational_snapshot_cache(self.server_root)
+                self._send_json(result, status=201 if result.get("review_draft_created") else 409)
+            except Exception as exc:
+                self._send_safe_error(exc, context="review-draft-from-allocation-recommendation")
             return
         if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
             try:

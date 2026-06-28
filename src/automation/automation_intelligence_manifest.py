@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.strategy_intelligence import build_strategy_intelligence_payload
@@ -129,6 +130,78 @@ def _daily_recommendation_preview(rows: list[dict[str, Any]]) -> list[dict[str, 
                 "reason": row.get("reason"),
                 "missing_evidence_label": row.get("risk_warning"),
                 "evidence_strength": row.get("evidence_strength"),
+            }
+        )
+    return preview
+
+
+def _allocation_recommendation(root: Path) -> dict[str, Any]:
+    latest = read_latest_allocation_recommendation_artifact(root)
+    if not latest.get("ok"):
+        return {
+            "status": "MISSING_ARTIFACT",
+            "artifact_path": None,
+            "allocation_change_recommended": None,
+            "no_change_count": None,
+            "review_required_count": None,
+            "increase_candidate_count": None,
+            "reduce_candidate_count": None,
+            "allocation_integrity": None,
+            "warnings": [latest.get("message") or "Allocation recommendation artifact has not been generated."],
+            "reason": "Generate the allocation recommendation artifact with the explicit POST endpoint.",
+            "preview": [],
+        }
+    payload = latest.get("artifact") or {}
+    summary = payload.get("summary") if isinstance(payload, dict) else {}
+    rows = payload.get("recommendations") if isinstance(payload, dict) else []
+    integrity = payload.get("allocation_integrity") if isinstance(payload, dict) else {}
+    review_count = int((summary or {}).get("review_required_count") or 0)
+    status = "AVAILABLE"
+    if review_count or not bool((summary or {}).get("allocation_change_recommended")):
+        status = "REVIEW_REQUIRED"
+    return {
+        "status": status,
+        "artifact_path": latest.get("artifact_path"),
+        "allocation_change_recommended": (summary or {}).get("allocation_change_recommended"),
+        "no_change_count": (summary or {}).get("no_change_count"),
+        "review_required_count": (summary or {}).get("review_required_count"),
+        "increase_candidate_count": (summary or {}).get("increase_candidate_count"),
+        "reduce_candidate_count": (summary or {}).get("reduce_candidate_count"),
+        "allocation_integrity": integrity,
+        "warnings": payload.get("warnings") if isinstance(payload.get("warnings"), list) else [],
+        "reason": _allocation_recommendation_reason(status, summary or {}, integrity or {}, payload.get("warnings") or []),
+        "preview": _allocation_recommendation_preview(rows if isinstance(rows, list) else []),
+    }
+
+
+def _allocation_recommendation_reason(
+    status: str,
+    summary: dict[str, Any],
+    integrity: dict[str, Any],
+    warnings: list[Any],
+) -> str:
+    if integrity.get("sums_to_100pct") is not True:
+        return "Allocation artifact cannot prove proposed weights sum to 100%; review draft generation is blocked."
+    if status == "REVIEW_REQUIRED":
+        return "Allocation artifact is available, but evidence-gated review or NO_CHANGE dominates today's guidance."
+    if warnings:
+        return str(warnings[0])
+    return "Allocation artifact exists and proposed target weights pass the 100% integrity check."
+
+
+def _allocation_recommendation_preview(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    preview: list[dict[str, Any]] = []
+    for row in rows[:5]:
+        if not isinstance(row, dict):
+            continue
+        preview.append(
+            {
+                "strategy_uid": row.get("strategy_uid"),
+                "display_name": row.get("display_name"),
+                "allocation_action": row.get("allocation_action"),
+                "current_weight": row.get("current_weight"),
+                "proposed_weight": row.get("proposed_weight"),
+                "reason": row.get("reason"),
             }
         )
     return preview
@@ -280,6 +353,7 @@ def _strategy_intelligence(root: Path) -> dict[str, Any]:
 
 def _operator_summary(
     daily: dict[str, Any],
+    allocation: dict[str, Any],
     rebalance: dict[str, Any],
     strategy_factory: dict[str, Any],
     ml: dict[str, Any],
@@ -291,6 +365,10 @@ def _operator_summary(
         review_items.append("Daily recommendation artifact has not been generated.")
     if daily["status"] == "REVIEW_REQUIRED":
         review_items.append("Daily recommendation artifact requires review because evidence is incomplete.")
+    if allocation["status"] == "MISSING_ARTIFACT":
+        review_items.append("Allocation recommendation artifact has not been generated.")
+    if allocation["status"] == "REVIEW_REQUIRED":
+        review_items.append("Allocation recommendation artifact is review-required or recommends no allocation change.")
     if rebalance["apply_due_status"] == "DUE_NOT_APPLIED":
         review_items.append("Approved paper rebalance is due but not applied.")
     if strategy_factory["candidate_registry_status"] != "AVAILABLE":
@@ -319,12 +397,13 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     alpha = _alpha_root()
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
     daily = _daily_recommendation(root_path)
+    allocation = _allocation_recommendation(root_path)
     rebalance = _rebalance(root_path)
     strategy = _strategy_factory(alpha)
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily, rebalance, strategy, ml, decomposition)
+    operator = _operator_summary(daily, allocation, rebalance, strategy, ml, decomposition)
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -334,6 +413,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "financial_state_mutated": False,
         "alpha_research_root": str(alpha),
         "daily_recommendation": daily,
+        "allocation_recommendation": allocation,
         "rebalance": rebalance,
         "strategy_factory": strategy,
         "ml_intelligence": ml,
@@ -355,6 +435,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
 def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[str, Any]:
     operator = manifest.get("operator_summary") or {}
     daily = manifest.get("daily_recommendation") or {}
+    allocation = manifest.get("allocation_recommendation") or {}
     rebalance = manifest.get("rebalance") or {}
     strategy = manifest.get("strategy_factory") or {}
     ml = manifest.get("ml_intelligence") or {}
@@ -365,6 +446,10 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     missing_evidence += int(decomposition.get("missing_decomposition_count") or 0)
     def daily_count(key: str) -> int | None:
         value = daily.get(key)
+        return int(value) if value is not None else None
+
+    def compact_count(payload: dict[str, Any], key: str) -> int | None:
+        value = payload.get(key)
         return int(value) if value is not None else None
 
     return {
@@ -378,6 +463,15 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "daily_recommendation_review_count": daily_count("review_count"),
         "daily_recommendation_reason": daily.get("reason"),
         "daily_recommendation_preview": daily.get("preview") or [],
+        "allocation_recommendation_status": allocation.get("status") or "NOT_AVAILABLE",
+        "allocation_recommendation_no_change_count": compact_count(allocation, "no_change_count"),
+        "allocation_recommendation_review_required_count": compact_count(allocation, "review_required_count"),
+        "allocation_recommendation_increase_candidate_count": compact_count(allocation, "increase_candidate_count"),
+        "allocation_recommendation_reduce_candidate_count": compact_count(allocation, "reduce_candidate_count"),
+        "allocation_recommendation_change_recommended": allocation.get("allocation_change_recommended"),
+        "allocation_recommendation_reason": allocation.get("reason"),
+        "allocation_recommendation_preview": allocation.get("preview") or [],
+        "allocation_integrity": allocation.get("allocation_integrity"),
         "rebalance_status": rebalance.get("apply_due_status") or rebalance.get("approved_plan_status") or "NOT_AVAILABLE",
         "strategy_factory_status": strategy.get("status") or "NOT_AVAILABLE",
         "ml_intelligence_status": ml.get("status") or "NOT_AVAILABLE",

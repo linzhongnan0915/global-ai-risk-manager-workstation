@@ -11,9 +11,12 @@ from pathlib import Path
 
 from scripts.run_workstation_server import WorkstationHandler
 from src.automation import (
+    build_allocation_recommendation_artifact,
     build_automation_intelligence_manifest,
     build_daily_recommendation_artifact,
+    read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
+    write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
 )
 from src.reporting.operational_snapshot import load_snapshot_summary_for_response
@@ -56,6 +59,7 @@ def _hashes(root: Path) -> dict[str, str]:
         str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(base.glob("**/*.json"))
         if "automation/daily_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/allocation_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -85,6 +89,45 @@ def _sample_strategy_intelligence_payload() -> dict:
                 "ml_evidence_status": "ML_MISSING_EVIDENCE",
                 "return_attribution_summary": {"status": "Missing Attribution Evidence"},
                 "missing_evidence": ["model artifact missing"],
+                "source_artifacts": [],
+            },
+        ],
+    }
+
+
+def _sample_allocation_payload(weights: tuple[float | None, float | None] = (0.6, 0.4), *, second_source: str = "CANONICAL_OPERATIONAL") -> dict:
+    first_weight, second_weight = weights
+    return {
+        "ok": True,
+        "cards": [
+            {
+                "strategy_uid": "test-allocation-a",
+                "strategy_name": "Test Allocation A",
+                "source_status": "CANONICAL_OPERATIONAL",
+                "current_weight": first_weight,
+                "target_weight": first_weight,
+                "decision_recommendation": "ACTIVE_MONITOR",
+                "evidence_strength": "PARTIAL_EVIDENCE",
+                "ml_evidence_status": "ML_MISSING_EVIDENCE",
+                "ml_evidence": {"status": "MISSING_EVIDENCE"},
+                "decomposition_evidence": {"status": "MISSING_EVIDENCE"},
+                "return_attribution_summary": {"status": "Missing Attribution Evidence"},
+                "missing_evidence": ["model artifact missing", "Missing Attribution Evidence"],
+                "source_artifacts": [{"kind": "test_fixture", "path": "test-only", "status": "TEST_ONLY"}],
+            },
+            {
+                "strategy_uid": "test-allocation-b",
+                "strategy_name": "Test Allocation B",
+                "source_status": second_source,
+                "current_weight": second_weight,
+                "target_weight": second_weight,
+                "decision_recommendation": "ACTIVE_MONITOR",
+                "evidence_strength": "PARTIAL_EVIDENCE",
+                "ml_evidence_status": "ML_MISSING_EVIDENCE",
+                "ml_evidence": {"status": "MISSING_EVIDENCE"},
+                "decomposition_evidence": {"status": "MISSING_EVIDENCE"},
+                "return_attribution_summary": {"status": "Missing Attribution Evidence"},
+                "missing_evidence": ["model artifact missing", "Missing Attribution Evidence"],
                 "source_artifacts": [],
             },
         ],
@@ -300,3 +343,201 @@ def test_manifest_reads_daily_recommendation_artifact_counts(tmp_path: Path, mon
     assert daily["hold_count"] == 1
     assert daily["review_count"] == 1
     assert len(daily["preview"]) == 2
+
+
+def test_allocation_recommendation_artifact_complete_weights_sum_to_100pct(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    payload = _sample_allocation_payload()
+    write_daily_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    artifact = build_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    integrity = artifact["allocation_integrity"]
+    assert artifact["source"] == "allocation_recommendation_artifact_v0"
+    assert artifact["paper_shadow_only"] is True
+    assert artifact["financial_state_mutated"] is False
+    assert integrity["target_weight_sum"] == 1.0
+    assert integrity["sums_to_100pct"] is True
+    assert integrity["residual_weight"] == 0.0
+    assert integrity["included_strategy_count"] == 2
+    assert integrity["excluded_strategy_count"] == 0
+    assert artifact["summary"]["allocation_change_recommended"] is False
+    assert artifact["summary"]["review_draft_generation_allowed"] is False
+    assert all(row["allocation_action"] == "NO_CHANGE" for row in artifact["recommendations"])
+    assert not any("cash" in row["display_name"].lower() or "residual" in row["display_name"].lower() for row in artifact["recommendations"])
+
+
+def test_allocation_recommendation_incomplete_weights_do_not_fake_100pct(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    payload = _sample_allocation_payload((0.6, None))
+    write_daily_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    artifact = build_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    integrity = artifact["allocation_integrity"]
+    assert integrity["target_weight_sum"] == 0.6
+    assert integrity["sums_to_100pct"] is False
+    assert round(integrity["residual_weight"], 10) == 0.4
+    assert artifact["summary"]["allocation_change_recommended"] is False
+    assert artifact["summary"]["review_draft_generation_allowed"] is False
+    assert "Proposed allocation weights do not sum to 100%" in " ".join(artifact["warnings"])
+
+
+def test_allocation_recommendation_missing_evidence_preserves_no_change_without_invalid_deltas(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    payload = _sample_allocation_payload()
+    write_daily_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    artifact = build_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    assert artifact["summary"]["increase_candidate_count"] == 0
+    assert artifact["summary"]["reduce_candidate_count"] == 0
+    for row in artifact["recommendations"]:
+        assert row["allocation_change_recommended"] is False
+        assert row["proposed_weight"] == row["current_weight"]
+        assert row["weight_delta"] == 0.0
+        assert row["blocking_evidence"]
+
+
+def test_allocation_denominator_excludes_non_canonical_unallocated_rows(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    payload = _sample_allocation_payload((1.0, 0.0), second_source="STRATEGY_FACTORY_ACTIVATION_RECORD")
+    write_daily_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    artifact = build_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=payload,
+    )
+
+    rows = {row["strategy_uid"]: row for row in artifact["recommendations"]}
+    assert rows["test-allocation-a"]["included_in_allocation_denominator"] is True
+    assert rows["test-allocation-b"]["included_in_allocation_denominator"] is False
+    assert artifact["allocation_integrity"]["included_strategy_count"] == 1
+    assert artifact["allocation_integrity"]["excluded_strategy_count"] == 1
+    assert artifact["allocation_integrity"]["sums_to_100pct"] is True
+
+
+def test_write_and_read_latest_allocation_recommendation_artifact(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    missing = read_latest_allocation_recommendation_artifact(root)
+    assert missing["ok"] is False
+    assert missing["status"] == "MISSING_ARTIFACT"
+
+    result = write_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=_sample_allocation_payload(),
+    )
+    latest = read_latest_allocation_recommendation_artifact(root)
+
+    assert result["status"] == "GENERATED"
+    assert result["artifact_path"] == "data/automation/allocation_recommendations/2026-06-28.json"
+    assert latest["ok"] is True
+    assert latest["artifact"]["allocation_integrity"]["sums_to_100pct"] is True
+
+
+def test_post_generate_allocation_recommendation_creates_artifact_without_financial_mutation(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    before = _hashes(root)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/allocation-recommendations/generate")
+        after = _hashes(root)
+        assert status == 201
+        assert payload["ok"] is True
+        assert payload["financial_state_mutated"] is False
+        assert payload["artifact"]["rebalance_plan_created"] is False
+        assert before == after
+        latest_status, latest = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/allocation-recommendations/latest")
+        assert latest_status == 200
+        assert latest["artifact"]["source"] == "allocation_recommendation_artifact_v0"
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_manifest_reads_allocation_recommendation_artifact_counts(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    write_allocation_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload=_sample_allocation_payload(),
+    )
+
+    manifest = build_automation_intelligence_manifest(root)
+    allocation = manifest["allocation_recommendation"]
+    compact = load_snapshot_summary_for_response(root)["automation_intelligence"]
+
+    assert allocation["status"] == "REVIEW_REQUIRED"
+    assert allocation["artifact_path"] == "data/automation/allocation_recommendations/2026-06-28.json"
+    assert allocation["no_change_count"] == 2
+    assert allocation["review_required_count"] == 0
+    assert allocation["allocation_integrity"]["sums_to_100pct"] is True
+    assert compact["allocation_recommendation_status"] == "REVIEW_REQUIRED"
+    assert compact["allocation_integrity"]["sums_to_100pct"] is True
+
+
+def test_allocation_recommendation_logic_has_no_hardcoded_strategy_names_counts_or_weights() -> None:
+    source = "\n".join(
+        [
+            (ROOT / "src/automation/allocation_recommendation_artifact.py").read_text(encoding="utf-8"),
+            (ROOT / "src/automation/automation_intelligence_manifest.py").read_text(encoding="utf-8"),
+        ]
+    )
+
+    forbidden = ["C3A", "WQ_ALPHA_018", "COMBINED_PORTFOLIO", "Copper", "Low Vol", "0.052631"]
+    assert not any(token in source for token in forbidden)
+    assert "included_strategy_count" in source
+    assert "excluded_strategy_count" in source
+
+
+def test_dashboard_allocation_recommendation_renders_backend_rows_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Allocation Recommendation" in source
+    assert "allocation_recommendation_preview" in source
+    assert "allocation_integrity" in source
+    assert "allocationPreview.map" in source
+    assert "target_weight_sum:1" not in source
+    assert "frontend_allocation_recommendations" not in source
+    assert "allocation_recommendation_status:\"AVAILABLE\"" not in source

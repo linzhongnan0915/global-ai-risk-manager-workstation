@@ -14,6 +14,7 @@ from pathlib import Path
 
 from scripts.run_workstation_server import WorkstationHandler
 from src.market.artifact_contract import artifact_contract, ensure_dashboard_artifact, validate_runtime_bootstrap_artifact
+from src.reporting.operational_snapshot import load_operational_snapshot_for_response, load_snapshot_summary_for_response
 from src.strategies.strategy_factory_artifact_adapter import load_alpha_snapshot
 from src.strategies.strategy_factory_plugin import PROTOTYPE_STRATEGY_ID, list_candidates
 
@@ -324,14 +325,89 @@ def test_snapshot_summary_endpoint_is_lightweight_aligned_and_read_only(tmp_path
         WorkstationHandler.operational_snapshot_bytes = original_bytes
 
 
+def test_snapshot_summary_cache_miss_does_not_build_full_snapshot(tmp_path, monkeypatch):
+    root = _copy_canonical_root(tmp_path)
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.operational_snapshot_bytes = None
+
+    def fail_full_snapshot(*args, **kwargs):
+        raise AssertionError("summary endpoint must not build full operational snapshot")
+
+    monkeypatch.setattr("scripts.run_workstation_server.load_operational_snapshot_for_response", fail_full_snapshot)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, headers, body = _fetch(f"http://127.0.0.1:{port}/api/snapshot-summary")
+        payload = json.loads(body.decode("utf-8"))
+        assert status == 200
+        assert int(headers["content-length"]) == len(body)
+        assert payload["detail"]["summary_native_backend"] is True
+        assert payload["detail"]["summary_builds_full_snapshot"] is False
+        assert "strategies" not in payload
+        assert "trades" not in payload
+        assert "holdings" not in payload
+        assert len(body) < 250_000
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_snapshot_summary_truth_matches_backend_artifacts():
+    summary = load_snapshot_summary_for_response(ROOT)
+    snapshot = load_operational_snapshot_for_response(ROOT)
+    inventory = snapshot["strategy_entity_inventory"]
+    approved = snapshot["paper_rebalance"]["approved_rebalance"]
+
+    assert summary["counts"]["ordinary_active_count"] == inventory["ordinary_active_count"]
+    assert summary["counts"]["combined_active_count"] == inventory["combined_active_count"]
+    assert summary["counts"]["top_level_active_count"] == inventory["top_level_active_count"]
+    assert summary["counts"]["active_unallocated_count"] == inventory["active_unallocated_count"]
+    assert summary["counts"]["pending_approval_count"] == inventory["pending_approval_count"]
+    assert summary["paper_rebalance"]["approved_plan_status"] == approved["latest_plan"]["status"]
+    assert summary["paper_rebalance"]["approved_plan_effective_date"] == approved["latest_plan"]["effective_date"]
+    assert summary["paper_rebalance"]["applied_event_count"] == len(approved["applied_events"])
+    assert summary["paper_rebalance"]["transaction_cost_record_count"] == len(snapshot["paper_rebalance"]["costs"])
+    assert summary["safety"]["paper_shadow_only"] is True
+    assert summary["safety"]["live_orders_created"] is False
+    assert summary["safety"]["brokerage_orders_created"] is False
+    assert summary["safety"]["live_brokerage_execution"] is False
+
+
 def test_dashboard_regular_polling_uses_snapshot_summary_endpoint():
     source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
 
     assert "async function fetchSummaryPayload()" in source
     assert "/api/snapshot-summary?ts=" in source
+    assert "async function loadInitialSummary()" in source
+    assert "await loadInitialSummary()" in source
+    assert "await loadSnapshot();await refreshStrategyFactory()" not in source
     assert "setInterval(()=>refreshOperational(false),POLL_INTERVAL_MS)" in source
     assert 'if(manual){const r=await fetch(`/api/refresh-data?ts=${Date.now()}`' in source
+    assert 'loadSnapshot("manual-refresh")' in source
+    assert 'function maybeLoadDetailForPage(pageName)' in source
+    assert 'loadSnapshot("load-details")' in source
     assert 'const summary=await loadSummary();state.refreshState=summary.refresh_status' in source
+    assert "detailPending=!state.detailLoaded&&topLevel===0&&Number(inv.top_level_active_count)>0" in source
+    assert "ordinary_active_count:detailPending?Number(inv.ordinary_active_count||0):ordinary.length" in source
+    assert "combined_active_count:detailPending?Number(inv.combined_active_count||0):combined.length" in source
+    assert "top_level_active_count:detailPending?Number(inv.top_level_active_count||0):topLevel" in source
+    assert "const counts=activeCountBreakdown(c),pending=counts.pending_approval_count" in source
+    assert "strategies:[]" in source
+    assert "strategies:Array.from" not in source
+    forbidden_effective_date = "2026" + "-06" + "-29"
+    forbidden_counts = (
+        "ordinary_active_count:" + "18",
+        "top_level_active_count:" + "19",
+        "active_unallocated_count:" + "2",
+    )
+    for forbidden in (*forbidden_counts, forbidden_effective_date):
+        assert forbidden not in source
 
 
 def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_bytes(tmp_path):

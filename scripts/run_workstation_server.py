@@ -56,8 +56,8 @@ from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.reporting.operational_snapshot import (
-    build_snapshot_summary,
     load_operational_snapshot_for_response,
+    load_snapshot_summary_for_response,
     load_or_build_operational_snapshot,
     official_promotion_readiness,
     persist_decision,
@@ -184,14 +184,10 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     @classmethod
     def snapshot_summary_payload(cls, root: Path) -> dict:
-        with cls.operational_snapshot_cache_lock:
-            if cls.operational_snapshot_bytes:
-                return build_snapshot_summary(json.loads(cls.operational_snapshot_bytes.decode("utf-8")))
-        snapshot = load_operational_snapshot_for_response(
+        return load_snapshot_summary_for_response(
             root,
             scheduler_enabled=bool(getattr(cls, "intraday_scheduler_enabled", False)),
         )
-        return build_snapshot_summary(snapshot)
 
     @classmethod
     def _run_bootstrap_refresh(cls, root: Path, interval: int) -> None:

@@ -286,6 +286,40 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             page.wait_for_timeout(500)
         initial_body_text = page.locator("body").inner_text()
         initial_body_upper = initial_body_text.upper()
+        initial_metrics = page.evaluate("() => window.__phase1Metrics || {}")
+        initial_rail_state = page.evaluate(
+            """() => {
+              const text = document.querySelector('.rail-summary')?.innerText || '';
+              const summary = window.__phase1Metrics || {};
+              return {text, metrics: summary};
+            }"""
+        )
+        summary_counts = page.evaluate(
+            """async () => {
+              const response = await fetch(`/api/snapshot-summary?ts=${Date.now()}`, {cache: 'no-store'});
+              const payload = await response.json();
+              return payload.counts || {};
+            }"""
+        )
+        report["checks"]["initial_load_summary_only"] = (
+            initial_metrics.get("snapshotLoadState") == "DETAIL_NOT_LOADED"
+            and "DETAIL NOT LOADED" in initial_body_upper
+            and "LOAD DETAILS" in initial_body_upper
+        )
+        report["api_checks"]["initial_rail_summary"] = initial_rail_state
+        rail_text = initial_rail_state.get("text", "")
+        report["checks"]["initial_rail_uses_summary_counts"] = (
+            f"Top-level active\n{summary_counts.get('top_level_active_count')}" in rail_text
+            and f"Ordinary\n{summary_counts.get('ordinary_active_count')}" in rail_text
+            and f"Combined\n{summary_counts.get('combined_active_count')}" in rail_text
+        )
+        load_details = page.locator("[data-load-details]").first
+        if load_details.count():
+            load_details.click()
+            page.wait_for_selector(".primary-chart, .strategy-monitor-page", timeout=120000)
+            page.wait_for_timeout(500)
+            initial_body_text = page.locator("body").inner_text()
+            initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
             "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
             and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper

@@ -2890,6 +2890,125 @@ def build_snapshot_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _summary_source_snapshot(
+    root: Path,
+    *,
+    scheduler_enabled: bool = False,
+    now: datetime | None = None,
+    refresh_lifecycle: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build the summary contract input from lightweight durable artifacts only."""
+    generated_at = now or datetime.now(timezone.utc)
+    canonical = _read_json(_paths(root)["canonical"], {})
+    canonical_strategies = [
+        row for row in deepcopy(canonical.get("strategies") or [])
+        if row.get("internal_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+    ]
+    activation_rows = [_strategy_factory_snapshot_row(row) for row in _strategy_factory_active_unallocated_records(root)]
+    strategy_by_id = {
+        str(row.get("internal_id") or row.get("strategy_uid") or row.get("strategy_id")): row
+        for row in canonical_strategies
+        if row.get("internal_id") or row.get("strategy_uid") or row.get("strategy_id")
+    }
+    for row in activation_rows:
+        key = str(row.get("internal_id") or row.get("strategy_uid") or row.get("strategy_id"))
+        if key:
+            strategy_by_id[key] = row
+    strategies = list(strategy_by_id.values())
+    inventory = _entity_inventory(strategies, {}, {}, {})
+    top_level_active_count = int(inventory.get("top_level_active_count") or 0)
+    ordinary_active_count = int(inventory.get("ordinary_active_count") or 0)
+    dynamic_sleeve_capital = _dynamic_sleeve_capital(top_level_active_count)
+    overlay = _read_intraday_overlay(root)
+    overlay_available = bool(overlay and overlay.get("status") == "LOADED" and not _is_overlay_stale(overlay, now=generated_at))
+    runtime_status = "NOT_LOADED"
+    if overlay:
+        if overlay.get("status") == "ERROR":
+            runtime_status = "ERROR"
+        elif overlay.get("status") == "LOADED":
+            runtime_status = "LOADED" if overlay_available else "STALE"
+        else:
+            runtime_status = str(overlay.get("status") or "NOT_LOADED").upper()
+    runtime_status = _runtime_status_from_lifecycle(runtime_status, refresh_lifecycle)
+    intraday = _intraday_from_overlay(overlay) if overlay_available else {}
+    portfolio_daily = canonical.get("portfolio_daily") or []
+    latest_portfolio = portfolio_daily[-1] if portfolio_daily else {}
+    portfolio_summary = deepcopy(canonical.get("portfolio_summary") or {})
+    if intraday:
+        portfolio_summary["intraday_estimated_nav"] = intraday.get("estimated_nav")
+        portfolio_summary["intraday_estimated_pnl"] = intraday.get("estimated_pnl")
+    quote_asof = intraday.get("market_data_as_of") or (overlay or {}).get("delayed_estimate_as_of")
+    daily_ledger_date = latest_portfolio.get("date") or portfolio_summary.get("as_of_date")
+    market_status = (refresh_lifecycle or {}).get("market_status") or (overlay or {}).get("market_session_status")
+    paper = paper_rebalance_snapshot_payload(root)
+    source = _read_json(_paths(root)["source_bundle"], {}).get("shadow_live", {})
+    summary_source = {
+        "snapshot_version": SNAPSHOT_VERSION,
+        "snapshot_id": f"summary-{generated_at.strftime('%Y%m%dT%H%M%SZ')}",
+        "generated_at": generated_at.isoformat(),
+        "refresh_status": "SUMMARY_LOADED",
+        "data_freshness": "SUMMARY_NATIVE",
+        "market_session_status": market_status,
+        "session_state": _canonical_session_state(
+            generated_at=generated_at,
+            latest_quote_asof=quote_asof,
+            daily_ledger_date=daily_ledger_date,
+            market_session_status_hint=market_status,
+        ),
+        "next_refresh": (overlay or {}).get("next_refresh"),
+        "last_successful_refresh": (overlay or {}).get("generated_at"),
+        "intraday_runtime_status": runtime_status,
+        "intraday_refresh_status": (refresh_lifecycle or {}).get("state") or runtime_status.lower(),
+        "intraday_refresh_message": _runtime_message(runtime_status, overlay),
+        "intraday_scheduler_enabled": bool(scheduler_enabled),
+        "intraday_refresh_cadence_minutes": (overlay or {}).get("refresh_cadence_minutes") or 30,
+        "intraday_estimate": {
+            "estimated_nav": intraday.get("estimated_nav"),
+            "estimated_pnl": intraday.get("estimated_pnl"),
+            "market_data_as_of": intraday.get("market_data_as_of"),
+            "covered_tickers": intraday.get("covered_tickers"),
+            "total_tickers": intraday.get("total_tickers"),
+            "written_to_official_ledger": False,
+        },
+        "portfolio_summary": portfolio_summary,
+        "strategy_entity_inventory": inventory,
+        "capital_reconciliation": {
+            "initial_shadow_capital": INITIAL_SHADOW_CAPITAL,
+            "top_level_active_sleeves": top_level_active_count,
+            "top_level_sleeve_weight": 1 / top_level_active_count if top_level_active_count else None,
+            "top_level_sleeve_denominator": top_level_active_count,
+            "starting_capital_per_sleeve": dynamic_sleeve_capital,
+            "starting_capital_denominator": top_level_active_count,
+            "sleeve_basis": "DYNAMIC_CURRENT_UNIVERSE_TOP_LEVEL_ACTIVE",
+            "combined_internal_constituents": ordinary_active_count,
+            "combined_internal_weight": 1 / ordinary_active_count if ordinary_active_count else None,
+            "combined_starting_capital": dynamic_sleeve_capital,
+            "expected_ordinary_active_sleeves": ordinary_active_count,
+            "ordinary_operational_ledgers": inventory.get("ordinary_operational_ledgers"),
+            "ordinary_active_count": ordinary_active_count,
+            "combined_active_count": inventory.get("combined_active_count"),
+            "active_unallocated_count": inventory.get("active_unallocated_count"),
+            "portfolio_ending_nav": portfolio_summary.get("nav"),
+            "basis": "Summary-native lightweight artifact path; full detail rows require /api/operational-snapshot.",
+        },
+        "paper_rebalance": paper,
+        "operational_universe": {
+            "held_ticker_count": len({row.get("ticker") for row in _current_holdings(canonical.get("holdings") or []) if row.get("ticker")}),
+            "current_price_covered_ticker_count": intraday.get("covered_tickers"),
+            "operational_pricing_universe_size": source.get("operational_pricing_universe_size"),
+        },
+    }
+    summary_source["operational_automation"] = {
+        "schema_version": "operational_automation_v1",
+        "paper_rebalance_apply": paper_rebalance_automation_status(root, snapshot=summary_source),
+        "paper_only": True,
+        "live_orders_created": False,
+        "brokerage_orders_created": False,
+        "official_ledger_mutation": False,
+    }
+    return summary_source
+
+
 def load_snapshot_summary_for_response(
     root: Path,
     *,
@@ -2897,13 +3016,17 @@ def load_snapshot_summary_for_response(
     now: datetime | None = None,
     refresh_lifecycle: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    snapshot = load_operational_snapshot_for_response(
+    snapshot = _summary_source_snapshot(
         root,
         scheduler_enabled=scheduler_enabled,
         now=now,
         refresh_lifecycle=refresh_lifecycle,
     )
-    return build_snapshot_summary(snapshot)
+    summary = build_snapshot_summary(snapshot)
+    summary["detail"]["detail_state"] = "DETAIL_NOT_LOADED"
+    summary["detail"]["summary_native_backend"] = True
+    summary["detail"]["summary_builds_full_snapshot"] = False
+    return summary
 
 
 def read_operational_intraday_overlay(root: Path) -> dict[str, Any] | None:

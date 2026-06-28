@@ -1,0 +1,879 @@
+{
+  "ok": true,
+  "source": "daily_recommendation_artifact_v0",
+  "generated_at": "2026-06-28T22:44:41.920096+00:00",
+  "as_of_date": "2026-06-28",
+  "paper_shadow_only": true,
+  "financial_state_mutated": false,
+  "strategy_count": 19,
+  "recommendations": [
+    {
+      "strategy_uid": "COMBINED_PORTFOLIO",
+      "display_name": "Combined",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/COMBINED_PORTFOLIO/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A1_002",
+      "display_name": "C3A1 002",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "REVIEW",
+      "proposed_weight": null,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Review required before changing allocation: ML evidence missing; attribution evidence missing.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_002/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A1_003",
+      "display_name": "C3A1 003",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_003/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A1_013",
+      "display_name": "C3A1 013",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "REVIEW",
+      "proposed_weight": null,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Review required before changing allocation: ML evidence missing; attribution evidence missing.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_013/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A2_008",
+      "display_name": "C3A2 008",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "REVIEW",
+      "proposed_weight": null,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Review required before changing allocation: ML evidence missing; attribution evidence missing.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A2_008/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A1_001",
+      "display_name": "C3A1 001",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_001/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "C3A1_015",
+      "display_name": "C3A1 015",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_015/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "FUNDAMENTAL_MOMENTUM",
+      "display_name": "Fundamental Momentum",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FUNDAMENTAL_MOMENTUM/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "EARNINGS_QUALITY",
+      "display_name": "Earnings Quality",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/EARNINGS_QUALITY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "MARGIN_IMPROVEMENT",
+      "display_name": "Margin Improvement",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/MARGIN_IMPROVEMENT/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "OVERNIGHT_INTRADAY_ENSEMBLE",
+      "display_name": "Overnight Intraday Ensemble",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/OVERNIGHT_INTRADAY_ENSEMBLE/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "FILING_SHOCK_CONTINUATION",
+      "display_name": "Filing Shock Continuation",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FILING_SHOCK_CONTINUATION/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "FUNDAMENTAL_SHOCK_RECOVERY",
+      "display_name": "Fundamental Shock Recovery",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FUNDAMENTAL_SHOCK_RECOVERY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "CASH_FLOW_GROWTH_QUALITY",
+      "display_name": "Cash Flow Growth Quality",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/CASH_FLOW_GROWTH_QUALITY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+      "display_name": "Overnight Gap Reversal Reduced Turnover",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM",
+      "display_name": "Liquidity Adjusted Momentum",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/LIQUIDITY_ADJUSTED_MOMENTUM/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "POST_FILING_CASH_FLOW_SURPRISE",
+      "display_name": "Post Filing Cash Flow Surprise",
+      "current_weight": 0.058823529411764705,
+      "recommended_action": "HOLD",
+      "proposed_weight": 0.058823529411764705,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Hold current exposure because ML evidence missing, attribution evidence missing; no allocation-ready increase evidence.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/POST_FILING_CASH_FLOW_SURPRISE/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+      "display_name": "COPX/XME Copper Equity Proxy Trend",
+      "current_weight": 0.0,
+      "recommended_action": "REVIEW",
+      "proposed_weight": null,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Review required before changing allocation: ML evidence missing; attribution evidence missing.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "strategy_factory_activation",
+          "path": "output\\strategy_factory\\portfolio_candidates\\SF_CAND_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1_ACDE308E01\\activation_record.json",
+          "status": "USER_CONFIRMED_LOCAL_ARTIFACT"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    },
+    {
+      "strategy_uid": "SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+      "display_name": "U.S. Stock Low Vol Defensive 63D Top 20",
+      "current_weight": 0.0,
+      "recommended_action": "REVIEW",
+      "proposed_weight": null,
+      "confidence": "REVIEW_REQUIRED",
+      "reason": "Review required before changing allocation: ML evidence missing; attribution evidence missing.",
+      "evidence_strength": "MISSING",
+      "risk_warning": "Missing ML validation evidence; Missing attribution/decomposition evidence",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "attribution_status": "Missing Attribution Evidence",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "strategy_factory_activation",
+          "path": "output\\strategy_factory\\portfolio_candidates\\SF_CAND_US_STOCK_LOW_VOL_63D_TOP20_V1_4093ABF664\\activation_record.json",
+          "status": "USER_CONFIRMED_LOCAL_ARTIFACT"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "increase_count": 0,
+    "reduce_count": 0,
+    "hold_count": 14,
+    "review_count": 5,
+    "missing_ml_evidence_count": 19,
+    "missing_attribution_evidence_count": 19
+  },
+  "warnings": [
+    "Missing ML evidence prevents evidence-based INCREASE recommendations.",
+    "Missing attribution/decomposition evidence prevents evidence-based INCREASE recommendations.",
+    "No allocation-ready proposed weight changes were available; proposed_weight is null or current_weight."
+  ]
+}

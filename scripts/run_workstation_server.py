@@ -22,6 +22,11 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
+from src.automation import (
+    build_automation_intelligence_manifest,
+    read_latest_daily_recommendation_artifact,
+    write_daily_recommendation_artifact,
+)
 from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
 from src.market.artifact_contract import ensure_dashboard_artifact
 from src.market.demo_hosting import configure_yfinance_cache, demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
@@ -620,6 +625,22 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="strategy-intelligence")
             return
+        if parsed.path in {"/api/automation-intelligence/manifest", "/api/automation-intelligence/manifest/"}:
+            try:
+                self._send_json(build_automation_intelligence_manifest(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="automation-intelligence-manifest")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/daily-recommendations/latest",
+            "/api/automation-intelligence/daily-recommendations/latest/",
+        }:
+            try:
+                latest = read_latest_daily_recommendation_artifact(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-recommendations-latest")
+            return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
                 refresh_lifecycle = WorkstationHandler.maybe_start_intraday_bootstrap(self.server_root)
@@ -758,6 +779,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {
+            "/api/automation-intelligence/daily-recommendations/generate",
+            "/api/automation-intelligence/daily-recommendations/generate/",
+        }:
+            try:
+                self._send_json(write_daily_recommendation_artifact(self.server_root), status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-recommendations-generate")
+            return
         if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
             try:
                 body = self._read_json_body()

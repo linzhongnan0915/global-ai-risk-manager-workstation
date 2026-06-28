@@ -3023,6 +3023,27 @@ def load_snapshot_summary_for_response(
         refresh_lifecycle=refresh_lifecycle,
     )
     summary = build_snapshot_summary(snapshot)
+    try:
+        from src.automation import build_automation_intelligence_manifest, compact_automation_intelligence_summary
+
+        manifest = build_automation_intelligence_manifest(root)
+        summary["automation_intelligence"] = compact_automation_intelligence_summary(manifest)
+    except Exception as exc:
+        summary["automation_intelligence"] = {
+            "source": "automation_intelligence_manifest_v0",
+            "overall_status": "REVIEW_REQUIRED",
+            "daily_recommendation_status": "NOT_AVAILABLE",
+            "rebalance_status": "NOT_AVAILABLE",
+            "strategy_factory_status": "NOT_AVAILABLE",
+            "ml_intelligence_status": "NOT_AVAILABLE",
+            "decomposition_status": "NOT_AVAILABLE",
+            "review_required_count": 1,
+            "missing_evidence_count": 0,
+            "paper_shadow_only": True,
+            "live_trading_enabled": False,
+            "financial_state_mutated": False,
+            "warning": str(exc),
+        }
     summary["detail"]["detail_state"] = "DETAIL_NOT_LOADED"
     summary["detail"]["summary_native_backend"] = True
     summary["detail"]["summary_builds_full_snapshot"] = False

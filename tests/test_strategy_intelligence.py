@@ -7,10 +7,12 @@ import json
 import socket
 import threading
 import urllib.request
+from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from scripts.run_workstation_server import WorkstationHandler
+from src.automation import write_daily_recommendation_artifact
 from src.reporting.operational_snapshot import load_snapshot_summary_for_response
 from src.strategy_intelligence import build_strategy_intelligence_payload
 from src.strategy_intelligence.mechanism_rules import classify_mechanism
@@ -42,6 +44,16 @@ def _paper_artifact_hashes() -> dict[str, str]:
 
 def _cards_by_uid(payload: dict) -> dict[str, dict]:
     return {card["strategy_uid"]: card for card in payload["cards"]}
+
+
+def _copy_root(tmp_path: Path) -> Path:
+    root = tmp_path / "workstation"
+    (root / "dashboard/data").mkdir(parents=True)
+    (root / "dashboard/data/canonical_operational.json").write_text(
+        (ROOT / "dashboard/data/canonical_operational.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return root
 
 
 def _card_by_research_version(payload: dict, token: str) -> dict:
@@ -91,6 +103,8 @@ def test_missing_ml_and_missing_attribution_are_explicit_not_faked():
         assert attribution["status"] == "Missing Attribution Evidence"
         assert attribution["requirement"] == "Requires factor/sector/long-short decomposition"
         assert "Missing long/short contribution decomposition" in attribution["missing_evidence"]
+        assert card["ml_evidence"]["status"] == "MISSING_ML_EVIDENCE"
+        assert card["decomposition_evidence"]["status"] == "MISSING_ATTRIBUTION_EVIDENCE"
 
 
 def test_combined_is_composite_not_independent_alpha_source():
@@ -249,6 +263,66 @@ def test_cards_include_source_artifacts_and_no_execution_authority_language():
     assert payload["safety"]["execution_authority"] == "NONE"
 
 
+def test_cards_include_daily_recommendation_fields_when_artifact_exists():
+    payload = build_strategy_intelligence_payload(ROOT)
+
+    assert payload["summary"]["daily_recommendation_count"] == len(payload["cards"])
+    for card in payload["cards"]:
+        daily = card["daily_recommendation"]
+        assert daily["source_artifact"] == "data/automation/daily_recommendations/2026-06-28.json"
+        assert daily["recommended_action"] in {"HOLD", "REVIEW", "REDUCE", "INCREASE"}
+        assert daily["confidence"] in {"LOW", "MEDIUM", "HIGH", "REVIEW_REQUIRED"}
+        assert daily["evidence_strength"] in {"MISSING", "WEAK", "PARTIAL", "STRONG"}
+        assert card["operator_explanation"]["headline"].startswith("Today's action:")
+
+
+def test_cards_show_missing_artifact_when_daily_recommendation_absent(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    payload = build_strategy_intelligence_payload(root)
+
+    assert payload["summary"]["daily_recommendation_status"] == "MISSING_ARTIFACT"
+    assert payload["summary"]["daily_recommendation_count"] is None
+    for card in payload["cards"]:
+        assert card["daily_recommendation"]["status"] == "MISSING_ARTIFACT"
+        assert card["daily_recommendation"]["recommended_action"] == "NOT_AVAILABLE"
+        assert card["daily_recommendation"]["source_artifact"] is None
+
+
+def test_daily_recommendation_matching_uses_strategy_uid_not_display_name(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    first_uid = baseline["cards"][0]["strategy_uid"]
+    fake_display_name = "Display Name Should Not Match Identity"
+    write_daily_recommendation_artifact(
+        root,
+        now=datetime(2026, 6, 28, tzinfo=timezone.utc),
+        strategy_intelligence_payload={
+            "ok": True,
+            "cards": [
+                {
+                    "strategy_uid": first_uid,
+                    "strategy_name": fake_display_name,
+                    "current_weight": 0.0,
+                    "target_weight": None,
+                    "decision_recommendation": "ACTIVE_MONITOR",
+                    "evidence_strength": "PARTIAL_EVIDENCE",
+                    "ml_evidence_status": "ML_MISSING_EVIDENCE",
+                    "return_attribution_summary": {"status": "Missing Attribution Evidence"},
+                    "missing_evidence": ["model artifact missing"],
+                    "source_artifacts": [],
+                }
+            ],
+        },
+    )
+
+    payload = build_strategy_intelligence_payload(root)
+    matched = _cards_by_uid(payload)[first_uid]
+
+    assert matched["strategy_name"] != fake_display_name
+    assert matched["daily_recommendation"]["recommended_action"] == "HOLD"
+    assert payload["summary"]["daily_recommendation_missing_match_count"] == len(payload["cards"]) - 1
+
+
 def test_strategy_intelligence_endpoint_is_200_and_read_only_for_paper_artifacts():
     before = _paper_artifact_hashes()
     original_root = WorkstationHandler.server_root
@@ -285,4 +359,23 @@ def test_dashboard_strategy_intelligence_tab_is_summary_first_without_fake_rows(
     assert "Pending Detail" in page_source
     assert "no fake rows are rendered" in page_source
     assert "Strategy Intelligence Preview" in page_source
+    assert "strategyIntelligenceEvidencePanel" in page_source
+    assert "daily_recommendation" in page_source
+    assert "ml_evidence" in page_source
+    assert "decomposition_evidence" in page_source
     assert "/api/operational-snapshot" not in page_source
+    assert "/api/automation-intelligence/daily-recommendations/latest" not in page_source
+
+
+def test_strategy_intelligence_evidence_wiring_no_hardcoded_strategy_literals():
+    sources = "\n".join(
+        [
+            (ROOT / "src/strategy_intelligence/builder.py").read_text(encoding="utf-8"),
+            (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8"),
+        ]
+    )
+    forbidden_new_logic = ["Copper", "Low Vol", "0.052631", "C3A1_", "ordinary_active_count: 18"]
+
+    assert not any(token in sources for token in forbidden_new_logic)
+    assert "row.get(\"strategy_uid\")" in sources
+    assert "display_name\") == " not in sources

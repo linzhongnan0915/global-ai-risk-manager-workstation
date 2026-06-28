@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.reporting.operational_snapshot import (
     REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS,
@@ -87,6 +88,134 @@ def _latest_paper_status(paper: dict[str, Any], strategy_uid: str) -> dict[str, 
     return result
 
 
+def _daily_recommendations_by_uid(root: Path) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    latest = read_latest_daily_recommendation_artifact(root)
+    if not latest.get("ok"):
+        return {}, latest
+    artifact = latest.get("artifact") or {}
+    rows = artifact.get("recommendations") if isinstance(artifact, dict) else []
+    by_uid = {
+        str(row.get("strategy_uid")): row
+        for row in rows or []
+        if isinstance(row, dict) and row.get("strategy_uid")
+    }
+    return by_uid, latest
+
+
+def _daily_recommendation_section(
+    recommendation: dict[str, Any] | None,
+    latest: dict[str, Any],
+) -> dict[str, Any]:
+    if not latest.get("ok"):
+        return {
+            "status": latest.get("status") or "MISSING_ARTIFACT",
+            "recommended_action": "NOT_AVAILABLE",
+            "reason": latest.get("message") or "Daily recommendation artifact is not available.",
+            "confidence": "NOT_AVAILABLE",
+            "evidence_strength": "NOT_AVAILABLE",
+            "risk_warning": None,
+            "current_weight": None,
+            "proposed_weight": None,
+            "source_artifact": None,
+        }
+    if not recommendation:
+        return {
+            "status": "NOT_AVAILABLE",
+            "recommended_action": "NOT_AVAILABLE",
+            "reason": "No daily recommendation row matched this strategy_uid.",
+            "confidence": "NOT_AVAILABLE",
+            "evidence_strength": "NOT_AVAILABLE",
+            "risk_warning": None,
+            "current_weight": None,
+            "proposed_weight": None,
+            "source_artifact": latest.get("artifact_path"),
+        }
+    review_required = (
+        recommendation.get("recommended_action") == "REVIEW"
+        or recommendation.get("confidence") == "REVIEW_REQUIRED"
+        or recommendation.get("evidence_strength") == "MISSING"
+    )
+    return {
+        "status": "REVIEW_REQUIRED" if review_required else "AVAILABLE",
+        "recommended_action": recommendation.get("recommended_action") or "NOT_AVAILABLE",
+        "reason": recommendation.get("reason") or "No reason supplied by daily recommendation artifact.",
+        "confidence": recommendation.get("confidence") or "NOT_AVAILABLE",
+        "evidence_strength": recommendation.get("evidence_strength") or "NOT_AVAILABLE",
+        "risk_warning": recommendation.get("risk_warning"),
+        "current_weight": recommendation.get("current_weight"),
+        "proposed_weight": recommendation.get("proposed_weight"),
+        "source_artifact": latest.get("artifact_path"),
+    }
+
+
+def _ml_evidence_section(ml: dict[str, Any], card_artifacts: list[dict[str, Any]]) -> dict[str, Any]:
+    role = ml.get("ml_role") or "NOT_AVAILABLE"
+    if role == "ML_MISSING_EVIDENCE":
+        status = "MISSING_ML_EVIDENCE"
+        summary = "Missing ML validation inputs; no supported ML claim is made."
+    elif role == "ML_REJECTED":
+        status = "REJECTED"
+        summary = "ML evidence is rejected by existing status rules."
+    elif role == "ML_WATCH_ONLY":
+        status = "REVIEW_REQUIRED"
+        summary = "ML evidence is watch-only and requires review."
+    elif role == "ML_DIAGNOSTICS_AVAILABLE":
+        status = "SUPPORTED"
+        summary = "ML diagnostics fields are present in existing artifacts."
+    else:
+        status = "NOT_AVAILABLE"
+        summary = "ML evidence status is not available."
+    return {
+        "status": status,
+        "summary": summary,
+        "source_artifacts": card_artifacts,
+    }
+
+
+def _decomposition_evidence_section(attribution: dict[str, Any], card_artifacts: list[dict[str, Any]]) -> dict[str, Any]:
+    status_text = attribution.get("status") or "NOT_AVAILABLE"
+    if status_text == "Missing Attribution Evidence":
+        status = "MISSING_ATTRIBUTION_EVIDENCE"
+        summary = "Missing factor/sector/long-short decomposition evidence."
+    elif status_text == "PARTIAL_ATTRIBUTION_EVIDENCE":
+        status = "REVIEW_REQUIRED"
+        summary = "Partial attribution/decomposition evidence is present and needs review."
+    elif status_text == "NOT_AVAILABLE":
+        status = "NOT_AVAILABLE"
+        summary = "Attribution/decomposition status is not available."
+    else:
+        status = "AVAILABLE"
+        summary = str(status_text)
+    return {
+        "status": status,
+        "summary": summary,
+        "source_artifacts": card_artifacts,
+    }
+
+
+def _operator_explanation(
+    daily: dict[str, Any],
+    ml_section: dict[str, Any],
+    decomposition_section: dict[str, Any],
+    missing: list[str],
+) -> dict[str, Any]:
+    action = daily.get("recommended_action") or "NOT_AVAILABLE"
+    missing_items = list(missing[:2])
+    if ml_section["status"] == "MISSING_ML_EVIDENCE" and "Missing ML Evidence" not in missing_items:
+        missing_items.append("Missing ML Evidence")
+    if decomposition_section["status"] == "MISSING_ATTRIBUTION_EVIDENCE" and "Missing Attribution Evidence" not in missing_items:
+        missing_items.append("Missing Attribution Evidence")
+    missing_items = missing_items[:4]
+    return {
+        "headline": f"Today's action: {action}",
+        "why_this_action": daily.get("reason") or "No daily recommendation row is available for this strategy.",
+        "what_is_missing": missing_items,
+        "next_review_step": "Review missing ML and attribution evidence before increasing exposure."
+        if missing_items
+        else "Continue monitoring existing evidence and paper-only controls.",
+    }
+
+
 def _current_rows(root: Path) -> list[dict[str, Any]]:
     canonical = _read_json(_paths(root)["canonical"], {})
     rows = [
@@ -105,7 +234,14 @@ def _current_rows(root: Path) -> list[dict[str, Any]]:
     return list(by_uid.values())
 
 
-def _card(root: Path, row: dict[str, Any], paper: dict[str, Any], generated_at: str) -> dict[str, Any]:
+def _card(
+    root: Path,
+    row: dict[str, Any],
+    paper: dict[str, Any],
+    generated_at: str,
+    daily_rows: dict[str, dict[str, Any]],
+    daily_latest: dict[str, Any],
+) -> dict[str, Any]:
     uid = str(row.get("strategy_uid") or row.get("strategy_id") or row.get("internal_id") or "")
     research = _research_summary(root, uid)
     mechanism = classify_mechanism(row, research)
@@ -128,6 +264,10 @@ def _card(root: Path, row: dict[str, Any], paper: dict[str, Any], generated_at: 
     current_weight = row.get("current_weight")
     if row.get("strategy_factory_phase2"):
         current_weight = 0.0
+    source_artifacts = _source_artifacts(root, row, research)
+    daily_section = _daily_recommendation_section(daily_rows.get(uid), daily_latest)
+    ml_section = _ml_evidence_section(ml, source_artifacts)
+    decomposition_section = _decomposition_evidence_section(attribution, source_artifacts)
     return {
         "card_id": f"strategy-intelligence::{uid}",
         "strategy_uid": uid,
@@ -157,7 +297,11 @@ def _card(root: Path, row: dict[str, Any], paper: dict[str, Any], generated_at: 
         "missing_evidence": missing,
         "failure_modes": failure_modes,
         "decision_recommendation": recommendation,
-        "source_artifacts": _source_artifacts(root, row, research),
+        "source_artifacts": source_artifacts,
+        "daily_recommendation": daily_section,
+        "ml_evidence": ml_section,
+        "decomposition_evidence": decomposition_section,
+        "operator_explanation": _operator_explanation(daily_section, ml_section, decomposition_section, missing),
         "generated_at": generated_at,
         "snapshot_version": SNAPSHOT_VERSION,
         "limitations": [
@@ -174,7 +318,10 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
     rows = _current_rows(root)
     paper = paper_rebalance_snapshot_payload(root)
-    cards = [_card(root, row, paper, generated_at) for row in rows]
+    daily_rows, daily_latest = _daily_recommendations_by_uid(root)
+    cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest) for row in rows]
+    daily_artifact = daily_latest.get("artifact") or {}
+    daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})
     summary = {
         "total_cards": len(cards),
@@ -202,6 +349,12 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             decision: sum(card["research_decision"] == decision for card in cards)
             for decision in sorted({card["research_decision"] for card in cards})
         },
+        "daily_recommendation_status": daily_latest.get("status") or "NOT_AVAILABLE",
+        "daily_recommendation_count": len(daily_rows) if daily_latest.get("ok") else None,
+        "daily_recommendation_review_count": (daily_summary or {}).get("review_count"),
+        "daily_recommendation_missing_match_count": sum(
+            card["daily_recommendation"]["recommended_action"] == "NOT_AVAILABLE" for card in cards
+        ),
     }
     return {
         "ok": True,
@@ -217,6 +370,7 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             "canonical": _relative(root, _paths(root)["canonical"]),
             "snapshot_summary_endpoint": "/api/snapshot-summary",
             "strategy_intelligence_endpoint": "/api/strategy-intelligence",
+            "daily_recommendation_artifact": daily_latest.get("artifact_path"),
         },
         "safety": {
             "state_mutation": False,

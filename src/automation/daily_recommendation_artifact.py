@@ -13,8 +13,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from src.strategy_intelligence import build_strategy_intelligence_payload
-
 
 SOURCE = "daily_recommendation_artifact_v0"
 ARTIFACT_DIR = Path("data/automation/daily_recommendations")
@@ -210,6 +208,8 @@ def build_daily_recommendation_artifact(
     now: datetime | None = None,
     strategy_intelligence_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from src.strategy_intelligence import build_strategy_intelligence_payload
+
     root_path = Path(root)
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
     as_of_date = generated_at[:10]

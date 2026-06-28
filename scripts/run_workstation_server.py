@@ -26,8 +26,10 @@ from src.automation import (
     build_automation_intelligence_manifest,
     build_review_draft_eligibility,
     create_review_draft_from_allocation_recommendation,
+    read_latest_daily_cycle_status,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
+    run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
 )
@@ -171,9 +173,11 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
     bootstrap_refresh_lock = threading.Lock()
+    daily_cycle_lock = threading.Lock()
     operational_snapshot_cache_lock = threading.Lock()
     bootstrap_refresh_in_progress = False
     last_bootstrap_refresh_at = 0.0
+    daily_cycle_in_progress = False
 
     @classmethod
     def warm_artifact_caches(cls, artifact: dict) -> None:
@@ -257,6 +261,28 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             "reason": "bootstrap_refresh_started",
             "requested_refresh_state": lifecycle.get("state"),
         }
+
+    @classmethod
+    def _run_daily_cycle_job(cls, root: Path) -> None:
+        try:
+            result = run_daily_automation_cycle(root, force=False)
+            logger.info("Daily automation cycle finished: %s", result.get("status"))
+        except Exception as exc:
+            logger.warning("Daily automation cycle failed: %s", exc)
+        finally:
+            with cls.daily_cycle_lock:
+                cls.daily_cycle_in_progress = False
+
+    @classmethod
+    def maybe_start_daily_cycle(cls, root: Path) -> dict:
+        if os.environ.get("DISABLE_DAILY_AUTOMATION_CYCLE", "").strip().lower() in {"1", "true", "yes", "on"}:
+            return {"state": "disabled", "reason": "daily_cycle_disabled_by_env", "pending": False}
+        with cls.daily_cycle_lock:
+            if cls.daily_cycle_in_progress:
+                return {"state": "pending", "reason": "daily_cycle_already_pending", "pending": True}
+            cls.daily_cycle_in_progress = True
+        threading.Thread(target=cls._run_daily_cycle_job, args=(root,), daemon=True).start()
+        return {"state": "pending", "reason": "daily_cycle_started", "pending": True}
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -672,6 +698,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="review-draft-eligibility-latest")
             return
+        if parsed.path in {
+            "/api/automation-intelligence/daily-cycle/latest",
+            "/api/automation-intelligence/daily-cycle/latest/",
+        }:
+            try:
+                latest = read_latest_daily_cycle_status(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-cycle-latest")
+            return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:
                 refresh_lifecycle = WorkstationHandler.maybe_start_intraday_bootstrap(self.server_root)
@@ -839,6 +875,17 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(result, status=201 if result.get("review_draft_created") else 409)
             except Exception as exc:
                 self._send_safe_error(exc, context="review-draft-from-allocation-recommendation")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/daily-cycle/generate",
+            "/api/automation-intelligence/daily-cycle/generate/",
+        }:
+            try:
+                body = self._read_json_body()
+                result = run_daily_automation_cycle(self.server_root, force=bool(body.get("force")))
+                self._send_json(result, status=201 if result.get("ok") else 500)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-cycle-generate")
             return
         if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
             try:
@@ -1443,9 +1490,11 @@ def main(
     if refresh_on_start:
         print("Startup official/live refresh is disabled for the Foundation dashboard.")
     WorkstationHandler.warm_operational_snapshot_cache(PROJECT_ROOT)
+    daily_cycle_start = WorkstationHandler.maybe_start_daily_cycle(PROJECT_ROOT)
     server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
     print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
     print("Default page load: /api/operational-snapshot (official ledger plus separate intraday estimate)")
+    print(f"Daily automation cycle: {daily_cycle_start.get('reason')}")
     if scheduler_enabled:
         threading.Thread(target=_intraday_scheduler_loop, args=(PROJECT_ROOT,), daemon=True).start()
         print("Operational intraday overlay scheduler enabled.")

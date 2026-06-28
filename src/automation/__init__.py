@@ -12,8 +12,10 @@ __all__ = [
     "compact_automation_intelligence_summary",
     "build_review_draft_eligibility",
     "create_review_draft_from_allocation_recommendation",
+    "read_latest_daily_cycle_status",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
+    "run_daily_automation_cycle",
     "write_allocation_recommendation_artifact",
     "write_daily_recommendation_artifact",
 ]
@@ -29,6 +31,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "build_automation_intelligence_manifest": build_automation_intelligence_manifest,
             "compact_automation_intelligence_summary": compact_automation_intelligence_summary,
+        }
+        return exports[name]
+    if name in {
+        "read_latest_daily_cycle_status",
+        "run_daily_automation_cycle",
+    }:
+        from src.automation.daily_cycle import (
+            read_latest_daily_cycle_status,
+            run_daily_automation_cycle,
+        )
+
+        exports = {
+            "read_latest_daily_cycle_status": read_latest_daily_cycle_status,
+            "run_daily_automation_cycle": run_daily_automation_cycle,
         }
         return exports[name]
     if name in {

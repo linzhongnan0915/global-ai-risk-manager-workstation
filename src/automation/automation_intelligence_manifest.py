@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
+from src.automation.daily_cycle import read_latest_daily_cycle_status
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
 from src.automation.review_draft_eligibility import build_review_draft_eligibility
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
@@ -237,6 +238,22 @@ def _review_draft_eligibility(root: Path) -> dict[str, Any]:
     }
 
 
+def _daily_cycle(root: Path) -> dict[str, Any]:
+    latest = read_latest_daily_cycle_status(root)
+    cycle = latest.get("daily_cycle") or {}
+    return {
+        "status": cycle.get("status") or latest.get("status") or "MISSING_ARTIFACT",
+        "as_of_date": cycle.get("as_of_date"),
+        "last_run_at": cycle.get("last_run_at"),
+        "daily_recommendation_status": cycle.get("daily_recommendation_status") or "MISSING_ARTIFACT",
+        "allocation_recommendation_status": cycle.get("allocation_recommendation_status") or "MISSING_ARTIFACT",
+        "review_draft_eligibility_status": cycle.get("review_draft_eligibility_status") or "MISSING_ARTIFACT",
+        "artifact_path": latest.get("artifact_path"),
+        "errors": cycle.get("errors") if isinstance(cycle.get("errors"), list) else [],
+        "warnings": cycle.get("warnings") if isinstance(cycle.get("warnings"), list) else [],
+    }
+
+
 def _apply_due_status(latest_plan: dict[str, Any], applied_events: list[dict[str, Any]]) -> tuple[str, bool, str | None]:
     if not latest_plan:
         return "NOT_AVAILABLE", False, None
@@ -382,6 +399,7 @@ def _strategy_intelligence(root: Path) -> dict[str, Any]:
 
 
 def _operator_summary(
+    daily_cycle: dict[str, Any],
     daily: dict[str, Any],
     allocation: dict[str, Any],
     review_eligibility: dict[str, Any],
@@ -392,6 +410,8 @@ def _operator_summary(
 ) -> dict[str, Any]:
     review_items: list[str] = []
     warnings: list[str] = []
+    if daily_cycle["status"] in {"MISSING_ARTIFACT", "PARTIAL", "FAILED", "NOT_WIRED"}:
+        review_items.append("Daily automation cycle is missing, partial, or failed.")
     if daily["status"] == "MISSING_ARTIFACT":
         review_items.append("Daily recommendation artifact has not been generated.")
     if daily["status"] == "REVIEW_REQUIRED":
@@ -429,6 +449,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     root_path = Path(root)
     alpha = _alpha_root()
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
+    daily_cycle = _daily_cycle(root_path)
     daily = _daily_recommendation(root_path)
     allocation = _allocation_recommendation(root_path)
     review_eligibility = _review_draft_eligibility(root_path)
@@ -437,7 +458,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily, allocation, review_eligibility, rebalance, strategy, ml, decomposition)
+    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, ml, decomposition)
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -446,6 +467,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "live_trading_enabled": False,
         "financial_state_mutated": False,
         "alpha_research_root": str(alpha),
+        "daily_cycle": daily_cycle,
         "daily_recommendation": daily,
         "allocation_recommendation": allocation,
         "review_draft_eligibility": review_eligibility,
@@ -470,6 +492,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
 def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[str, Any]:
     operator = manifest.get("operator_summary") or {}
     daily = manifest.get("daily_recommendation") or {}
+    daily_cycle = manifest.get("daily_cycle") or {}
     allocation = manifest.get("allocation_recommendation") or {}
     review_eligibility = manifest.get("review_draft_eligibility") or {}
     rebalance = manifest.get("rebalance") or {}
@@ -491,6 +514,14 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     return {
         "source": SOURCE,
         "overall_status": operator.get("overall_status") or "NOT_AVAILABLE",
+        "daily_cycle_status": daily_cycle.get("status") or "NOT_WIRED",
+        "daily_cycle_as_of_date": daily_cycle.get("as_of_date"),
+        "daily_cycle_last_run_at": daily_cycle.get("last_run_at"),
+        "daily_cycle_daily_recommendation_status": daily_cycle.get("daily_recommendation_status"),
+        "daily_cycle_allocation_recommendation_status": daily_cycle.get("allocation_recommendation_status"),
+        "daily_cycle_review_draft_eligibility_status": daily_cycle.get("review_draft_eligibility_status"),
+        "daily_cycle_errors": daily_cycle.get("errors") or [],
+        "daily_cycle_warnings": daily_cycle.get("warnings") or [],
         "daily_recommendation_status": daily.get("status") or "NOT_AVAILABLE",
         "daily_recommendation_count": daily_count("recommendation_count"),
         "daily_recommendation_increase_count": daily_count("increase_count"),

@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "source": "daily_automation_cycle_v0",
+  "generated_at": "2026-06-28T23:53:34.837232+00:00",
+  "paper_shadow_only": true,
+  "financial_state_mutated": false,
+  "review_draft_created": false,
+  "approved_plan_created": false,
+  "apply_performed": false,
+  "force": false,
+  "daily_cycle": {
+    "status": "AVAILABLE",
+    "as_of_date": "2026-06-28",
+    "last_run_at": "2026-06-28T23:53:34.837232+00:00",
+    "daily_recommendation_status": "AVAILABLE",
+    "allocation_recommendation_status": "AVAILABLE",
+    "review_draft_eligibility_status": "REVIEW_REQUIRED",
+    "errors": [],
+    "warnings": [
+      "Allocation weights not changed because evidence or allocation logic is incomplete."
+    ]
+  },
+  "steps": [
+    {
+      "name": "daily_recommendation",
+      "status": "SKIPPED_EXISTING",
+      "artifact_path": "data/automation/daily_recommendations/2026-06-28.json"
+    },
+    {
+      "name": "allocation_recommendation",
+      "status": "SKIPPED_EXISTING",
+      "artifact_path": "data/automation/allocation_recommendations/2026-06-28.json"
+    },
+    {
+      "name": "review_draft_eligibility",
+      "status": "REVIEW_REQUIRED",
+      "artifact_path": "data/automation/allocation_recommendations/2026-06-28.json"
+    },
+    {
+      "name": "automation_intelligence_manifest",
+      "status": "READ",
+      "artifact_path": null
+    }
+  ],
+  "review_draft_eligibility": {
+    "source": "review_draft_eligibility_v0",
+    "generated_at": "2026-06-28T23:53:34.838581+00:00",
+    "paper_shadow_only": true,
+    "financial_state_mutated": false,
+    "latest_allocation_artifact": "data/automation/allocation_recommendations/2026-06-28.json",
+    "eligibility": {
+      "review_draft_generation_allowed": false,
+      "reason": "Review draft generation is blocked until allocation change, 100% integrity, evidence, and plan-conflict gates pass.",
+      "blocking_conditions": [
+        "ALLOCATION_CHANGE_NOT_RECOMMENDED",
+        "MISSING_ML_OR_ATTRIBUTION_EVIDENCE",
+        "APPROVED_PLAN_PENDING_EFFECTIVE_DATE"
+      ],
+      "required_conditions": {
+        "allocation_artifact_available": true,
+        "sums_to_100pct": true,
+        "allocation_change_recommended": false,
+        "no_blocking_missing_evidence": false,
+        "no_existing_pending_approved_plan_conflict": false
+      }
+    },
+    "rebalance_context": {
+      "monthly_proposal_status": "MONTHLY_PROPOSAL_READY",
+      "review_draft_status": "DRAFT_NOT_APPLIED",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "apply_due_status": "DUE_OR_PENDING_APPROVED_PLAN",
+      "effective_date": "2026-06-29"
+    },
+    "warnings": [
+      "Allocation weights not changed because evidence or allocation logic is incomplete."
+    ]
+  },
+  "manifest_summary": {
+    "overall_status": "REVIEW_REQUIRED"
+  }
+}

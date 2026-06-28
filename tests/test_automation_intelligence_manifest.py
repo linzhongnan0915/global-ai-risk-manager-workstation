@@ -17,8 +17,10 @@ from src.automation import (
     build_daily_recommendation_artifact,
     build_review_draft_eligibility,
     create_review_draft_from_allocation_recommendation,
+    read_latest_daily_cycle_status,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
+    run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
 )
@@ -63,6 +65,7 @@ def _hashes(root: Path) -> dict[str, str]:
         for path in sorted(base.glob("**/*.json"))
         if "automation/daily_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/allocation_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/daily_cycle" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -791,6 +794,144 @@ def test_review_draft_eligibility_production_logic_has_no_hardcoded_strategy_lit
         [
             (ROOT / "src/automation/review_draft_eligibility.py").read_text(encoding="utf-8"),
             (ROOT / "src/automation/automation_intelligence_manifest.py").read_text(encoding="utf-8"),
+        ]
+    )
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    assert not any(token in source for token in forbidden)
+
+
+def test_daily_cycle_generates_artifacts_in_correct_order(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+
+    result = run_daily_automation_cycle(root, now=datetime(2026, 6, 28, tzinfo=timezone.utc))
+    steps = result["artifact"]["steps"]
+
+    assert result["status"] == "AVAILABLE"
+    assert [step["name"] for step in steps[:4]] == [
+        "daily_recommendation",
+        "allocation_recommendation",
+        "review_draft_eligibility",
+        "automation_intelligence_manifest",
+    ]
+    assert (root / "data/automation/daily_recommendations/2026-06-28.json").exists()
+    assert (root / "data/automation/allocation_recommendations/2026-06-28.json").exists()
+    assert (root / "data/automation/daily_cycle/2026-06-28.json").exists()
+    assert result["review_draft_created"] is False
+    assert result["approved_plan_created"] is False
+    assert result["apply_performed"] is False
+
+
+def test_daily_cycle_is_idempotent_for_same_date_without_force(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    first = run_daily_automation_cycle(root, now=datetime(2026, 6, 28, 1, tzinfo=timezone.utc))
+    daily_path = root / "data/automation/daily_recommendations/2026-06-28.json"
+    allocation_path = root / "data/automation/allocation_recommendations/2026-06-28.json"
+    daily_before = json.loads(daily_path.read_text(encoding="utf-8"))["generated_at"]
+    allocation_before = json.loads(allocation_path.read_text(encoding="utf-8"))["generated_at"]
+
+    second = run_daily_automation_cycle(root, now=datetime(2026, 6, 28, 2, tzinfo=timezone.utc))
+    daily_after = json.loads(daily_path.read_text(encoding="utf-8"))["generated_at"]
+    allocation_after = json.loads(allocation_path.read_text(encoding="utf-8"))["generated_at"]
+
+    assert first["status"] == "AVAILABLE"
+    assert second["status"] == "AVAILABLE"
+    assert daily_before == daily_after
+    assert allocation_before == allocation_after
+    assert second["artifact"]["steps"][0]["status"] == "SKIPPED_EXISTING"
+    assert second["artifact"]["steps"][1]["status"] == "SKIPPED_EXISTING"
+
+
+def test_daily_cycle_force_overwrites_existing_automation_artifacts(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    run_daily_automation_cycle(root, now=datetime(2026, 6, 28, 1, tzinfo=timezone.utc))
+    daily_path = root / "data/automation/daily_recommendations/2026-06-28.json"
+    before = json.loads(daily_path.read_text(encoding="utf-8"))["generated_at"]
+
+    result = run_daily_automation_cycle(root, now=datetime(2026, 6, 28, 3, tzinfo=timezone.utc), force=True)
+    after = json.loads(daily_path.read_text(encoding="utf-8"))["generated_at"]
+
+    assert result["status"] == "AVAILABLE"
+    assert before != after
+    assert result["artifact"]["steps"][0]["status"] == "GENERATED"
+
+
+def test_daily_cycle_post_does_not_mutate_financial_or_rebalance_state(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    original_root = WorkstationHandler.server_root
+    original_bytes = WorkstationHandler.operational_snapshot_bytes
+    WorkstationHandler.server_root = root
+    WorkstationHandler.warm_operational_snapshot_cache(root)
+    before = _hashes(root)
+    port = _free_port()
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/daily-cycle/generate")
+        after = _hashes(root)
+        assert status == 201
+        assert payload["daily_cycle"]["status"] == "AVAILABLE"
+        assert payload["financial_state_mutated"] is False
+        assert payload["review_draft_created"] is False
+        assert payload["approved_plan_created"] is False
+        assert payload["apply_performed"] is False
+        assert before == after
+        assert not (root / "data/paper_rebalance/recommendation_review_drafts.json").exists()
+        assert not (root / "data/paper_rebalance/approved_rebalance_plans.json").exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+        WorkstationHandler.operational_snapshot_bytes = original_bytes
+
+
+def test_daily_cycle_scheduler_job_can_be_disabled(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("DISABLE_DAILY_AUTOMATION_CYCLE", "1")
+
+    result = WorkstationHandler.maybe_start_daily_cycle(root)
+
+    assert result["state"] == "disabled"
+    assert not (root / "data/automation/daily_cycle").exists()
+
+
+def test_manifest_reads_daily_cycle_status(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(tmp_path / "missing_alpha_research"))
+    run_daily_automation_cycle(root, now=datetime(2026, 6, 28, tzinfo=timezone.utc))
+
+    manifest = build_automation_intelligence_manifest(root)
+    latest = read_latest_daily_cycle_status(root)
+    compact = load_snapshot_summary_for_response(root)["automation_intelligence"]
+
+    assert latest["daily_cycle"]["status"] == "AVAILABLE"
+    assert manifest["daily_cycle"]["status"] == "AVAILABLE"
+    assert manifest["daily_cycle"]["as_of_date"] == "2026-06-28"
+    assert compact["daily_cycle_status"] == "AVAILABLE"
+    assert compact["daily_cycle_daily_recommendation_status"] == "AVAILABLE"
+    assert compact["daily_cycle_allocation_recommendation_status"] == "AVAILABLE"
+
+
+def test_dashboard_daily_cycle_renders_backend_fields_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Daily Automation Cycle" in source
+    assert "daily_cycle_status" in source
+    assert "daily_cycle_daily_recommendation_status" in source
+    assert "daily_cycle_allocation_recommendation_status" in source
+    assert "daily_cycle_review_draft_eligibility_status" in source
+    assert "frontend_daily_cycle" not in source
+
+
+def test_daily_cycle_production_logic_has_no_hardcoded_strategy_literals() -> None:
+    source = "\n".join(
+        [
+            (ROOT / "src/automation/daily_cycle.py").read_text(encoding="utf-8"),
+            (ROOT / "scripts/run_workstation_server.py").read_text(encoding="utf-8"),
         ]
     )
     forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]

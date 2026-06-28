@@ -1,0 +1,2430 @@
+{
+  "ok": true,
+  "schema_version": "strategy_intelligence_cards_v1",
+  "generated_at": "2026-06-28T21:36:48.777868+00:00",
+  "snapshot_version": "3.6.9",
+  "coverage_universe": "current_top_level_active_plus_active_unallocated",
+  "strategy_entity_inventory": {
+    "entities": [
+      {
+        "display_id": "#000001",
+        "internal_id": "C3A1_002",
+        "strategy_name": "C3A1 002",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000002",
+        "internal_id": "C3A1_003",
+        "strategy_name": "C3A1 003",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000003",
+        "internal_id": "C3A1_013",
+        "strategy_name": "C3A1 013",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000004",
+        "internal_id": "C3A2_008",
+        "strategy_name": "C3A2 008",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000005",
+        "internal_id": "C3A1_001",
+        "strategy_name": "C3A1 001",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000006",
+        "internal_id": "C3A1_015",
+        "strategy_name": "C3A1 015",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000007",
+        "internal_id": "FUNDAMENTAL_MOMENTUM",
+        "strategy_name": "Fundamental Momentum",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000008",
+        "internal_id": "EARNINGS_QUALITY",
+        "strategy_name": "Earnings Quality",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000009",
+        "internal_id": "MARGIN_IMPROVEMENT",
+        "strategy_name": "Margin Improvement",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000010",
+        "internal_id": "OVERNIGHT_INTRADAY_ENSEMBLE",
+        "strategy_name": "Overnight Intraday Ensemble",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000011",
+        "internal_id": "FILING_SHOCK_CONTINUATION",
+        "strategy_name": "Filing Shock Continuation",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000012",
+        "internal_id": "FUNDAMENTAL_SHOCK_RECOVERY",
+        "strategy_name": "Fundamental Shock Recovery",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000013",
+        "internal_id": "CASH_FLOW_GROWTH_QUALITY",
+        "strategy_name": "Cash Flow Growth Quality",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000014",
+        "internal_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+        "strategy_name": "Overnight Gap Reversal Reduced Turnover",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000015",
+        "internal_id": "LIQUIDITY_ADJUSTED_MOMENTUM",
+        "strategy_name": "Liquidity Adjusted Momentum",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000016",
+        "internal_id": "POST_FILING_CASH_FLOW_SURPRISE",
+        "strategy_name": "Post Filing Cash Flow Surprise",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": "No operational daily ledger rows are present."
+      },
+      {
+        "display_id": "#000019",
+        "internal_id": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+        "strategy_name": "COPX/XME Copper Equity Proxy Trend",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": "ACTIVE_UNALLOCATED",
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": true,
+        "effective_date": "2026-06-27",
+        "blocker": "Active unallocated; no portfolio impact until approved rebalance is effective."
+      },
+      {
+        "display_id": "#000020",
+        "internal_id": "SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+        "strategy_name": "U.S. Stock Low Vol Defensive 63D Top 20",
+        "entity_type": "ORDINARY_STRATEGY",
+        "current_operational_status": "ACTIVE_UNALLOCATED",
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": true,
+        "effective_date": "2026-06-27",
+        "blocker": "Active unallocated; no portfolio impact until approved rebalance is effective."
+      },
+      {
+        "display_id": "#COMBINED",
+        "internal_id": "COMBINED_PORTFOLIO",
+        "strategy_name": "Combined",
+        "entity_type": "COMBINED_STRATEGY",
+        "current_operational_status": null,
+        "has_operational_daily_ledger": false,
+        "has_trade_rows": false,
+        "has_holdings_position_rows": false,
+        "has_research_artifacts": false,
+        "effective_date": null,
+        "blocker": null
+      }
+    ],
+    "ordinary_entities": 18,
+    "ordinary_active_count": 18,
+    "ordinary_operational_ledgers": 0,
+    "combined": 1,
+    "combined_active_count": 1,
+    "top_level_active_count": 19,
+    "active_unallocated_strategies": 2,
+    "active_unallocated_count": 2,
+    "pending_candidates": 0,
+    "pending_approval_count": 0,
+    "total_registry_entities": 19,
+    "missing_ordinary_ledger": [],
+    "status": "PASS"
+  },
+  "summary": {
+    "total_cards": 19,
+    "strategies_explained": 19,
+    "generic_fallback_count": 0,
+    "cards_with_strategy_specific_mechanism": 19,
+    "missing_attribution_count": 19,
+    "attribution_missing_count": 19,
+    "ml_missing_evidence_count": 19,
+    "ml_missing_count": 19,
+    "review_required_count": 0,
+    "rejected_watch_count": 3,
+    "watch_reject_review_count": 3,
+    "active_unallocated_zero_weight_count": 2,
+    "research_decision_counts": {
+      "ARCHIVE": 3,
+      "CONTINUE": 3,
+      "KEEP_CANDIDATE": 9,
+      "MISSING_RESEARCH_DECISION": 2,
+      "RESEARCH_COMPOSITE_CONSTRUCTED": 1,
+      "REVIEW": 1
+    }
+  },
+  "cards": [
+    {
+      "card_id": "strategy-intelligence::COMBINED_PORTFOLIO",
+      "strategy_uid": "COMBINED_PORTFOLIO",
+      "strategy_name": "Combined",
+      "display_label": "#COMBINED",
+      "family": "Combined",
+      "mechanism_class": "COMBINED_COMPOSITE",
+      "mechanism_source": "portfolio_composite_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "documented research signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "RESEARCH_COMPOSITE_CONSTRUCTED",
+      "evidence_decision": "RESEARCH_COMPOSITE_CONSTRUCTED",
+      "edge_thesis": "Diversified composite of current active paper strategies rather than a standalone alpha signal.",
+      "economic_mechanism": "Causal Thesis: portfolio-level diversification may reduce idiosyncratic strategy noise; it is not independent evidence of a new alpha source, and returns depend on constituents.",
+      "causal_thesis_confidence": "COMPOSITE_MECHANISM_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "constituent overlap",
+        "correlation spike",
+        "hidden factor concentration",
+        "insufficient attribution",
+        "ML evidence missing"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/COMBINED_PORTFOLIO/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A1_002",
+      "strategy_uid": "C3A1_002",
+      "strategy_name": "C3A1 002",
+      "display_label": "#000001",
+      "family": "Momentum",
+      "mechanism_class": "MOMENTUM",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "relative strength momentum",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "ARCHIVE",
+      "evidence_decision": "ARCHIVE",
+      "edge_thesis": "Uses relative strength momentum to capture price persistence that may reflect slow information diffusion.",
+      "economic_mechanism": "Causal Thesis: medium-term momentum may reflect delayed information diffusion, investor underreaction, or gradual portfolio rebalancing; research decisions remain separate from allocation approval.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "WATCH_ONLY",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "momentum reversal",
+        "crowding",
+        "regime decay",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "WATCH_ONLY",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_002/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A1_003",
+      "strategy_uid": "C3A1_003",
+      "strategy_name": "C3A1 003",
+      "display_label": "#000002",
+      "family": "Momentum",
+      "mechanism_class": "MOMENTUM",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "relative strength momentum",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "CONTINUE",
+      "evidence_decision": "CONTINUE",
+      "edge_thesis": "Uses relative strength momentum to capture price persistence that may reflect slow information diffusion.",
+      "economic_mechanism": "Causal Thesis: medium-term momentum may reflect delayed information diffusion, investor underreaction, or gradual portfolio rebalancing; research decisions remain separate from allocation approval.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "MODERATE_RESEARCH_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "momentum reversal",
+        "crowding",
+        "regime decay",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_003/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A1_013",
+      "strategy_uid": "C3A1_013",
+      "strategy_name": "C3A1 013",
+      "display_label": "#000003",
+      "family": "Liquidity",
+      "mechanism_class": "LIQUIDITY",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "Amihud illiquidity signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "ARCHIVE",
+      "evidence_decision": "ARCHIVE",
+      "edge_thesis": "Uses Amihud illiquidity signal to capture compensation or persistence linked to liquidity preference and trading frictions.",
+      "economic_mechanism": "Causal Thesis: liquidity-related signals may reflect investor constraints, capacity pressure, or compensation for trading frictions; evidence is partial until attribution and cost-linkage are decomposed.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "WATCH_ONLY",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "capacity limitation",
+        "transaction cost sensitivity",
+        "liquidity regime shift",
+        "public fallback data limitation",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "WATCH_ONLY",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_013/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A2_008",
+      "strategy_uid": "C3A2_008",
+      "strategy_name": "C3A2 008",
+      "display_label": "#000004",
+      "family": "Momentum",
+      "mechanism_class": "MOMENTUM",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "slow momentum",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "ARCHIVE",
+      "evidence_decision": "ARCHIVE",
+      "edge_thesis": "Uses slow momentum to capture price persistence that may reflect slow information diffusion.",
+      "economic_mechanism": "Causal Thesis: medium-term momentum may reflect delayed information diffusion, investor underreaction, or gradual portfolio rebalancing; research decisions remain separate from allocation approval.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "WATCH_ONLY",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "momentum reversal",
+        "crowding",
+        "regime decay",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "WATCH_ONLY",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A2_008/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A1_001",
+      "strategy_uid": "C3A1_001",
+      "strategy_name": "C3A1 001",
+      "display_label": "#000005",
+      "family": "Momentum",
+      "mechanism_class": "MOMENTUM",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "residual momentum",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "CONTINUE",
+      "evidence_decision": "CONTINUE",
+      "edge_thesis": "Uses residual momentum to capture price persistence that may reflect slow information diffusion.",
+      "economic_mechanism": "Causal Thesis: medium-term momentum may reflect delayed information diffusion, investor underreaction, or gradual portfolio rebalancing; research decisions remain separate from allocation approval.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "MODERATE_RESEARCH_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "momentum reversal",
+        "crowding",
+        "regime decay",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_001/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::C3A1_015",
+      "strategy_uid": "C3A1_015",
+      "strategy_name": "C3A1 015",
+      "display_label": "#000006",
+      "family": "Price Efficiency",
+      "mechanism_class": "PRICE_EFFICIENCY",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "price-efficiency signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "CONTINUE",
+      "evidence_decision": "CONTINUE",
+      "edge_thesis": "Uses price-efficiency signal to identify smoother or more efficient positive price paths rather than noisy drift.",
+      "economic_mechanism": "Causal Thesis: cleaner trend formation, lower noisy path behavior, or gradual information diffusion may allow price paths with stronger persistence; this is not causal proof and needs attribution.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "MODERATE_RESEARCH_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "path signal can be data-mined",
+        "choppy regime failure",
+        "transaction cost sensitivity",
+        "turnover evidence incomplete",
+        "insufficient attribution",
+        "ML evidence missing"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/C3A1_015/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::FUNDAMENTAL_MOMENTUM",
+      "strategy_uid": "FUNDAMENTAL_MOMENTUM",
+      "strategy_name": "Fundamental Momentum",
+      "display_label": "#000007",
+      "family": "Fundamental Momentum",
+      "mechanism_class": "FUNDAMENTAL_MOMENTUM",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "fundamental momentum signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Combines revenue growth, margin change, and operating cash-flow improvement signals to detect fundamental trend persistence.",
+      "economic_mechanism": "Causal Thesis: revenue growth, margin improvement, and operating cash-flow improvement may be incorporated gradually by the market; PIT and timestamp evidence remain required before treating this as an event-timing proof.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "fundamental data revision risk",
+        "sector/beta confounding",
+        "accounting noise",
+        "insufficient attribution",
+        "ML evidence missing"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FUNDAMENTAL_MOMENTUM/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::EARNINGS_QUALITY",
+      "strategy_uid": "EARNINGS_QUALITY",
+      "strategy_name": "Earnings Quality",
+      "display_label": "#000008",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "earnings quality signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses earnings quality signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/EARNINGS_QUALITY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::MARGIN_IMPROVEMENT",
+      "strategy_uid": "MARGIN_IMPROVEMENT",
+      "strategy_name": "Margin Improvement",
+      "display_label": "#000009",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "margin improvement signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses margin improvement signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/MARGIN_IMPROVEMENT/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::OVERNIGHT_INTRADAY_ENSEMBLE",
+      "strategy_uid": "OVERNIGHT_INTRADAY_ENSEMBLE",
+      "strategy_name": "Overnight Intraday Ensemble",
+      "display_label": "#000010",
+      "family": "Market Microstructure",
+      "mechanism_class": "MARKET_MICROSTRUCTURE",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "overnight/intraday microstructure signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses overnight/intraday microstructure signal to capture short-horizon overreaction, liquidity pressure, or session effects.",
+      "economic_mechanism": "Causal Thesis: temporary overreaction and liquidity pressure may mean-revert over short horizons; cost and execution sensitivity can erase the effect.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "high turnover",
+        "transaction cost sensitivity",
+        "microstructure decay",
+        "execution sensitivity",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/OVERNIGHT_INTRADAY_ENSEMBLE/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::FILING_SHOCK_CONTINUATION",
+      "strategy_uid": "FILING_SHOCK_CONTINUATION",
+      "strategy_name": "Filing Shock Continuation",
+      "display_label": "#000011",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "filing or post-filing signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses filing or post-filing signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FILING_SHOCK_CONTINUATION/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::FUNDAMENTAL_SHOCK_RECOVERY",
+      "strategy_uid": "FUNDAMENTAL_SHOCK_RECOVERY",
+      "strategy_name": "Fundamental Shock Recovery",
+      "display_label": "#000012",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "documented research signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses documented research signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/FUNDAMENTAL_SHOCK_RECOVERY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::CASH_FLOW_GROWTH_QUALITY",
+      "strategy_uid": "CASH_FLOW_GROWTH_QUALITY",
+      "strategy_name": "Cash Flow Growth Quality",
+      "display_label": "#000013",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "cash-flow quality signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses cash-flow quality signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/CASH_FLOW_GROWTH_QUALITY/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+      "strategy_name": "Overnight Gap Reversal Reduced Turnover",
+      "display_label": "#000014",
+      "family": "Market Microstructure",
+      "mechanism_class": "MARKET_MICROSTRUCTURE",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "overnight/intraday microstructure signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses overnight/intraday microstructure signal to capture short-horizon overreaction, liquidity pressure, or session effects.",
+      "economic_mechanism": "Causal Thesis: temporary overreaction and liquidity pressure may mean-revert over short horizons; cost and execution sensitivity can erase the effect.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "high turnover",
+        "transaction cost sensitivity",
+        "microstructure decay",
+        "execution sensitivity",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::LIQUIDITY_ADJUSTED_MOMENTUM",
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM",
+      "strategy_name": "Liquidity Adjusted Momentum",
+      "display_label": "#000015",
+      "family": "Liquidity",
+      "mechanism_class": "LIQUIDITY",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "documented research signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "KEEP_CANDIDATE",
+      "evidence_decision": "KEEP_CANDIDATE",
+      "edge_thesis": "Uses documented research signal to capture compensation or persistence linked to liquidity preference and trading frictions.",
+      "economic_mechanism": "Causal Thesis: liquidity-related signals may reflect investor constraints, capacity pressure, or compensation for trading frictions; evidence is partial until attribution and cost-linkage are decomposed.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "capacity limitation",
+        "transaction cost sensitivity",
+        "liquidity regime shift",
+        "public fallback data limitation",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/LIQUIDITY_ADJUSTED_MOMENTUM/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::POST_FILING_CASH_FLOW_SURPRISE",
+      "strategy_uid": "POST_FILING_CASH_FLOW_SURPRISE",
+      "strategy_name": "Post Filing Cash Flow Surprise",
+      "display_label": "#000016",
+      "family": "Fundamental / Event",
+      "mechanism_class": "FUNDAMENTAL_EVENT",
+      "mechanism_source": "research_metadata",
+      "is_generic_fallback": false,
+      "signal_metadata": "filing or post-filing signal",
+      "source_status": "CANONICAL_OPERATIONAL",
+      "portfolio_status": "executed",
+      "current_weight": 0.058823529411764705,
+      "target_weight": null,
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "REVIEW",
+      "evidence_decision": "REVIEW",
+      "edge_thesis": "Uses filing or post-filing signal to capture delayed market incorporation of fundamentals or event information.",
+      "economic_mechanism": "Causal Thesis: accounting or filing information may be incorporated with a delay, creating post-event drift or quality re-rating; PIT/timestamp evidence remains a gating concern.",
+      "causal_thesis_confidence": "HYPOTHESIS_ONLY",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "PARTIAL_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "missing PIT/timestamp evidence",
+        "stale filings",
+        "accounting noise",
+        "sector/beta confounding",
+        "ML evidence missing",
+        "insufficient attribution"
+      ],
+      "decision_recommendation": "ACTIVE_MONITOR",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "research_summary",
+          "path": "data/research/canonical/POST_FILING_CASH_FLOW_SURPRISE/summary.json",
+          "status": "HISTORICAL_RESEARCH"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+      "strategy_uid": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+      "strategy_name": "COPX/XME Copper Equity Proxy Trend",
+      "display_label": "#000019",
+      "family": "Strategy Factory",
+      "mechanism_class": "STRATEGY_FACTORY_ACTIVE_UNALLOCATED",
+      "mechanism_source": "strategy_factory_activation_lineage",
+      "is_generic_fallback": false,
+      "signal_metadata": "trend signal",
+      "source_status": "STRATEGY_FACTORY_ACTIVATION_RECORD",
+      "portfolio_status": "ACTIVE_UNALLOCATED",
+      "current_weight": 0.0,
+      "target_weight": "RECOMMENDATION_PENDING",
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "MISSING_RESEARCH_DECISION",
+      "evidence_decision": "MISSING_EVIDENCE",
+      "edge_thesis": "User-confirmed trend signal waiting for paper allocation evidence; current weight remains zero.",
+      "economic_mechanism": "Causal Thesis: candidate-specific source material may define an edge, but V1 requires explicit evidence artifacts before treating the thesis as supported.",
+      "causal_thesis_confidence": "MISSING_EVIDENCE",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "MISSING_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "no NAV/P&L impact while current weight is zero",
+        "missing PIT/timestamp evidence",
+        "insufficient attribution",
+        "ML evidence missing"
+      ],
+      "decision_recommendation": "ACTIVE_UNALLOCATED_ZERO_WEIGHT",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "strategy_factory_activation",
+          "path": "output\\strategy_factory\\portfolio_candidates\\SF_CAND_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1_ACDE308E01\\activation_record.json",
+          "status": "USER_CONFIRMED_LOCAL_ARTIFACT"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    },
+    {
+      "card_id": "strategy-intelligence::SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+      "strategy_uid": "SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+      "strategy_name": "U.S. Stock Low Vol Defensive 63D Top 20",
+      "display_label": "#000020",
+      "family": "Strategy Factory",
+      "mechanism_class": "STRATEGY_FACTORY_ACTIVE_UNALLOCATED",
+      "mechanism_source": "strategy_factory_activation_lineage",
+      "is_generic_fallback": false,
+      "signal_metadata": "documented research signal",
+      "source_status": "STRATEGY_FACTORY_ACTIVATION_RECORD",
+      "portfolio_status": "ACTIVE_UNALLOCATED",
+      "current_weight": 0.0,
+      "target_weight": "RECOMMENDATION_PENDING",
+      "recommendation_status": "DRAFT_NOT_APPLIED",
+      "proposal_status": "MONTHLY_PROPOSAL_READY",
+      "approved_plan_status": "APPROVED_WAITING_EFFECTIVE_DATE",
+      "research_decision": "MISSING_RESEARCH_DECISION",
+      "evidence_decision": "MISSING_EVIDENCE",
+      "edge_thesis": "User-confirmed documented research signal waiting for paper allocation evidence; current weight remains zero.",
+      "economic_mechanism": "Causal Thesis: candidate-specific source material may define an edge, but V1 requires explicit evidence artifacts before treating the thesis as supported.",
+      "causal_thesis_confidence": "MISSING_EVIDENCE",
+      "return_attribution_summary": {
+        "status": "Missing Attribution Evidence",
+        "requirement": "Requires factor/sector/long-short decomposition",
+        "fields": {
+          "cost_sensitivity_status": "Missing Attribution Evidence",
+          "sector_exposure_status": "Missing Attribution Evidence",
+          "long_leg_evidence": "Missing Attribution Evidence",
+          "liquidity_exposure_status": "Missing Attribution Evidence",
+          "beta_exposure_status": "Missing Attribution Evidence",
+          "regime_evidence_status": "Missing Attribution Evidence",
+          "factor_exposure_status": "Missing Attribution Evidence",
+          "short_leg_evidence": "Missing Attribution Evidence",
+          "concentration_status": "Missing Attribution Evidence"
+        },
+        "missing_evidence": [
+          "Missing long/short contribution decomposition",
+          "Missing factor exposure attribution",
+          "Missing sector attribution",
+          "Missing regime attribution",
+          "Missing cost-sensitivity linkage"
+        ]
+      },
+      "ml_role": "ML_MISSING_EVIDENCE",
+      "ml_evidence_status": "ML_MISSING_EVIDENCE",
+      "evidence_strength": "MISSING_EVIDENCE",
+      "missing_evidence": [
+        "Missing long/short contribution decomposition",
+        "Missing factor exposure attribution",
+        "Missing sector attribution",
+        "Missing regime attribution",
+        "Missing cost-sensitivity linkage",
+        "feature specification missing",
+        "target specification missing",
+        "train/validation/test split missing",
+        "OOS / walk-forward metrics missing",
+        "baseline comparison missing",
+        "model artifact missing",
+        "explainability / feature importance missing",
+        "Missing Attribution Evidence"
+      ],
+      "failure_modes": [
+        "no NAV/P&L impact while current weight is zero",
+        "missing PIT/timestamp evidence",
+        "insufficient attribution",
+        "ML evidence missing"
+      ],
+      "decision_recommendation": "ACTIVE_UNALLOCATED_ZERO_WEIGHT",
+      "source_artifacts": [
+        {
+          "kind": "operational_summary",
+          "path": "/api/snapshot-summary",
+          "status": "READ_ONLY_ENDPOINT"
+        },
+        {
+          "kind": "strategy_registry",
+          "path": "dashboard/data/canonical_operational.json",
+          "status": "CANONICAL_OPERATIONAL"
+        },
+        {
+          "kind": "strategy_factory_activation",
+          "path": "output\\strategy_factory\\portfolio_candidates\\SF_CAND_US_STOCK_LOW_VOL_63D_TOP20_V1_4093ABF664\\activation_record.json",
+          "status": "USER_CONFIRMED_LOCAL_ARTIFACT"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/monthly_rebalance_proposals.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/recommendation_review_drafts.json",
+          "status": "READ_ONLY_LINEAGE"
+        },
+        {
+          "kind": "paper_rebalance",
+          "path": "data/paper_rebalance/approved_rebalance_plans.json",
+          "status": "READ_ONLY_LINEAGE"
+        }
+      ],
+      "generated_at": "2026-06-28T21:36:48.777868+00:00",
+      "snapshot_version": "3.6.9",
+      "limitations": [
+        "Rule-based V1 explanation; Causal Thesis is a hypothesis, not proof.",
+        "Return Attribution remains missing unless factor/sector/long-short decomposition artifacts exist.",
+        "Paper/shadow monitoring only; no execution authority is created by this card.",
+        "Historical Research remains separate from Operational records."
+      ]
+    }
+  ],
+  "source_paths": {
+    "artifact": "data/strategy_intelligence/strategy_explanation_cards.json",
+    "canonical": "dashboard/data/canonical_operational.json",
+    "snapshot_summary_endpoint": "/api/snapshot-summary",
+    "strategy_intelligence_endpoint": "/api/strategy-intelligence"
+  },
+  "safety": {
+    "state_mutation": false,
+    "paper_rebalance_mutation": false,
+    "full_snapshot_required": false,
+    "execution_authority": "NONE"
+  }
+}

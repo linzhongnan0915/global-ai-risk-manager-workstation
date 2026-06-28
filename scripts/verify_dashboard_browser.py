@@ -421,21 +421,22 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
 
         if True:
             workflow_tabs = [
-                ("Portfolio Command Center", "1. Portfolio Command Center"),
-                ("Strategy Monitor", "2. Strategy Monitor"),
-                ("Allocation & Rebalance", "3. Allocation & Rebalance"),
-                ("Risk Factors & Exposure", "4. Risk Factors & Exposure"),
-                ("Correlation & Diversification", "5. Correlation & Diversification"),
-                ("Universe & Data Coverage", "6. Universe & Data Coverage"),
-                ("Workflow & Shadow-Live Testing", "7. Workflow & Shadow-Live Testing"),
-                ("Strategy Factory", "8. Strategy Factory"),
-                ("Strategy Library & Governance", "9. Strategy Library & Governance"),
-                ("Daily Risk Report", "10. Daily Risk Report"),
+                "Portfolio Command Center",
+                "Strategy Monitor",
+                "Strategy Intelligence",
+                "Allocation & Rebalance",
+                "Risk Factors & Exposure",
+                "Correlation & Diversification",
+                "Universe & Data Coverage",
+                "Workflow & Shadow-Live Testing",
+                "Strategy Factory",
+                "Strategy Library & Governance",
+                "Daily Risk Report",
             ]
             for viewport in VIEWPORTS:
                 page.set_viewport_size({"width": viewport[0], "height": viewport[1]})
-                for index, (tab, button_name) in enumerate(workflow_tabs, start=1):
-                    page.get_by_role("button", name=button_name, exact=True).click()
+                for index, tab in enumerate(workflow_tabs, start=1):
+                    page.locator(f'button[data-page="{tab}"]').click()
                     page.wait_for_timeout(400)
                     body_text = page.locator("body").inner_text()
                     report["tabs"].append({"tab": tab, "loaded": tab in body_text, "viewport": f"{viewport[0]}x{viewport[1]}"})
@@ -468,7 +469,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 rail_results[rail_key] = expected_tab in body_text and top_active and rail_active
             report["checks"]["left_rail_navigation"] = all(rail_results.values())
             report["api_checks"]["left_rail_navigation"] = rail_results
-            page.get_by_role("button", name="2. Strategy Monitor", exact=True).click()
+            page.locator('button[data-page="Strategy Monitor"]').click()
             page.wait_for_timeout(500)
             strategy_monitor_text = page.locator("body").inner_text()
             strategy_monitor_state = page.evaluate(
@@ -519,7 +520,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             report["api_checks"]["strategy_monitor_current_state"] = strategy_monitor_state
             report["checks"]["combined_drawer_derived"] = strategy_monitor_state["combinedRows"] == 1
-            page.get_by_role("button", name="4. Risk Factors & Exposure", exact=True).click()
+            page.locator('button[data-page="Risk Factors & Exposure"]').click()
             page.wait_for_timeout(500)
             risk_state = page.evaluate(
                 """
@@ -536,7 +537,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
             report["checks"]["geometry_pass"] = geometry_pass
             unique_tabs = {entry["tab"] for entry in report["tabs"]}
-            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 10 and geometry_pass
+            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 11 and geometry_pass
             REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
             print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"], "geometry_pass": geometry_pass}, indent=2))
             print(f"Console errors: {len(report['console_errors'])}")
@@ -912,7 +913,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
     report["passed"] = (
         all(report["checks"].values())
         and api_boolean_pass
-        and len(unique_tabs) == 10
+        and len(unique_tabs) == 11
         and geometry_pass
     )
     REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")

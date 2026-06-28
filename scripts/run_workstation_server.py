@@ -65,6 +65,7 @@ from src.reporting.operational_snapshot import (
     refresh_operational_snapshot,
 )
 from src.risk.limits import load_risk_limits
+from src.strategy_intelligence import build_strategy_intelligence_payload
 from src.strategies.shadow_mvp import initialize_database, platform_strategy_registry
 from src.strategies.strategy_factory_admission import (
     activate_portfolio_candidate as activate_variant_portfolio_candidate,
@@ -612,6 +613,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(self.snapshot_summary_payload(self.server_root))
             except Exception as exc:
                 self._send_safe_error(exc, context="snapshot-summary")
+            return
+        if parsed.path in {"/api/strategy-intelligence", "/api/strategy-intelligence/"}:
+            try:
+                self._send_json(build_strategy_intelligence_payload(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-intelligence")
             return
         if parsed.path in {"/api/operational-snapshot", "/api/operational-snapshot/"}:
             try:

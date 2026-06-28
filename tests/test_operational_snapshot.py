@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -21,7 +22,9 @@ from src.reporting.operational_snapshot import (
     refresh_operational_snapshot,
     snapshot_refresh_lock,
 )
+from src.market.approved_rebalance_plan import apply_due_approved_rebalance_plan, create_approved_rebalance_plan
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
+from src.market.recommendation_review_draft import create_recommendation_review_draft
 from src.reporting.strategy_research_artifacts import load_strategy_research_artifacts
 from src.market.paper_portfolio_ledger import (
     backfill_paper_portfolio_daily_from_canonical,
@@ -55,6 +58,10 @@ def _copy_root(tmp_path: Path) -> Path:
 
 def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _state_digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else "MISSING"
 
 
 def test_canonical_fixture_snapshot_fields_identity_costs_exposure_and_contributor_scale():
@@ -164,6 +171,30 @@ def _latest_collection_item(path: Path, collection_key: str) -> dict:
 
 def _line_items(row: dict) -> list[dict]:
     return row.get("rows") or row.get("line_items") or row.get("recommendations") or []
+
+
+def _recommendation_row_from_snapshot(snapshot: dict) -> dict:
+    strategy = next(
+        row for row in snapshot["strategies"]
+        if row.get("membership_state") == "executed"
+        and row.get("internal_id") != "COMBINED_PORTFOLIO"
+    )
+    uid = strategy.get("strategy_uid") or strategy["internal_id"]
+    current = float(strategy.get("current_weight") or 0.0)
+    proposed = min(current + 0.01, 1.0)
+    return {
+        "strategy_uid": uid,
+        "strategy_name": strategy.get("display_name") or uid,
+        "canonical_status": strategy.get("current_operational_status") or "ACTIVE_ALLOCATED",
+        "current_weight": current,
+        "recommended_weight": proposed,
+        "proposed_weight": proposed,
+        "evidence_status": "EVIDENCE_AVAILABLE",
+        "data_quality": "PUBLIC_FALLBACK",
+        "ml_status": "No ML evidence available",
+        "recommendation_reason": "Operational automation regression row.",
+        "action_status": "INCREASE",
+    }
 
 
 def _write_durable_activation(root: Path, *, suffix: str, display_label: str) -> dict:
@@ -381,6 +412,157 @@ def test_root_runtime_snapshot_merges_user_ui_active_unallocated_and_uses_dynami
     assert len(_line_items(draft)) == top_level_count
     assert len(_line_items(approved)) == top_level_count
     assert approved["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+
+
+def test_snapshot_automation_does_not_apply_approved_plan_before_effective_date(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    approval_snapshot = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-26T12:00:00-04:00"),
+    )
+    draft = create_recommendation_review_draft(
+        root,
+        [_recommendation_row_from_snapshot(approval_snapshot)],
+        portfolio_nav=approval_snapshot["portfolio_summary"]["nav"],
+        source_recommendation_artifact="operational_snapshot_test_recommendation_rows",
+    )
+    plan = create_approved_rebalance_plan(root, snapshot=approval_snapshot, draft_id=draft["proposal_id"])
+
+    waiting = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-28T12:00:00-04:00"),
+    )
+    paper = paper_rebalance_snapshot_payload(root)
+
+    assert plan["effective_date"] == "2026-06-29"
+    assert waiting["operational_automation"]["paper_rebalance_apply"]["applied"] is False
+    assert waiting["operational_automation"]["paper_rebalance_apply"]["message"] == "effective date has not arrived"
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+    assert paper["approved_rebalance"]["applied_events"] == []
+    assert paper["current_paper_target"] is None
+    assert waiting["portfolio_daily"] == waiting["official_ledger_daily"]
+
+
+def test_snapshot_after_effective_date_reports_due_without_mutating_apply_state(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    approval_snapshot = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-26T12:00:00-04:00"),
+    )
+    draft = create_recommendation_review_draft(
+        root,
+        [_recommendation_row_from_snapshot(approval_snapshot)],
+        portfolio_nav=approval_snapshot["portfolio_summary"]["nav"],
+        source_recommendation_artifact="operational_snapshot_test_recommendation_rows",
+    )
+    plan = create_approved_rebalance_plan(root, snapshot=approval_snapshot, draft_id=draft["proposal_id"])
+    rebalance_dir = root / "data" / "paper_rebalance"
+    watched = [
+        rebalance_dir / "approved_rebalance_plans.json",
+        rebalance_dir / "applied_rebalance_events.json",
+        rebalance_dir / "current_paper_target_weights.json",
+    ]
+    before = {path.name: _state_digest(path) for path in watched}
+
+    due = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-29T12:00:00-04:00"),
+    )
+    repeated = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-29T12:05:00-04:00"),
+    )
+    after = {path.name: _state_digest(path) for path in watched}
+    paper = paper_rebalance_snapshot_payload(root)
+
+    status = due["operational_automation"]["paper_rebalance_apply"]
+    assert plan["effective_date"] == "2026-06-29"
+    assert status["status"] == "DUE_NOT_APPLIED"
+    assert status["effective_date_reached"] is True
+    assert status["mutation_allowed_from_snapshot"] is False
+    assert before == after
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+    assert paper["approved_rebalance"]["applied_events"] == []
+    assert paper["current_paper_target"] is None
+    assert due["portfolio_daily"] == due["official_ledger_daily"]
+    assert repeated["portfolio_daily"] == repeated["official_ledger_daily"]
+
+
+def test_concurrent_snapshot_after_effective_date_is_read_only(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    approval_snapshot = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-26T12:00:00-04:00"),
+    )
+    draft = create_recommendation_review_draft(
+        root,
+        [_recommendation_row_from_snapshot(approval_snapshot)],
+        portfolio_nav=approval_snapshot["portfolio_summary"]["nav"],
+        source_recommendation_artifact="operational_snapshot_test_recommendation_rows",
+    )
+    create_approved_rebalance_plan(root, snapshot=approval_snapshot, draft_id=draft["proposal_id"])
+    rebalance_dir = root / "data" / "paper_rebalance"
+    watched = [
+        rebalance_dir / "approved_rebalance_plans.json",
+        rebalance_dir / "applied_rebalance_events.json",
+        rebalance_dir / "current_paper_target_weights.json",
+    ]
+    before = {path.name: _state_digest(path) for path in watched}
+
+    def load_due_snapshot() -> dict:
+        return load_operational_snapshot_for_response(
+            root,
+            now=datetime.fromisoformat("2026-06-29T12:00:00-04:00"),
+        )["operational_automation"]["paper_rebalance_apply"]
+
+    with ThreadPoolExecutor(max_workers=25) as executor:
+        results = [
+            future.result()
+            for future in as_completed([executor.submit(load_due_snapshot) for _ in range(25)])
+        ]
+    after = {path.name: _state_digest(path) for path in watched}
+    paper = paper_rebalance_snapshot_payload(root)
+
+    assert before == after
+    assert all(row["status"] == "DUE_NOT_APPLIED" for row in results)
+    assert all(row["mutation_allowed_from_snapshot"] is False for row in results)
+    assert paper["approved_rebalance"]["applied_events"] == []
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+    assert paper["current_paper_target"] is None
+    assert not (rebalance_dir / "approved_rebalance_apply.lock").exists()
+
+
+def test_concurrent_snapshot_automation_before_effective_date_writes_no_apply_state(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    approval_snapshot = load_operational_snapshot_for_response(
+        root,
+        now=datetime.fromisoformat("2026-06-26T12:00:00-04:00"),
+    )
+    draft = create_recommendation_review_draft(
+        root,
+        [_recommendation_row_from_snapshot(approval_snapshot)],
+        portfolio_nav=approval_snapshot["portfolio_summary"]["nav"],
+        source_recommendation_artifact="operational_snapshot_test_recommendation_rows",
+    )
+    create_approved_rebalance_plan(root, snapshot=approval_snapshot, draft_id=draft["proposal_id"])
+
+    def load_waiting_snapshot() -> dict:
+        return load_operational_snapshot_for_response(
+            root,
+            now=datetime.fromisoformat("2026-06-28T12:00:00-04:00"),
+        )["operational_automation"]["paper_rebalance_apply"]
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = [
+            future.result()
+            for future in as_completed([executor.submit(load_waiting_snapshot) for _ in range(8)])
+        ]
+    paper = paper_rebalance_snapshot_payload(root)
+
+    assert all(row["applied"] is False and row["already_applied"] is False for row in results)
+    assert paper["approved_rebalance"]["applied_events"] == []
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+    assert paper["current_paper_target"] is None
 
 
 def test_paper_execution_fields_use_real_reference_price_and_five_bps_cost():

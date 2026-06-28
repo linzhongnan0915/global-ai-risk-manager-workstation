@@ -35,7 +35,11 @@ from src.market.intraday_refresh_service import (
     set_refresh_cadence,
 )
 from src.market.live_refresh import build_live_overlay, write_live_overlay
-from src.market.approved_rebalance_plan import apply_approved_rebalance_plan, create_approved_rebalance_plan
+from src.market.approved_rebalance_plan import (
+    apply_approved_rebalance_plan,
+    apply_due_approved_rebalance_plan,
+    create_approved_rebalance_plan,
+)
 from src.market.monthly_rebalance_proposal import (
     create_monthly_rebalance_proposal,
     create_review_draft_from_monthly_proposal,
@@ -995,6 +999,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             "/api/paper-rebalance/monthly-proposal/review-draft/",
             "/api/paper-rebalance/approve-recommendation-draft",
             "/api/paper-rebalance/approve-recommendation-draft/",
+            "/api/paper-rebalance/apply-due",
+            "/api/paper-rebalance/apply-due/",
             "/api/paper-rebalance/apply-approved",
             "/api/paper-rebalance/apply-approved/",
             "/api/paper-rebalance/accept",
@@ -1060,6 +1066,18 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     )
                     self.warm_operational_snapshot_cache(self.server_root)
                     self._send_json(self._paper_rebalance_response({"approved_rebalance_plan": plan}), status=201)
+                    return
+                if parsed.path.rstrip("/").endswith("/apply-due"):
+                    snapshot = load_operational_snapshot_for_response(
+                        self.server_root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    result = apply_due_approved_rebalance_plan(
+                        self.server_root,
+                        snapshot=snapshot,
+                    )
+                    self.warm_operational_snapshot_cache(self.server_root)
+                    self._send_json(self._paper_rebalance_response({"paper_apply_result": result}))
                     return
                 if parsed.path.rstrip("/").endswith("/apply-approved"):
                     snapshot = load_operational_snapshot_for_response(
@@ -1269,6 +1287,19 @@ def _intraday_scheduler_loop(root: Path) -> None:
                     artifact_path=root / "output" / "dashboard_artifact.json",
                     config=cfg,
                 )
+                automation_result = None
+                try:
+                    automation_snapshot = load_operational_snapshot_for_response(
+                        root,
+                        scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
+                    )
+                    automation_result = apply_due_approved_rebalance_plan(root, snapshot=automation_snapshot)
+                    if automation_result.get("applied"):
+                        logger.info("Due paper rebalance automation applied: %s", automation_result.get("plan_id"))
+                    elif automation_result.get("already_applied"):
+                        logger.info("Due paper rebalance automation already applied: %s", automation_result.get("plan_id"))
+                except Exception as automation_exc:
+                    logger.warning("Due paper rebalance automation check failed: %s", automation_exc)
                 if result.get("ok"):
                     WorkstationHandler.warm_operational_snapshot_cache(root)
                     logger.info("Operational intraday overlay refreshed: %s", result.get("snapshot_id"))

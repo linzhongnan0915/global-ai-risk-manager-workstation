@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pytest
 
-from src.market.approved_rebalance_plan import apply_approved_rebalance_plan, create_approved_rebalance_plan
+from src.market.approved_rebalance_plan import (
+    apply_approved_rebalance_plan,
+    apply_due_approved_rebalance_plan,
+    create_approved_rebalance_plan,
+)
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.market.recommendation_review_draft import create_recommendation_review_draft
 
@@ -158,6 +163,54 @@ def test_repeated_apply_is_idempotent_and_does_not_double_book_cost(tmp_path: Pa
     assert second["already_applied"] is True
     assert len(events) == 1
     assert second["event"]["total_transaction_cost"] == pytest.approx(first["event"]["total_transaction_cost"])
+
+
+def test_concurrent_due_apply_is_exactly_once(tmp_path: Path):
+    root = tmp_path / "workstation"
+    plan = _approved_plan(root)
+    snapshot = _snapshot(session_marker="2026-06-29")
+
+    with ThreadPoolExecutor(max_workers=25) as executor:
+        results = [
+            future.result()
+            for future in as_completed(
+                [executor.submit(apply_due_approved_rebalance_plan, root, snapshot=snapshot) for _ in range(25)]
+            )
+        ]
+
+    paper = paper_rebalance_snapshot_payload(root)
+    events = paper["approved_rebalance"]["applied_events"]
+    newly_applied = [row for row in results if row.get("applied")]
+    already_applied = [row for row in results if row.get("already_applied")]
+    skipped = [row for row in results if row.get("skipped")]
+
+    assert len(events) == 1
+    assert len(newly_applied) == 1
+    assert len(already_applied) + len(skipped) == 24
+    assert events[0]["plan_id"] == plan["plan_id"]
+    assert events[0]["apply_key"] == newly_applied[0]["apply_key"]
+    assert paper["current_paper_target"]["apply_key"] == events[0]["apply_key"]
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPLIED_PAPER"
+    assert paper["current_paper_target"]["paper_transaction_cost_total"] == pytest.approx(
+        events[0]["total_transaction_cost"]
+    )
+
+
+def test_due_apply_service_before_effective_date_writes_no_apply_state(tmp_path: Path):
+    root = tmp_path / "workstation"
+    plan = _approved_plan(root)
+
+    result = apply_due_approved_rebalance_plan(root, snapshot=_snapshot(session_marker="2026-06-28"))
+    paper = paper_rebalance_snapshot_payload(root)
+
+    assert result["applied"] is False
+    assert result["already_applied"] is False
+    assert result["message"] == "effective date has not arrived"
+    assert paper["approved_rebalance"]["latest_plan"]["plan_id"] == plan["plan_id"]
+    assert paper["approved_rebalance"]["latest_plan"]["status"] == "APPROVED_WAITING_EFFECTIVE_DATE"
+    assert paper["approved_rebalance"]["applied_events"] == []
+    assert paper["current_paper_target"] is None
+    assert not (root / "data/paper_rebalance/approved_rebalance_apply.lock").exists()
 
 
 def test_smoke_test_and_pending_rows_do_not_apply(tmp_path: Path):

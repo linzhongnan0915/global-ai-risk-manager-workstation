@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
 
+from src.market.approved_rebalance_plan import paper_rebalance_automation_status
 from src.market.intraday_provider import fetch_intraday_bars, latest_bar_by_ticker
 from src.market.intraday_config import load_intraday_config
 from src.market.market_hours import market_session_status
@@ -2253,6 +2254,21 @@ def _attach_paper_portfolio_daily_fields(root: Path, snapshot: dict[str, Any]) -
     return enriched
 
 
+def _attach_operational_automation_fields(root: Path, snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Expose paper-only automation status without mutating rebalance state."""
+    automation = paper_rebalance_automation_status(root, snapshot=snapshot)
+    enriched = _attach_paper_portfolio_daily_fields(root, snapshot)
+    enriched["operational_automation"] = {
+        "schema_version": "operational_automation_v1",
+        "paper_rebalance_apply": automation,
+        "paper_only": True,
+        "live_orders_created": False,
+        "brokerage_orders_created": False,
+        "official_ledger_mutation": False,
+    }
+    return enriched
+
+
 def _research_mapping_available(root: Path) -> bool:
     return (root / "data/config/strategy_research_mapping.json").exists()
 
@@ -2670,6 +2686,10 @@ def load_operational_snapshot_for_response(
 ) -> dict[str, Any]:
     """Return official base snapshot merged with a fresh delayed overlay when available."""
     base = load_or_build_operational_snapshot(root)
+
+    def finalize(snapshot: dict[str, Any]) -> dict[str, Any]:
+        return _attach_operational_automation_fields(root, snapshot)
+
     overlay = _read_intraday_overlay(root)
     if not overlay:
         latest = _snapshot_from_latest_refresh(
@@ -2679,25 +2699,29 @@ def load_operational_snapshot_for_response(
             refresh_lifecycle=refresh_lifecycle,
         )
         if latest:
-            return latest
-        return _attach_intraday_runtime_fields(
-            base,
-            status="NOT_LOADED",
-            overlay=None,
-            scheduler_enabled=scheduler_enabled,
-            available=False,
-            refresh_lifecycle=refresh_lifecycle,
-            now=now,
+            return finalize(latest)
+        return finalize(
+            _attach_intraday_runtime_fields(
+                base,
+                status="NOT_LOADED",
+                overlay=None,
+                scheduler_enabled=scheduler_enabled,
+                available=False,
+                refresh_lifecycle=refresh_lifecycle,
+                now=now,
+            )
         )
     if overlay.get("status") == "ERROR":
-        return _attach_intraday_runtime_fields(
-            base,
-            status="ERROR",
-            overlay=overlay,
-            scheduler_enabled=scheduler_enabled,
-            available=False,
-            refresh_lifecycle=refresh_lifecycle,
-            now=now,
+        return finalize(
+            _attach_intraday_runtime_fields(
+                base,
+                status="ERROR",
+                overlay=overlay,
+                scheduler_enabled=scheduler_enabled,
+                available=False,
+                refresh_lifecycle=refresh_lifecycle,
+                now=now,
+            )
         )
     if overlay.get("status") != "LOADED" or _is_overlay_stale(overlay, now=now):
         latest = _snapshot_from_latest_refresh(
@@ -2707,29 +2731,33 @@ def load_operational_snapshot_for_response(
             refresh_lifecycle=refresh_lifecycle,
         )
         if latest:
-            return latest
-        return _attach_intraday_runtime_fields(
-            base,
-            status="STALE" if overlay.get("status") == "LOADED" else str(overlay.get("status") or "NOT_LOADED"),
-            overlay=overlay,
-            scheduler_enabled=scheduler_enabled,
-            available=False,
-            refresh_lifecycle=refresh_lifecycle,
-            now=now,
+            return finalize(latest)
+        return finalize(
+            _attach_intraday_runtime_fields(
+                base,
+                status="STALE" if overlay.get("status") == "LOADED" else str(overlay.get("status") or "NOT_LOADED"),
+                overlay=overlay,
+                scheduler_enabled=scheduler_enabled,
+                available=False,
+                refresh_lifecycle=refresh_lifecycle,
+                now=now,
+            )
         )
     intraday = _intraday_from_overlay(overlay)
     if intraday is None:
-        return _attach_intraday_runtime_fields(
-            base,
-            status="ERROR",
-            overlay={
-                **overlay,
-                "errors": ["Intraday overlay schema is invalid for dashboard merge."],
-            },
-            scheduler_enabled=scheduler_enabled,
-            available=False,
-            refresh_lifecycle=refresh_lifecycle,
-            now=now,
+        return finalize(
+            _attach_intraday_runtime_fields(
+                base,
+                status="ERROR",
+                overlay={
+                    **overlay,
+                    "errors": ["Intraday overlay schema is invalid for dashboard merge."],
+                },
+                scheduler_enabled=scheduler_enabled,
+                available=False,
+                refresh_lifecycle=refresh_lifecycle,
+                now=now,
+            )
         )
     canonical = _read_json(_paths(root)["canonical"], {})
     market_proxy_cache = _read_json(_paths(root)["market_proxy_cache"], {})
@@ -2747,14 +2775,16 @@ def load_operational_snapshot_for_response(
         refresh_status="SUCCESS",
     )
     merged = _attach_paper_portfolio_daily_fields(root, merged)
-    return _attach_intraday_runtime_fields(
-        merged,
-        status="LOADED",
-        overlay=overlay,
-        scheduler_enabled=scheduler_enabled,
-        available=True,
-        refresh_lifecycle=refresh_lifecycle,
-        now=now,
+    return finalize(
+        _attach_intraday_runtime_fields(
+            merged,
+            status="LOADED",
+            overlay=overlay,
+            scheduler_enabled=scheduler_enabled,
+            available=True,
+            refresh_lifecycle=refresh_lifecycle,
+            now=now,
+        )
     )
 
 

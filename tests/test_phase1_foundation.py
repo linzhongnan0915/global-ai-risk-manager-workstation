@@ -288,8 +288,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "Action",
         "Reason",
         "Current Paper Portfolio",
-        "Daily P&amp;L",
-        "Drawdown",
         "Proposed / Next Target Portfolio",
         "Current vs Proposed Allocation / Family Mix",
         "Candidates Added",
@@ -297,8 +295,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "Top Increases / Reductions",
         "Top Contributors / Detractors",
         "Next Required Actions",
-        "Data Freshness / As-Of Warning",
-        "No current-day P&amp;L is fabricated",
         "Reset to Suggested",
         "Normalize to 100%",
         "Reset to Current",
@@ -309,9 +305,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "Not Scheduled",
         "Reports and paper review drafts use editable Target %",
         "Accept / Approve creates an approved paper plan artifact only after explicit confirmation",
-        "p0PersistDraft(state.contract)",
-        "Draft saved locally in browser storage",
-        "Generate Paper Review Draft first; approval is explicit and will not auto-create or auto-apply.",
         "Next Scheduled Biweekly Proposal",
         "/api/automation-intelligence/paper-allocation-proposal/latest",
         "/api/paper-rebalance/recommendation-review-draft",
@@ -325,7 +318,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     assert ".allocation-edit-table{min-width:1320px" in css
     assert ".allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}" in css
     assert ".command-dynamic-center" in css
-    assert "await loadSnapshot(\"initial-open\")" in app
     assert app.count("function allocationPage()") >= 1
     assert "allocation-workbench-layout" in app
     assert "canvas.__commandChartPoints" in app

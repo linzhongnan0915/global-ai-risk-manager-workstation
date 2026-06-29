@@ -15,6 +15,7 @@ from src.automation import (
     build_allocation_recommendation_artifact,
     build_automation_intelligence_manifest,
     build_daily_recommendation_artifact,
+    build_ml_intelligence_patch_manifest,
     build_review_draft_eligibility,
     build_strategy_factory_evidence_manifest,
     create_review_draft_from_allocation_recommendation,
@@ -24,6 +25,7 @@ from src.automation import (
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
+    write_ml_intelligence_patch_manifest,
     write_strategy_factory_evidence_manifest,
 )
 from src.reporting.operational_snapshot import load_snapshot_summary_for_response
@@ -70,6 +72,7 @@ def _hashes(root: Path) -> dict[str, str]:
         and "automation/allocation_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/daily_cycle" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/strategy_factory_evidence" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/ml_intelligence_patch" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -1139,6 +1142,210 @@ def test_dashboard_renders_factory_evidence_and_research_lineage_from_backend_on
 def test_strategy_factory_evidence_wiring_no_hardcoded_strategy_literals() -> None:
     production_files = [
         ROOT / "src/automation/strategy_factory_evidence_manifest.py",
+        ROOT / "src/automation/automation_intelligence_manifest.py",
+        ROOT / "scripts/run_workstation_server.py",
+    ]
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    for path in production_files:
+        source = path.read_text(encoding="utf-8")
+        assert not any(token in source for token in forbidden)
+
+
+def _write_complete_ml_support(alpha: Path, identity: str, *, leakage: str = "PASS", overfit: str = "LOW") -> Path:
+    outputs = alpha / "experiments" / identity / "outputs"
+    outputs.mkdir(parents=True, exist_ok=True)
+    (outputs / "ml_diagnostics_summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "ML_DIAGNOSTICS_SUMMARY_V0",
+                "strategy_id": identity,
+                "ml_diagnostics_decision": "ML_DIAGNOSTICS_AVAILABLE",
+                "leakage_status": leakage,
+                "overfit_warning_status": overfit,
+                "missing_evidence": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    for name in [
+        "ml_feature_matrix_manifest.json",
+        "ml_target_definition.json",
+        "timing_contract.csv",
+        "ml_leakage_checks.json",
+        "ml_train_test_splits.csv",
+        "walk_forward_summary.csv",
+        "baseline_summary.json",
+        "ml_feature_importance.csv",
+        "cost_sensitivity.csv",
+    ]:
+        (outputs / name).write_text("{}\n" if name.endswith(".json") else "field,value\nok,1\n", encoding="utf-8")
+    return outputs / "ml_diagnostics_summary.json"
+
+
+def _make_ml_supported_alpha(tmp_path: Path, identity: str = "TEST_ML_UID") -> Path:
+    alpha = _factory_alpha_fixture(tmp_path)
+    sf = alpha / "strategy_factory"
+    (sf / "candidate_results" / "test_candidate_registry.json").write_text(
+        json.dumps(
+            {
+                "candidates": [
+                    {
+                        "strategy_id": identity,
+                        "candidate_id": identity,
+                        "lifecycle_status": "TESTABLE_CANDIDATE",
+                        "decision": "PASS_TO_NEXT_RESEARCH_STAGE",
+                        "candidate_portfolio_eligible": True,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (sf / "candidate_portfolio" / "candidate_portfolio_registry.csv").write_text(
+        f"candidate_id,status\n{identity},TESTABLE\n",
+        encoding="utf-8",
+    )
+    (sf / "research_cards" / f"{identity}.md").write_text(f"# {identity}\n", encoding="utf-8")
+    (sf / "codex_test_specs" / f"{identity}_test_spec.md").write_text(f"# {identity}\n", encoding="utf-8")
+    report_dir = sf / "evidence_reports" / identity
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "evidence_report.md").write_text(f"# {identity} Evidence\n", encoding="utf-8")
+    (report_dir / "missing_evidence.json").write_text("[]\n", encoding="utf-8")
+    _write_complete_ml_support(alpha, identity)
+    return alpha
+
+
+def test_ml_patch_manifest_loads_available_ml_diagnostics(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+
+    manifest = build_ml_intelligence_patch_manifest(root, alpha_root=alpha)
+
+    assert manifest["summary"]["candidate_count"] == 1
+    assert manifest["summary"]["ml_gate_count"] == 1
+    assert manifest["items"][0]["candidate_id"] == "TEST_FACTORY_UID"
+    assert manifest["items"][0]["ml_status"] in {"ML_MISSING_EVIDENCE", "ML_REVIEW_REQUIRED"}
+    assert manifest["ml_training_performed"] is False
+
+
+def test_ml_patch_missing_ml_artifacts_return_missing_or_not_required(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    for path in alpha.glob("**/ml_diagnostics_summary.json"):
+        path.unlink()
+
+    manifest = build_ml_intelligence_patch_manifest(root, alpha_root=alpha)
+
+    assert manifest["summary"]["ml_gate_count"] == 0
+    assert manifest["items"][0]["ml_status"] in {"ML_MISSING_EVIDENCE", "ML_NOT_REQUIRED", "NOT_AVAILABLE"}
+
+
+def test_ml_supported_by_evidence_requires_support_artifacts(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _make_ml_supported_alpha(tmp_path)
+    supported = build_ml_intelligence_patch_manifest(root, alpha_root=alpha)
+    assert supported["items"][0]["ml_status"] == "ML_SUPPORTED_BY_EVIDENCE"
+
+    (alpha / "experiments" / "TEST_ML_UID" / "outputs" / "ml_target_definition.json").unlink()
+    incomplete = build_ml_intelligence_patch_manifest(root, alpha_root=alpha)
+    assert incomplete["items"][0]["ml_status"] != "ML_SUPPORTED_BY_EVIDENCE"
+
+
+def test_ml_patch_preserves_leakage_and_overfit_risk_flags(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _make_ml_supported_alpha(tmp_path, identity="TEST_RISK_UID")
+    _write_complete_ml_support(alpha, "TEST_RISK_UID", leakage="HIGH_RISK", overfit="HIGH_RISK")
+
+    manifest = build_ml_intelligence_patch_manifest(root, alpha_root=alpha)
+    item = manifest["items"][0]
+
+    assert item["ml_status"] == "ML_LEAKAGE_RISK"
+    assert item["risk_flags"]["leakage_risk"] is True
+    assert item["risk_flags"]["overfit_risk"] is True
+
+
+def test_strategy_intelligence_card_gets_ml_patch_for_canonical_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+    patch = payload["cards"][0]["ml_intelligence_patch"]
+
+    assert patch["status"] in {"ML_MISSING_EVIDENCE", "ML_REVIEW_REQUIRED", "ML_LEAKAGE_RISK", "ML_OVERFIT_RISK"}
+    assert patch["source_artifacts"]
+
+
+def test_strategy_intelligence_card_ml_patch_not_available_without_canonical_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    alpha = _make_ml_supported_alpha(tmp_path, identity="UNMATCHED_ML_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+
+    assert payload["cards"][0]["ml_intelligence_patch"]["status"] == "NOT_AVAILABLE"
+
+
+def test_ml_patch_get_endpoint_is_read_only(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/ml-intelligence-patch/manifest")
+        assert status == 200
+        assert payload["summary"]["candidate_count"] == 1
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_ml_patch_refresh_post_writes_only_cache(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/ml-intelligence-patch/refresh")
+        assert status == 201
+        assert payload["ml_training_performed"] is False
+        assert payload["financial_state_mutated"] is False
+        assert (root / "data/automation/ml_intelligence_patch/manifest.json").exists()
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_dashboard_renders_ml_patch_backend_fields_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "ML Patch" in source
+    assert "ml_intelligence_patch_status" in source
+    assert "card.ml_intelligence_patch" in source
+    assert "TEST_ML_UID" not in source
+
+
+def test_ml_patch_wiring_no_hardcoded_strategy_literals() -> None:
+    production_files = [
+        ROOT / "src/automation/ml_intelligence_patch_manifest.py",
         ROOT / "src/automation/automation_intelligence_manifest.py",
         ROOT / "scripts/run_workstation_server.py",
     ]

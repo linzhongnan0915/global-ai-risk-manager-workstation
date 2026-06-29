@@ -16,6 +16,7 @@ from typing import Any
 from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
 from src.automation.daily_cycle import read_latest_daily_cycle_status
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.ml_intelligence_patch_manifest import build_ml_intelligence_patch_manifest
 from src.automation.review_draft_eligibility import build_review_draft_eligibility
 from src.automation.strategy_factory_evidence_manifest import build_strategy_factory_evidence_manifest
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
@@ -384,6 +385,23 @@ def _strategy_intelligence(root: Path) -> dict[str, Any]:
     }
 
 
+def _ml_intelligence_patch(root: Path, strategy_payload: dict[str, Any]) -> dict[str, Any]:
+    payload = build_ml_intelligence_patch_manifest(root, strategy_cards=strategy_payload.get("cards") or [])
+    summary = payload.get("summary") or {}
+    return {
+        "status": payload.get("status") or "NOT_AVAILABLE",
+        "candidate_count": summary.get("candidate_count"),
+        "ml_gate_count": summary.get("ml_gate_count"),
+        "ml_missing_evidence_count": summary.get("ml_missing_evidence_count"),
+        "ml_ready_for_experiment_count": summary.get("ml_ready_for_experiment_count"),
+        "ml_supported_by_evidence_count": summary.get("ml_supported_by_evidence_count"),
+        "ml_overfit_risk_count": summary.get("ml_overfit_risk_count"),
+        "ml_leakage_risk_count": summary.get("ml_leakage_risk_count"),
+        "strategy_card_match_count": summary.get("strategy_card_match_count"),
+        "warnings": payload.get("warnings") if isinstance(payload.get("warnings"), list) else [],
+    }
+
+
 def _operator_summary(
     daily_cycle: dict[str, Any],
     daily: dict[str, Any],
@@ -392,6 +410,7 @@ def _operator_summary(
     rebalance: dict[str, Any],
     strategy_factory: dict[str, Any],
     ml: dict[str, Any],
+    ml_patch: dict[str, Any],
     decomposition: dict[str, Any],
 ) -> dict[str, Any]:
     review_items: list[str] = []
@@ -414,6 +433,8 @@ def _operator_summary(
         review_items.append("Strategy Factory candidate registry is missing or unavailable.")
     if ml["status"] in {"MISSING_EVIDENCE", "MISSING_ARTIFACT"}:
         warnings.append("ML evidence remains missing or unavailable for dashboard intelligence.")
+    if ml_patch["status"] in {"MISSING_ARTIFACT", "REVIEW_REQUIRED", "NOT_WIRED"}:
+        warnings.append("ML Intelligence Patch requires review or has missing evidence.")
     if decomposition["status"] in {"MISSING_EVIDENCE", "MISSING_ARTIFACT"}:
         warnings.append("Attribution/decomposition evidence remains missing or incomplete.")
     if rebalance["safe_to_apply_now"]:
@@ -443,8 +464,9 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     strategy = _strategy_factory(root_path, alpha)
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
+    ml_patch = _ml_intelligence_patch(root_path, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, ml, decomposition)
+    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, ml, ml_patch, decomposition)
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -460,6 +482,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "rebalance": rebalance,
         "strategy_factory": strategy,
         "ml_intelligence": ml,
+        "ml_intelligence_patch": ml_patch,
         "decomposition": decomposition,
         "strategy_intelligence": intelligence["summary"],
         "operator_summary": operator,
@@ -484,6 +507,7 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     rebalance = manifest.get("rebalance") or {}
     strategy = manifest.get("strategy_factory") or {}
     ml = manifest.get("ml_intelligence") or {}
+    ml_patch = manifest.get("ml_intelligence_patch") or {}
     decomposition = manifest.get("decomposition") or {}
     review_required = len(operator.get("top_review_items") or [])
     review_required += int(strategy.get("review_required_count") or 0)
@@ -544,6 +568,16 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "strategy_factory_evidence_review_required_count": compact_count(strategy, "review_required_count"),
         "strategy_factory_evidence_warnings": strategy.get("warnings") or [],
         "ml_intelligence_status": ml.get("status") or "NOT_AVAILABLE",
+        "ml_intelligence_patch_status": ml_patch.get("status") or "NOT_WIRED",
+        "ml_intelligence_patch_candidate_count": compact_count(ml_patch, "candidate_count"),
+        "ml_intelligence_patch_ml_gate_count": compact_count(ml_patch, "ml_gate_count"),
+        "ml_intelligence_patch_missing_evidence_count": compact_count(ml_patch, "ml_missing_evidence_count"),
+        "ml_intelligence_patch_ready_for_experiment_count": compact_count(ml_patch, "ml_ready_for_experiment_count"),
+        "ml_intelligence_patch_supported_by_evidence_count": compact_count(ml_patch, "ml_supported_by_evidence_count"),
+        "ml_intelligence_patch_overfit_risk_count": compact_count(ml_patch, "ml_overfit_risk_count"),
+        "ml_intelligence_patch_leakage_risk_count": compact_count(ml_patch, "ml_leakage_risk_count"),
+        "ml_intelligence_patch_strategy_card_match_count": compact_count(ml_patch, "strategy_card_match_count"),
+        "ml_intelligence_patch_warnings": ml_patch.get("warnings") or [],
         "decomposition_status": decomposition.get("status") or "NOT_AVAILABLE",
         "review_required_count": review_required,
         "missing_evidence_count": missing_evidence,

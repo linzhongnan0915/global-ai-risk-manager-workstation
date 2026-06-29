@@ -9,6 +9,7 @@ __all__ = [
     "build_automation_intelligence_manifest",
     "build_allocation_recommendation_artifact",
     "build_daily_recommendation_artifact",
+    "build_ml_intelligence_patch_manifest",
     "compact_automation_intelligence_summary",
     "build_review_draft_eligibility",
     "build_strategy_factory_evidence_manifest",
@@ -19,6 +20,7 @@ __all__ = [
     "run_daily_automation_cycle",
     "write_allocation_recommendation_artifact",
     "write_daily_recommendation_artifact",
+    "write_ml_intelligence_patch_manifest",
     "write_strategy_factory_evidence_manifest",
 ]
 
@@ -47,6 +49,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "read_latest_daily_cycle_status": read_latest_daily_cycle_status,
             "run_daily_automation_cycle": run_daily_automation_cycle,
+        }
+        return exports[name]
+    if name in {
+        "build_ml_intelligence_patch_manifest",
+        "write_ml_intelligence_patch_manifest",
+    }:
+        from src.automation.ml_intelligence_patch_manifest import (
+            build_ml_intelligence_patch_manifest,
+            write_ml_intelligence_patch_manifest,
+        )
+
+        exports = {
+            "build_ml_intelligence_patch_manifest": build_ml_intelligence_patch_manifest,
+            "write_ml_intelligence_patch_manifest": write_ml_intelligence_patch_manifest,
         }
         return exports[name]
     if name in {

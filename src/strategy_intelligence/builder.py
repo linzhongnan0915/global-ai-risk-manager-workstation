@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.ml_intelligence_patch_manifest import (
+    build_ml_intelligence_patch_manifest,
+    ml_patch_for_identity,
+)
 from src.automation.strategy_factory_evidence_manifest import (
     build_strategy_factory_evidence_manifest,
     research_lineage_for_identity,
@@ -246,6 +250,7 @@ def _card(
     daily_rows: dict[str, dict[str, Any]],
     daily_latest: dict[str, Any],
     factory_evidence: dict[str, Any],
+    ml_patch_manifest: dict[str, Any],
 ) -> dict[str, Any]:
     uid = str(row.get("strategy_uid") or row.get("strategy_id") or row.get("internal_id") or "")
     research = _research_summary(root, uid)
@@ -275,6 +280,13 @@ def _card(
     decomposition_section = _decomposition_evidence_section(attribution, source_artifacts)
     research_lineage = research_lineage_for_identity(
         factory_evidence,
+        uid,
+        row.get("candidate_id"),
+        row.get("strategy_id"),
+        row.get("internal_id"),
+    )
+    ml_patch = ml_patch_for_identity(
+        ml_patch_manifest,
         uid,
         row.get("candidate_id"),
         row.get("strategy_id"),
@@ -312,6 +324,7 @@ def _card(
         "source_artifacts": source_artifacts,
         "daily_recommendation": daily_section,
         "research_lineage": research_lineage,
+        "ml_intelligence_patch": ml_patch,
         "ml_evidence": ml_section,
         "decomposition_evidence": decomposition_section,
         "operator_explanation": _operator_explanation(daily_section, ml_section, decomposition_section, missing),
@@ -333,7 +346,8 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
     paper = paper_rebalance_snapshot_payload(root)
     daily_rows, daily_latest = _daily_recommendations_by_uid(root)
     factory_evidence = build_strategy_factory_evidence_manifest(root, now=now)
-    cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest, factory_evidence) for row in rows]
+    ml_patch_manifest = build_ml_intelligence_patch_manifest(root, factory_manifest=factory_evidence, now=now)
+    cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest, factory_evidence, ml_patch_manifest) for row in rows]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})

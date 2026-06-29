@@ -1,0 +1,1245 @@
+{
+  "ok": true,
+  "status": "REVIEW_REQUIRED",
+  "source": "ml_intelligence_patch_pack_v0",
+  "generated_at": "2026-06-29T00:24:11.855213+00:00",
+  "paper_shadow_only": true,
+  "financial_state_mutated": false,
+  "ml_training_performed": false,
+  "summary": {
+    "candidate_count": 14,
+    "strategy_card_match_count": 0,
+    "ml_gate_count": 9,
+    "ml_not_required_count": 5,
+    "ml_review_required_count": 0,
+    "ml_missing_evidence_count": 8,
+    "ml_ready_for_experiment_count": 0,
+    "ml_supported_by_evidence_count": 0,
+    "ml_rejected_count": 0,
+    "ml_overfit_risk_count": 0,
+    "ml_leakage_risk_count": 1
+  },
+  "items": [
+    {
+      "candidate_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "strategy_uid": null,
+      "research_card_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "test_spec_id": "ETF_FACTOR_PROXY_UNIVERSE_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_NOT_REQUIRED",
+      "ml_role": "NOT_AVAILABLE",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "No ML requirement was identified from canonical artifact evidence.",
+      "missing_evidence": [],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/ETF_FACTOR_PROXY_UNIVERSE_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/ETF_FACTOR_PROXY_UNIVERSE_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "strategy_uid": null,
+      "research_card_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "test_spec_id": "MACRO_REGIME_ALLOCATOR_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "REGIME_DETECTION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: institutional_asof_macro_history",
+      "missing_evidence": [
+        "institutional_asof_macro_history"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/MACRO_REGIME_ALLOCATOR_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/MACRO_REGIME_ALLOCATOR_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "strategy_uid": null,
+      "research_card_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "test_spec_id": "HEDGE_FUND_LINEAR_CLONE_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_NOT_REQUIRED",
+      "ml_role": "NOT_AVAILABLE",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "No ML requirement was identified from canonical artifact evidence.",
+      "missing_evidence": [
+        "target_hedge_fund_return_series"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/HEDGE_FUND_LINEAR_CLONE_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/HEDGE_FUND_LINEAR_CLONE_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "strategy_uid": null,
+      "research_card_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "test_spec_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_NOT_REQUIRED",
+      "ml_role": "NOT_AVAILABLE",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "No ML requirement was identified from canonical artifact evidence.",
+      "missing_evidence": [
+        "timestamped_alternative_data_for_google_trends_or_gdelt"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "strategy_uid": null,
+      "research_card_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "test_spec_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_NOT_REQUIRED",
+      "ml_role": "NOT_AVAILABLE",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "No ML requirement was identified from canonical artifact evidence.",
+      "missing_evidence": [],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "ML_RESEARCH_PROCESS_REFERENCE_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "DISCOVERY",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: specific_clean_timestamped_dataset_and_testable_signal",
+      "missing_evidence": [
+        "specific_clean_timestamped_dataset_and_testable_signal"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "test_spec",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "EXISTING_GLOBAL_AI_RESEARCH_REPORT_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "ml_status": "ML_NOT_REQUIRED",
+      "ml_role": "NOT_AVAILABLE",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": false,
+        "leakage_check_available": false,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": false,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": false,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": null,
+        "overfit_risk": null,
+        "missing_timestamp_rule": true,
+        "missing_baseline": true,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "No ML requirement was identified from canonical artifact evidence.",
+      "missing_evidence": [],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "test_spec",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "evidence_report",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        }
+      ]
+    },
+    {
+      "candidate_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "strategy_uid": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "research_card_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "test_spec_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": true,
+        "oos_or_walk_forward_available": true,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": false,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing PIT data",
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "split",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/walk_forward_windows.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "oos",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/walk_forward_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_LEAKAGE_RISK",
+      "ml_role": "RANKING",
+      "evidence_checklist": {
+        "feature_spec_available": true,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": true,
+        "oos_or_walk_forward_available": true,
+        "baseline_comparison_available": true,
+        "explainability_output_available": true,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": true,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": false,
+        "missing_explainability": false
+      },
+      "summary": "Existing ML diagnostics indicate ML_LEAKAGE_RISK.",
+      "missing_evidence": [
+        "missing liquidity/capacity audit",
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing liquidity column for liquidity bucket diagnostics"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/JPM_MACRO_ML_SECTOR_ROTATION_V0_research_card.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/JPM_MACRO_ML_SECTOR_ROTATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/JPM_MACRO_ML_SECTOR_ROTATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "feature_spec",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_feature_matrix_manifest.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "leakage_check",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_leakage_checks.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "split",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_train_test_splits.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "oos",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/walk_forward_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "explainability",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_feature_importance.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "strategy_factory/experiments/JPM_MACRO_ML_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": true,
+        "oos_or_walk_forward_available": true,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": false,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing liquidity/capacity audit",
+      "missing_evidence": [
+        "missing liquidity/capacity audit",
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing true online price panel",
+        "missing liquidity column for liquidity bucket diagnostics",
+        "ML diagnostics not required for transparent first-run signal",
+        "True online price panel is Missing Evidence."
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_research_card.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": null,
+          "status": "MISSING_ARTIFACT"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "split",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/walk_forward_windows.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "oos",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/walk_forward_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "strategy_factory/experiments/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0_EXPERIMENT_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "research_card_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "test_spec_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing PIT data",
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "research_card_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "test_spec_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": true,
+        "oos_or_walk_forward_available": true,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": false,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing PIT data",
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "split",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/walk_forward_windows.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "oos",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/walk_forward_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "strategy_uid": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "research_card_id": "Price Efficiency Revalidation V0",
+      "test_spec_id": "PRICE_EFFICIENCY_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing PIT data",
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/PRICE_EFFICIENCY_REVALIDATION_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/PRICE_EFFICIENCY_REVALIDATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/PRICE_EFFICIENCY_REVALIDATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    },
+    {
+      "candidate_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "strategy_uid": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "research_card_id": "Residual Momentum 12-1 Revalidation V0",
+      "test_spec_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "ml_status": "ML_MISSING_EVIDENCE",
+      "ml_role": "VALIDATION",
+      "evidence_checklist": {
+        "feature_spec_available": false,
+        "target_spec_available": false,
+        "timestamp_rule_available": true,
+        "leakage_check_available": true,
+        "train_validation_test_split_available": false,
+        "oos_or_walk_forward_available": false,
+        "baseline_comparison_available": true,
+        "explainability_output_available": false,
+        "cost_turnover_capacity_available": true,
+        "source_lineage_available": true
+      },
+      "risk_flags": {
+        "leakage_risk": false,
+        "overfit_risk": false,
+        "missing_timestamp_rule": false,
+        "missing_baseline": false,
+        "missing_oos": true,
+        "missing_explainability": true
+      },
+      "summary": "ML evidence is incomplete: missing PIT data",
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/batch01_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_results/strategy_candidate_registry.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "candidate_registry",
+          "path": "strategy_factory/candidate_portfolio/candidate_portfolio_registry.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "research_card",
+          "path": "strategy_factory/research_cards/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "test_spec",
+          "path": "strategy_factory/codex_test_specs/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "evidence_report",
+          "path": "strategy_factory/evidence_reports/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_gate",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "ml_diagnostics_summary",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "timestamp_rule",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "baseline",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_capacity",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        }
+      ]
+    }
+  ],
+  "unmatched": {
+    "factory_items_without_strategy_card_match": 14,
+    "strategy_cards_without_ml_patch_match": 19,
+    "warnings": []
+  },
+  "warnings": []
+}

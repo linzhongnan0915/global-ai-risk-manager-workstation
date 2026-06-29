@@ -27,18 +27,25 @@ from src.automation import (
     build_blackbox_decomposition_manifest,
     build_candidate_strategy_identity_bridge,
     build_ml_intelligence_patch_manifest,
+    build_paper_allocation_proposal,
     build_strategy_factory_evidence_manifest,
     build_review_draft_eligibility,
     create_review_draft_from_allocation_recommendation,
     read_latest_daily_cycle_status,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
+    read_latest_paper_allocation_proposal,
+    read_latest_strategy_factory_job,
+    read_strategy_factory_job,
     run_daily_automation_cycle,
+    run_selected_batch_job,
     write_allocation_recommendation_artifact,
     write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
     write_ml_intelligence_patch_manifest,
+    write_paper_allocation_report,
+    write_paper_allocation_proposal,
     write_strategy_factory_evidence_manifest,
 )
 from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
@@ -526,6 +533,9 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     }
                 if "portfolio_candidates" not in state:
                     state["portfolio_candidates"] = strategy_factory_portfolio_candidates_status(self.server_root)
+                latest_job = read_latest_strategy_factory_job(self.server_root)
+                if latest_job.get("ok"):
+                    state["latest_selected_batch_job"] = latest_job.get("job")
                 self._send_json(state)
             except Exception as exc:
                 self._send_safe_error(exc, context="strategy-factory")
@@ -744,6 +754,34 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="allocation-recommendations-latest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/paper-allocation-proposal/latest",
+            "/api/automation-intelligence/paper-allocation-proposal/latest/",
+        }:
+            try:
+                latest = read_latest_paper_allocation_proposal(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="paper-allocation-proposal-latest")
+            return
+        if parsed.path in {
+            "/api/strategy-factory/jobs/latest",
+            "/api/strategy-factory/jobs/latest/",
+        }:
+            try:
+                latest = read_latest_strategy_factory_job(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-job-latest")
+            return
+        if parsed.path.startswith("/api/strategy-factory/jobs/") and parsed.path.rstrip("/") != "/api/strategy-factory/jobs":
+            try:
+                job_id = unquote(parsed.path.rstrip("/").split("/")[-1])
+                latest = read_strategy_factory_job(self.server_root, job_id)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-job")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/review-draft-eligibility/latest",
             "/api/automation-intelligence/review-draft-eligibility/latest/",
         }:
@@ -927,6 +965,35 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="allocation-recommendations-generate")
             return
         if parsed.path in {
+            "/api/automation-intelligence/paper-allocation-proposal/generate",
+            "/api/automation-intelligence/paper-allocation-proposal/generate/",
+        }:
+            try:
+                self._send_json(write_paper_allocation_proposal(self.server_root), status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="paper-allocation-proposal-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/paper-allocation-report/generate",
+            "/api/automation-intelligence/paper-allocation-report/generate/",
+        }:
+            try:
+                body = self._read_json_body()
+                self._send_json(
+                    write_paper_allocation_report(
+                        self.server_root,
+                        body.get("rows") or [],
+                        source_proposal_artifact=body.get("source_proposal_artifact"),
+                        draft_summary=body.get("draft_summary") or {},
+                    ),
+                    status=201,
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="paper-allocation-report-generate")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/review-draft/from-allocation-recommendation",
             "/api/automation-intelligence/review-draft/from-allocation-recommendation/",
         }:
@@ -1052,6 +1119,25 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": False, "error": str(exc)}, status=400)
             except Exception as exc:
                 self._send_safe_error(exc, context="strategy-factory-run")
+            return
+        if parsed.path in {"/api/strategy-factory/run-selected-batch", "/api/strategy-factory/run-selected-batch/"}:
+            try:
+                body = self._read_json_body()
+                material_ids = body.get("material_ids")
+                if material_ids is None:
+                    material_ids = body.get("selected_material_ids")
+                self._send_json(
+                    run_selected_batch_job(
+                        self.server_root,
+                        material_ids=list(material_ids or []),
+                        mode=str(body.get("mode") or "selected_batch"),
+                    ),
+                    status=201,
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-run-selected-batch")
             return
         if parsed.path in {
             "/api/strategy-factory/backtest-current-run",

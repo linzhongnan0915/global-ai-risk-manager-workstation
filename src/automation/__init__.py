@@ -8,6 +8,7 @@ from typing import Any
 __all__ = [
     "build_automation_intelligence_manifest",
     "build_allocation_recommendation_artifact",
+    "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
     "build_ml_intelligence_patch_manifest",
     "compact_automation_intelligence_summary",
@@ -19,6 +20,7 @@ __all__ = [
     "read_latest_daily_recommendation_artifact",
     "run_daily_automation_cycle",
     "write_allocation_recommendation_artifact",
+    "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
     "write_ml_intelligence_patch_manifest",
     "write_strategy_factory_evidence_manifest",
@@ -49,6 +51,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "read_latest_daily_cycle_status": read_latest_daily_cycle_status,
             "run_daily_automation_cycle": run_daily_automation_cycle,
+        }
+        return exports[name]
+    if name in {
+        "build_candidate_strategy_identity_bridge",
+        "write_candidate_strategy_identity_bridge",
+    }:
+        from src.automation.candidate_strategy_identity_bridge import (
+            build_candidate_strategy_identity_bridge,
+            write_candidate_strategy_identity_bridge,
+        )
+
+        exports = {
+            "build_candidate_strategy_identity_bridge": build_candidate_strategy_identity_bridge,
+            "write_candidate_strategy_identity_bridge": write_candidate_strategy_identity_bridge,
         }
         return exports[name]
     if name in {

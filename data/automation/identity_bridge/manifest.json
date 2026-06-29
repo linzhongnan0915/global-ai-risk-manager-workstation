@@ -1,0 +1,267 @@
+{
+  "ok": true,
+  "status": "MISSING_LINEAGE",
+  "source": "candidate_strategy_identity_bridge_v0",
+  "generated_at": "2026-06-29T00:38:06.888632+00:00",
+  "paper_shadow_only": true,
+  "financial_state_mutated": false,
+  "summary": {
+    "factory_candidate_count": 14,
+    "strategy_card_count": 19,
+    "matched_count": 0,
+    "unmatched_factory_count": 14,
+    "unmatched_strategy_card_count": 19,
+    "activation_lineage_match_count": 0,
+    "warnings": []
+  },
+  "matches": [],
+  "unmatched_factory_items": [
+    {
+      "candidate_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "strategy_uid": null,
+      "research_card_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "test_spec_id": "ETF_FACTOR_PROXY_UNIVERSE_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "strategy_uid": null,
+      "research_card_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "test_spec_id": "MACRO_REGIME_ALLOCATOR_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "strategy_uid": null,
+      "research_card_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "test_spec_id": "HEDGE_FUND_LINEAR_CLONE_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "strategy_uid": null,
+      "research_card_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "test_spec_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "strategy_uid": null,
+      "research_card_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "test_spec_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "ML_RESEARCH_PROCESS_REFERENCE_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "EXISTING_GLOBAL_AI_RESEARCH_REPORT_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "strategy_uid": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "research_card_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "test_spec_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "research_card_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "test_spec_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "research_card_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "test_spec_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "strategy_uid": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "research_card_id": "Price Efficiency Revalidation V0",
+      "test_spec_id": "PRICE_EFFICIENCY_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    },
+    {
+      "candidate_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "strategy_uid": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "research_card_id": "Residual Momentum 12-1 Revalidation V0",
+      "test_spec_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Strategy Intelligence card or activation lineage matched this Factory item."
+    }
+  ],
+  "unmatched_strategy_cards": [
+    {
+      "strategy_uid": "COMBINED_PORTFOLIO",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A1_002",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A1_003",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A1_013",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A2_008",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A1_001",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "C3A1_015",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "FUNDAMENTAL_MOMENTUM",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "EARNINGS_QUALITY",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "MARGIN_IMPROVEMENT",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "OVERNIGHT_INTRADAY_ENSEMBLE",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "FILING_SHOCK_CONTINUATION",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "FUNDAMENTAL_SHOCK_RECOVERY",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "CASH_FLOW_GROWTH_QUALITY",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "POST_FILING_CASH_FLOW_SURPRISE",
+      "candidate_id": null,
+      "match_status": "UNMATCHED",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "SF_STRATEGY_UID_32B00A3F65A3_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1",
+      "candidate_id": "SF_CAND_COPPER_EQUITY_PROXY_TREND_COPX_XME_V1_ACDE308E01",
+      "match_status": "MISSING_LINEAGE",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    },
+    {
+      "strategy_uid": "SF_STRATEGY_UID_BB17380C36CE_US_STOCK_LOW_VOL_63D_TOP20_V1",
+      "candidate_id": "SF_CAND_US_STOCK_LOW_VOL_63D_TOP20_V1_4093ABF664",
+      "match_status": "MISSING_LINEAGE",
+      "reason": "No canonical Factory candidate lineage matched this Strategy Intelligence card."
+    }
+  ],
+  "warnings": [],
+  "source_status": {
+    "strategy_factory_evidence_status": "REVIEW_REQUIRED",
+    "ml_intelligence_patch_status": "REVIEW_REQUIRED"
+  }
+}

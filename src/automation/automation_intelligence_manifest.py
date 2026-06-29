@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
+from src.automation.candidate_strategy_identity_bridge import build_candidate_strategy_identity_bridge
 from src.automation.daily_cycle import read_latest_daily_cycle_status
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
 from src.automation.ml_intelligence_patch_manifest import build_ml_intelligence_patch_manifest
@@ -402,6 +403,19 @@ def _ml_intelligence_patch(root: Path, strategy_payload: dict[str, Any]) -> dict
     }
 
 
+def _identity_bridge(root: Path, strategy_payload: dict[str, Any]) -> dict[str, Any]:
+    payload = build_candidate_strategy_identity_bridge(root, strategy_cards=strategy_payload.get("cards") or [])
+    summary = payload.get("summary") or {}
+    return {
+        "status": payload.get("status") or "NOT_WIRED",
+        "matched_count": summary.get("matched_count"),
+        "unmatched_factory_count": summary.get("unmatched_factory_count"),
+        "unmatched_strategy_card_count": summary.get("unmatched_strategy_card_count"),
+        "activation_lineage_match_count": summary.get("activation_lineage_match_count"),
+        "warnings": payload.get("warnings") if isinstance(payload.get("warnings"), list) else [],
+    }
+
+
 def _operator_summary(
     daily_cycle: dict[str, Any],
     daily: dict[str, Any],
@@ -409,6 +423,7 @@ def _operator_summary(
     review_eligibility: dict[str, Any],
     rebalance: dict[str, Any],
     strategy_factory: dict[str, Any],
+    identity_bridge: dict[str, Any],
     ml: dict[str, Any],
     ml_patch: dict[str, Any],
     decomposition: dict[str, Any],
@@ -431,6 +446,8 @@ def _operator_summary(
         review_items.append("Approved paper rebalance is due but not applied.")
     if strategy_factory["candidate_registry_status"] != "AVAILABLE":
         review_items.append("Strategy Factory candidate registry is missing or unavailable.")
+    if identity_bridge["status"] in {"MISSING_LINEAGE", "NOT_WIRED"}:
+        review_items.append("Candidate-to-strategy identity bridge has no canonical lineage matches.")
     if ml["status"] in {"MISSING_EVIDENCE", "MISSING_ARTIFACT"}:
         warnings.append("ML evidence remains missing or unavailable for dashboard intelligence.")
     if ml_patch["status"] in {"MISSING_ARTIFACT", "REVIEW_REQUIRED", "NOT_WIRED"}:
@@ -465,8 +482,9 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
     ml_patch = _ml_intelligence_patch(root_path, intelligence["payload"])
+    identity_bridge = _identity_bridge(root_path, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, ml, ml_patch, decomposition)
+    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, identity_bridge, ml, ml_patch, decomposition)
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -481,6 +499,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "review_draft_eligibility": review_eligibility,
         "rebalance": rebalance,
         "strategy_factory": strategy,
+        "identity_bridge": identity_bridge,
         "ml_intelligence": ml,
         "ml_intelligence_patch": ml_patch,
         "decomposition": decomposition,
@@ -506,6 +525,7 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     review_eligibility = manifest.get("review_draft_eligibility") or {}
     rebalance = manifest.get("rebalance") or {}
     strategy = manifest.get("strategy_factory") or {}
+    identity_bridge = manifest.get("identity_bridge") or {}
     ml = manifest.get("ml_intelligence") or {}
     ml_patch = manifest.get("ml_intelligence_patch") or {}
     decomposition = manifest.get("decomposition") or {}
@@ -567,6 +587,12 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "strategy_factory_evidence_missing_evidence_count": compact_count(strategy, "missing_evidence_count"),
         "strategy_factory_evidence_review_required_count": compact_count(strategy, "review_required_count"),
         "strategy_factory_evidence_warnings": strategy.get("warnings") or [],
+        "identity_bridge_status": identity_bridge.get("status") or "NOT_WIRED",
+        "identity_bridge_matched_count": compact_count(identity_bridge, "matched_count"),
+        "identity_bridge_unmatched_factory_count": compact_count(identity_bridge, "unmatched_factory_count"),
+        "identity_bridge_unmatched_strategy_card_count": compact_count(identity_bridge, "unmatched_strategy_card_count"),
+        "identity_bridge_activation_lineage_match_count": compact_count(identity_bridge, "activation_lineage_match_count"),
+        "identity_bridge_warnings": identity_bridge.get("warnings") or [],
         "ml_intelligence_status": ml.get("status") or "NOT_AVAILABLE",
         "ml_intelligence_patch_status": ml_patch.get("status") or "NOT_WIRED",
         "ml_intelligence_patch_candidate_count": compact_count(ml_patch, "candidate_count"),

@@ -14,6 +14,7 @@ from scripts.run_workstation_server import WorkstationHandler
 from src.automation import (
     build_allocation_recommendation_artifact,
     build_automation_intelligence_manifest,
+    build_candidate_strategy_identity_bridge,
     build_daily_recommendation_artifact,
     build_ml_intelligence_patch_manifest,
     build_review_draft_eligibility,
@@ -24,6 +25,7 @@ from src.automation import (
     read_latest_daily_recommendation_artifact,
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
+    write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
     write_ml_intelligence_patch_manifest,
     write_strategy_factory_evidence_manifest,
@@ -73,6 +75,7 @@ def _hashes(root: Path) -> dict[str, str]:
         and "automation/daily_cycle" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/strategy_factory_evidence" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/ml_intelligence_patch" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/identity_bridge" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -1353,3 +1356,189 @@ def test_ml_patch_wiring_no_hardcoded_strategy_literals() -> None:
     for path in production_files:
         source = path.read_text(encoding="utf-8")
         assert not any(token in source for token in forbidden)
+
+
+def _write_activation_record(root: Path, *, candidate_id: str, strategy_uid: str, display_name: str = "Test-only Activated") -> None:
+    folder = root / "data/strategy_factory/portfolio_candidates" / candidate_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "activation_record.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "strategy_factory_active_unallocated_strategy_v1",
+                "candidate_id": candidate_id,
+                "strategy_uid": strategy_uid,
+                "strategy_id": strategy_uid,
+                "strategy_name": display_name,
+                "status": "ACTIVE_UNALLOCATED",
+                "state": "ACTIVE_UNALLOCATED",
+                "membership_state": "active_unallocated",
+                "activation_source": "USER_UI",
+                "activation_confirmation": True,
+                "user_confirmed_at": "2026-06-28T00:00:00+00:00",
+                "activation_confirmed_at": "2026-06-28T00:00:00+00:00",
+                "activated_at": "2026-06-28T00:00:00+00:00",
+                "user_action_id": f"TEST_ONLY_ACTIVATE_{candidate_id}",
+                "TEST_ARTIFACT": False,
+                "SMOKE_ONLY": False,
+                "EXCLUDE_FROM_ACTIVE_UNIVERSE": False,
+                "live_trading": False,
+                "brokerage_execution": False,
+                "current_weight": 0.0,
+                "target_weight": 0.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_identity_bridge_matches_when_explicit_activation_lineage_exists(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_activation_record(root, candidate_id="TEST_FACTORY_UID", strategy_uid="TEST_STRATEGY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    strategy_payload = build_strategy_intelligence_payload(root)
+
+    bridge = build_candidate_strategy_identity_bridge(root, alpha_root=alpha, strategy_cards=strategy_payload["cards"])
+
+    assert bridge["summary"]["matched_count"] == 1
+    assert bridge["summary"]["activation_lineage_match_count"] == 1
+    assert bridge["matches"][0]["strategy_uid"] == "TEST_STRATEGY_UID"
+    assert bridge["matches"][0]["candidate_id"] == "TEST_FACTORY_UID"
+    assert bridge["matches"][0]["match_basis"] == "activation_record"
+
+
+def test_identity_bridge_does_not_match_by_display_name(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_activation_record(root, candidate_id="UNRELATED_TEST_UID", strategy_uid="DISPLAY_ONLY_TEST_UID", display_name="TEST_FACTORY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    strategy_payload = build_strategy_intelligence_payload(root)
+
+    bridge = build_candidate_strategy_identity_bridge(root, alpha_root=alpha, strategy_cards=strategy_payload["cards"])
+
+    assert bridge["summary"]["matched_count"] == 0
+    assert all(row["candidate_id"] != "TEST_FACTORY_UID" for row in bridge["matches"])
+
+
+def test_identity_bridge_missing_lineage_stays_unmatched(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    strategy_payload = build_strategy_intelligence_payload(root)
+
+    bridge = build_candidate_strategy_identity_bridge(root, alpha_root=alpha, strategy_cards=strategy_payload["cards"])
+
+    assert bridge["status"] == "MISSING_LINEAGE"
+    assert bridge["summary"]["matched_count"] == 0
+    assert bridge["unmatched_factory_items"]
+    assert bridge["unmatched_strategy_cards"]
+
+
+def test_strategy_intelligence_cards_receive_factory_and_ml_only_when_bridge_matches(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_activation_record(root, candidate_id="TEST_FACTORY_UID", strategy_uid="TEST_STRATEGY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+    activated = next(card for card in payload["cards"] if card["strategy_uid"] == "TEST_STRATEGY_UID")
+
+    assert activated["identity_bridge"]["match_status"] == "MATCHED"
+    assert activated["research_lineage"]["candidate_id"] == "TEST_FACTORY_UID"
+    assert activated["ml_intelligence_patch"]["status"] != "NOT_AVAILABLE"
+
+
+def test_strategy_intelligence_cards_remain_not_available_without_bridge_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    canonical = {
+        "strategies": [
+            {
+                "internal_id": "UNMATCHED_CARD_UID",
+                "strategy_uid": "UNMATCHED_CARD_UID",
+                "display_name": "Test-only Unmatched Strategy",
+                "membership_state": "executed",
+                "current_weight": 0.1,
+                "target_weight": 0.1,
+            }
+        ]
+    }
+    (root / "dashboard/data/canonical_operational.json").write_text(json.dumps(canonical), encoding="utf-8")
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+
+    assert payload["cards"][0]["identity_bridge"]["match_status"] == "MISSING_LINEAGE"
+    assert payload["cards"][0]["research_lineage"]["status"] == "NOT_AVAILABLE"
+    assert payload["cards"][0]["ml_intelligence_patch"]["status"] == "NOT_AVAILABLE"
+
+
+def test_identity_bridge_get_endpoint_is_read_only(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/identity-bridge/manifest")
+        assert status == 200
+        assert "matched_count" in payload["summary"]
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_identity_bridge_refresh_post_writes_only_cache(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/identity-bridge/refresh")
+        assert status == 201
+        assert payload["financial_state_mutated"] is False
+        assert (root / "data/automation/identity_bridge/manifest.json").exists()
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_dashboard_renders_identity_bridge_backend_fields_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Identity Bridge" in source
+    assert "identity_bridge_status" in source
+    assert "card.identity_bridge" in source
+    assert "TEST_FACTORY_UID" not in source
+
+
+def test_identity_bridge_no_hardcoded_strategy_literals_or_display_name_matching() -> None:
+    production_files = [
+        ROOT / "src/automation/candidate_strategy_identity_bridge.py",
+        ROOT / "src/automation/automation_intelligence_manifest.py",
+        ROOT / "scripts/run_workstation_server.py",
+    ]
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    for path in production_files:
+        source = path.read_text(encoding="utf-8")
+        assert not any(token in source for token in forbidden)
+    bridge_source = (ROOT / "src/automation/candidate_strategy_identity_bridge.py").read_text(encoding="utf-8")
+    assert "display_name" not in bridge_source
+    assert "strategy_name" not in bridge_source

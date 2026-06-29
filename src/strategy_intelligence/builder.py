@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.candidate_strategy_identity_bridge import (
+    bridge_match_for_strategy,
+    build_candidate_strategy_identity_bridge,
+)
 from src.automation.ml_intelligence_patch_manifest import (
     build_ml_intelligence_patch_manifest,
     ml_patch_for_identity,
@@ -295,6 +299,8 @@ def _card(
     return {
         "card_id": f"strategy-intelligence::{uid}",
         "strategy_uid": uid,
+        "candidate_id": row.get("candidate_id") or row.get("portfolio_candidate_id"),
+        "material_hash": row.get("material_hash") or row.get("source_material_hash"),
         "strategy_name": row.get("display_name") or row.get("name") or row.get("strategy_name") or uid,
         "display_label": row.get("display_label") or row.get("display_id") or "Display only",
         "family": mechanism["family"],
@@ -339,6 +345,61 @@ def _card(
     }
 
 
+def _not_available_research_lineage() -> dict[str, Any]:
+    return {
+        "status": "NOT_AVAILABLE",
+        "candidate_id": None,
+        "research_card_id": None,
+        "test_spec_id": None,
+        "evidence_report_status": "NOT_AVAILABLE",
+        "ml_gate_status": "NOT_AVAILABLE",
+        "missing_evidence": [],
+        "source_artifacts": [],
+        "reason": "No canonical Factory/activation lineage match.",
+    }
+
+
+def _not_available_ml_patch() -> dict[str, Any]:
+    return {
+        "status": "NOT_AVAILABLE",
+        "ml_role": "NOT_AVAILABLE",
+        "evidence_checklist": {},
+        "risk_flags": {},
+        "missing_evidence": [],
+        "source_artifacts": [],
+        "reason": "No canonical Factory/activation lineage match.",
+    }
+
+
+def _apply_identity_bridge(
+    card: dict[str, Any],
+    identity_bridge: dict[str, Any],
+    factory_evidence: dict[str, Any],
+    ml_patch_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    match = bridge_match_for_strategy(identity_bridge, card.get("strategy_uid"))
+    enriched = dict(card)
+    enriched["identity_bridge"] = match or {
+        "match_status": "MISSING_LINEAGE",
+        "match_basis": "not_available",
+        "reason": "No canonical Factory/activation lineage match.",
+    }
+    if not match:
+        enriched["research_lineage"] = _not_available_research_lineage()
+        enriched["ml_intelligence_patch"] = _not_available_ml_patch()
+        return enriched
+    identities = (
+        match.get("candidate_id"),
+        match.get("strategy_uid"),
+        match.get("research_card_id"),
+        match.get("test_spec_id"),
+        match.get("material_hash"),
+    )
+    enriched["research_lineage"] = research_lineage_for_identity(factory_evidence, *identities)
+    enriched["ml_intelligence_patch"] = ml_patch_for_identity(ml_patch_manifest, *identities)
+    return enriched
+
+
 def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | None = None) -> dict[str, Any]:
     root = Path(root)
     generated_at = (now or datetime.now(timezone.utc)).isoformat()
@@ -348,6 +409,14 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
     factory_evidence = build_strategy_factory_evidence_manifest(root, now=now)
     ml_patch_manifest = build_ml_intelligence_patch_manifest(root, factory_manifest=factory_evidence, now=now)
     cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest, factory_evidence, ml_patch_manifest) for row in rows]
+    identity_bridge = build_candidate_strategy_identity_bridge(
+        root,
+        strategy_cards=cards,
+        factory_manifest=factory_evidence,
+        ml_patch_manifest=ml_patch_manifest,
+        now=now,
+    )
+    cards = [_apply_identity_bridge(card, identity_bridge, factory_evidence, ml_patch_manifest) for card in cards]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})
@@ -406,6 +475,7 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             "strategy_intelligence_endpoint": "/api/strategy-intelligence",
             "daily_recommendation_artifact": daily_latest.get("artifact_path"),
             "strategy_factory_evidence_status": factory_evidence.get("status"),
+            "identity_bridge_status": identity_bridge.get("status"),
         },
         "safety": {
             "state_mutation": False,

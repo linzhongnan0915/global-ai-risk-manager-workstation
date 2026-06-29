@@ -24,6 +24,7 @@ from scripts.validate_deployment_artifact import DeploymentArtifactError, valida
 from src.allocation.rebalance_simulation import simulate_rebalance
 from src.automation import (
     build_automation_intelligence_manifest,
+    build_candidate_strategy_identity_bridge,
     build_ml_intelligence_patch_manifest,
     build_strategy_factory_evidence_manifest,
     build_review_draft_eligibility,
@@ -33,6 +34,7 @@ from src.automation import (
     read_latest_daily_recommendation_artifact,
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
+    write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
     write_ml_intelligence_patch_manifest,
     write_strategy_factory_evidence_manifest,
@@ -690,6 +692,21 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="ml-intelligence-patch-manifest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/identity-bridge/manifest",
+            "/api/automation-intelligence/identity-bridge/manifest/",
+        }:
+            try:
+                strategy_payload = build_strategy_intelligence_payload(self.server_root)
+                self._send_json(
+                    build_candidate_strategy_identity_bridge(
+                        self.server_root,
+                        strategy_cards=strategy_payload.get("cards") or [],
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="identity-bridge-manifest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/daily-recommendations/latest",
             "/api/automation-intelligence/daily-recommendations/latest/",
         }:
@@ -943,6 +960,24 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json({**payload, "artifact_path": str(path.relative_to(self.server_root)).replace("\\", "/")}, status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="ml-intelligence-patch-refresh")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/identity-bridge/refresh",
+            "/api/automation-intelligence/identity-bridge/refresh/",
+        }:
+            try:
+                strategy_payload = build_strategy_intelligence_payload(self.server_root)
+                path = write_candidate_strategy_identity_bridge(
+                    self.server_root,
+                    strategy_cards=strategy_payload.get("cards") or [],
+                )
+                payload = build_candidate_strategy_identity_bridge(
+                    self.server_root,
+                    strategy_cards=strategy_payload.get("cards") or [],
+                )
+                self._send_json({**payload, "artifact_path": str(path.relative_to(self.server_root)).replace("\\", "/")}, status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="identity-bridge-refresh")
             return
         if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
             try:

@@ -513,3 +513,51 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .strategy-detail-summary{min-height:36px;flex-wrap:wrap}
 .strategy-detail-summary .status-badge{font-size:9px}
 @media(max-width:640px){.strategy-detail-kpis.drawer-kpis,.drawer-governance-status .drawer-status-grid{grid-template-columns:1fr}.drawer-status-item{grid-template-columns:1fr}.strategy-detail-kpis .drawer-kpi strong{font-size:18px}}
+
+/* P0 review surfaces: restore readable Workflow, Strategy Intelligence, and allocation workbench layouts. */
+.workflow-v2,
+.strategy-intelligence-page-v2,
+.allocation-p0-page{min-width:0;overflow-x:hidden}
+.workflow-diagram-v2{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:8px;margin-top:8px}
+.workflow-step-v2{min-width:0;min-height:154px;display:grid;grid-template-rows:auto auto auto 1fr auto;gap:6px;padding:11px;border:1px solid #244b55;background:#061519}
+.workflow-step-v2 div{min-width:0}
+.workflow-step-v2 strong{display:block;color:#edf8fb;font-size:13px;line-height:1.2;white-space:normal}
+.workflow-step-v2 span{display:block;margin-top:3px;color:#91a8ab;font-size:10px;line-height:1.3;white-space:normal}
+.workflow-step-v2 b{justify-self:start;max-width:100%;padding:3px 7px;border:1px solid #2b6a75;background:#061d22;color:#72d0f6;font-size:9px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workflow-step-v2 em{color:#ffd36c;font-size:18px;font-style:normal;font-weight:800}
+.workflow-step-v2 p,.workflow-step-v2 small{margin:0;color:#c2d3d6;font-size:10px;line-height:1.38;white-space:normal;overflow-wrap:anywhere}
+.workflow-step-v2 small{color:#8fa7ab}
+.workflow-governance-details{margin-top:8px}
+.strategy-analyst-layout-v2{display:grid;grid-template-columns:minmax(300px,32%) minmax(0,1fr);gap:10px;margin-top:8px;align-items:start}
+.strategy-selector-panel-v3{min-width:0;overflow:hidden}
+.strategy-search-v2{height:32px;display:grid;grid-template-columns:54px minmax(0,1fr);align-items:center;gap:6px;padding:0 8px;border-bottom:1px solid var(--soft)}
+.strategy-search-v2 span{color:#8fa7ab;font-size:9px;text-transform:uppercase}
+.strategy-search-v2 input{min-width:0;height:22px;border:1px solid var(--line);background:#03090a;color:#edf8fb;padding:0 7px;font-size:10px}
+.strategy-selector-list-v3{max-height:430px;display:grid;gap:5px;padding:8px;overflow:auto;overscroll-behavior:contain}
+.strategy-card-row-v3{min-width:0;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main evidence" "meta meta" "uid uid";gap:4px 8px;align-items:center;padding:8px;border:1px solid #1f454c;background:#041012;color:#dcebed;text-align:left;cursor:pointer}
+.strategy-card-row-v3:hover,.strategy-card-row-v3:focus,.strategy-card-row-v3.active{border-color:#47b8d8;background:#082027;outline:none}
+.strategy-card-main{grid-area:main;min-width:0;display:flex;align-items:center;gap:6px}
+.strategy-card-main strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.strategy-card-main .status-badge{flex:0 0 auto}
+.strategy-card-meta{grid-area:meta;min-width:0;display:grid;grid-template-columns:92px 62px minmax(0,1fr);gap:5px;color:#9fb4b7;font-size:9px}
+.strategy-card-meta i,.strategy-card-row-v3 small,.strategy-card-row-v3 em{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:normal}
+.strategy-card-row-v3 small{grid-area:uid;color:#6f8b91;font-size:8px}
+.strategy-card-row-v3 em{grid-area:evidence;justify-self:end;color:#ffd36c;font-size:9px}
+.strategy-analyst-memo-v3{min-width:0;overflow:hidden}
+.analyst-memo-hero-v3{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px solid var(--soft);background:#061519}
+.analyst-memo-hero-v3 div{min-width:0}
+.analyst-memo-hero-v3 strong,.analyst-memo-hero-v3 small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.analyst-memo-hero-v3 strong{color:#edf8fb;font-size:16px}.analyst-memo-hero-v3 small{margin-top:3px;color:#8fa7ab;font-size:9px}
+.analyst-memo-grid-v3{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:8px;padding:10px}
+.analyst-memo-grid-v3 article{min-width:0;padding:10px;border:1px solid var(--soft);background:#041012}
+.analyst-memo-grid-v3 h3{margin:0 0 8px;color:#72d0f6;font-size:11px;text-transform:uppercase}
+.analyst-memo-grid-v3 p,.analyst-memo-grid-v3 li{color:#c7dadd;font-size:11px;line-height:1.45;white-space:normal}
+.analyst-memo-grid-v3 dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:5px;margin:0}
+.analyst-memo-grid-v3 dt{color:#81989b;font-size:8px;text-transform:uppercase}.analyst-memo-grid-v3 dd{min-width:0;margin:0;color:#edf8fb;font-size:10px;overflow-wrap:anywhere}
+.strategy-source-details{margin:0 10px 10px;border:1px solid var(--soft);background:#03090a}
+.strategy-source-details summary{height:30px;display:flex;align-items:center;padding:0 9px;color:#9fb4b7;font-size:9px;font-weight:800;text-transform:uppercase;cursor:pointer}
+.paper-allocation-proposal-table{table-layout:fixed;min-width:1180px}
+.paper-allocation-proposal-table th,.paper-allocation-proposal-table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.paper-allocation-proposal-table td:last-child{white-space:normal;line-height:1.25}
+@media(max-width:1550px){.workflow-diagram-v2{grid-template-columns:repeat(2,minmax(220px,1fr))}.strategy-analyst-layout-v2{grid-template-columns:1fr}.strategy-selector-list-v3{max-height:260px}.analyst-memo-grid-v3{grid-template-columns:1fr}}
+@media(max-width:760px){.workflow-diagram-v2{grid-template-columns:1fr}.strategy-card-row-v3{grid-template-columns:1fr;grid-template-areas:"main" "meta" "uid" "evidence"}.strategy-card-row-v3 em{justify-self:start}.strategy-card-meta{grid-template-columns:1fr}.analyst-memo-grid-v3 dl{grid-template-columns:1fr}}

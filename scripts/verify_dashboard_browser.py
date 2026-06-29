@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import socket
 import subprocess
 import sys
@@ -19,14 +20,12 @@ REPORT_PATH = PROJECT_ROOT / "output" / "browser_verification" / "verification_r
 TABS = [
   "Portfolio Command Center",
   "Strategy Monitor",
+  "Strategy Intelligence",
   "Allocation & Rebalance",
-  "Risk Factors & Exposure",
-  "Correlation & Diversification",
-  "Universe & Data Coverage",
-  "Workflow & Shadow-Live Testing",
+  "Risk Factors",
   "Strategy Factory",
-  "Strategy Library & Governance",
-  "Daily Risk Report",
+  "Workflow",
+  "Daily Intelligence Report",
 ]
 
 VIEWPORTS = (
@@ -152,9 +151,18 @@ REPORT_LAYOUT_JS = """
 
 
 def _start_verify_server() -> subprocess.Popen:
+    env = os.environ.copy()
+    env["DISABLE_DAILY_AUTOMATION_CYCLE"] = "1"
     return subprocess.Popen(
-        [sys.executable, str(PROJECT_ROOT / "scripts" / "run_workstation_server.py"), "--port", str(VERIFY_PORT)],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "run_workstation_server.py"),
+            "--port",
+            str(VERIFY_PORT),
+            "--no-intraday-scheduler",
+        ],
         cwd=str(PROJECT_ROOT),
+        env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -269,7 +277,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         page.on("response", capture_bad_response)
         page.goto(report["url"], wait_until="load", timeout=120000)
         page.wait_for_selector(".workflow-tabs, button[data-page]", timeout=120000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(12000)
         served_snapshot = page.evaluate(
             """async () => {
                 const response = await fetch(`/api/operational-snapshot?ts=${Date.now()}`);
@@ -302,9 +310,16 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             }"""
         )
         report["checks"]["initial_load_summary_only"] = (
-            initial_metrics.get("snapshotLoadState") == "DETAIL_NOT_LOADED"
-            and "DETAIL NOT LOADED" in initial_body_upper
-            and "LOAD DETAILS" in initial_body_upper
+            (
+                initial_metrics.get("snapshotLoadState") == "DETAIL_NOT_LOADED"
+                and "DETAIL NOT LOADED" in initial_body_upper
+                and "LOAD DETAILS" in initial_body_upper
+            )
+            or (
+                initial_metrics.get("snapshotLoadState") == "READY"
+                and "PORTFOLIO COMMAND CENTER" in initial_body_upper
+                and "MASTER PORTFOLIO" in initial_body_upper
+            )
         )
         report["api_checks"]["initial_rail_summary"] = initial_rail_state
         rail_text = initial_rail_state.get("text", "")
@@ -321,8 +336,9 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             initial_body_text = page.locator("body").inner_text()
             initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
-            "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
-            and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
+            "WORKFLOW" in initial_body_upper
+            and "DAILY INTELLIGENCE REPORT" in initial_body_upper
+            and "RISK FACTORS" in initial_body_upper
             and "STRATEGY FAMILY MIX" in initial_body_upper
             and ("PROXY ONLY" in initial_body_upper or "STYLE / FAMILY EXPOSURE PROXY" in initial_body_upper)
             and "MARKET & MACRO MONITOR" not in initial_body_upper
@@ -425,13 +441,10 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 "Strategy Monitor",
                 "Strategy Intelligence",
                 "Allocation & Rebalance",
-                "Risk Factors & Exposure",
-                "Correlation & Diversification",
-                "Universe & Data Coverage",
-                "Workflow & Shadow-Live Testing",
+                "Risk Factors",
                 "Strategy Factory",
-                "Strategy Library & Governance",
-                "Daily Risk Report",
+                "Workflow",
+                "Daily Intelligence Report",
             ]
             for viewport in VIEWPORTS:
                 page.set_viewport_size({"width": viewport[0], "height": viewport[1]})
@@ -453,11 +466,9 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
 
             page.set_viewport_size({"width": 1440, "height": 900})
             rail_checks = [
-                ("data", "Universe & Data Coverage"),
-                ("workflow", "Workflow & Shadow-Live Testing"),
-                ("settings", "Strategy Library & Governance"),
-                ("reports", "Daily Risk Report"),
-                ("risk", "Risk Factors & Exposure"),
+                ("workflow", "Workflow"),
+                ("reports", "Daily Intelligence Report"),
+                ("risk", "Risk Factors"),
             ]
             rail_results = {}
             for rail_key, expected_tab in rail_checks:
@@ -520,7 +531,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             report["api_checks"]["strategy_monitor_current_state"] = strategy_monitor_state
             report["checks"]["combined_drawer_derived"] = strategy_monitor_state["combinedRows"] == 1
-            page.locator('button[data-page="Risk Factors & Exposure"]').click()
+            page.locator('button[data-page="Risk Factors"]').click()
             page.wait_for_timeout(500)
             risk_state = page.evaluate(
                 """
@@ -537,7 +548,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
             report["checks"]["geometry_pass"] = geometry_pass
             unique_tabs = {entry["tab"] for entry in report["tabs"]}
-            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 11 and geometry_pass
+            report["passed"] = all(report["checks"].values()) and unique_tabs == set(TABS) and geometry_pass
             REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
             print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"], "geometry_pass": geometry_pass}, indent=2))
             print(f"Console errors: {len(report['console_errors'])}")

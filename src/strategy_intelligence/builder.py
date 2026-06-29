@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.strategy_factory_evidence_manifest import (
+    build_strategy_factory_evidence_manifest,
+    research_lineage_for_identity,
+)
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.reporting.operational_snapshot import (
     REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS,
@@ -241,6 +245,7 @@ def _card(
     generated_at: str,
     daily_rows: dict[str, dict[str, Any]],
     daily_latest: dict[str, Any],
+    factory_evidence: dict[str, Any],
 ) -> dict[str, Any]:
     uid = str(row.get("strategy_uid") or row.get("strategy_id") or row.get("internal_id") or "")
     research = _research_summary(root, uid)
@@ -268,6 +273,13 @@ def _card(
     daily_section = _daily_recommendation_section(daily_rows.get(uid), daily_latest)
     ml_section = _ml_evidence_section(ml, source_artifacts)
     decomposition_section = _decomposition_evidence_section(attribution, source_artifacts)
+    research_lineage = research_lineage_for_identity(
+        factory_evidence,
+        uid,
+        row.get("candidate_id"),
+        row.get("strategy_id"),
+        row.get("internal_id"),
+    )
     return {
         "card_id": f"strategy-intelligence::{uid}",
         "strategy_uid": uid,
@@ -299,6 +311,7 @@ def _card(
         "decision_recommendation": recommendation,
         "source_artifacts": source_artifacts,
         "daily_recommendation": daily_section,
+        "research_lineage": research_lineage,
         "ml_evidence": ml_section,
         "decomposition_evidence": decomposition_section,
         "operator_explanation": _operator_explanation(daily_section, ml_section, decomposition_section, missing),
@@ -319,7 +332,8 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
     rows = _current_rows(root)
     paper = paper_rebalance_snapshot_payload(root)
     daily_rows, daily_latest = _daily_recommendations_by_uid(root)
-    cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest) for row in rows]
+    factory_evidence = build_strategy_factory_evidence_manifest(root, now=now)
+    cards = [_card(root, row, paper, generated_at, daily_rows, daily_latest, factory_evidence) for row in rows]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})
@@ -355,6 +369,12 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
         "daily_recommendation_missing_match_count": sum(
             card["daily_recommendation"]["recommended_action"] == "NOT_AVAILABLE" for card in cards
         ),
+        "research_lineage_available_count": sum(
+            card["research_lineage"]["status"] not in {"NOT_AVAILABLE", "MISSING_ARTIFACT"} for card in cards
+        ),
+        "research_lineage_review_required_count": sum(
+            card["research_lineage"]["status"] in {"REVIEW_REQUIRED", "MISSING_EVIDENCE"} for card in cards
+        ),
     }
     return {
         "ok": True,
@@ -371,6 +391,7 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             "snapshot_summary_endpoint": "/api/snapshot-summary",
             "strategy_intelligence_endpoint": "/api/strategy-intelligence",
             "daily_recommendation_artifact": daily_latest.get("artifact_path"),
+            "strategy_factory_evidence_status": factory_evidence.get("status"),
         },
         "safety": {
             "state_mutation": False,

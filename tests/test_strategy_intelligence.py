@@ -12,7 +12,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from scripts.run_workstation_server import WorkstationHandler
-from src.automation import write_daily_recommendation_artifact
+from src.automation import read_latest_daily_recommendation_artifact, write_daily_recommendation_artifact
 from src.reporting.operational_snapshot import load_snapshot_summary_for_response
 from src.strategy_intelligence import build_strategy_intelligence_payload
 from src.strategy_intelligence.mechanism_rules import classify_mechanism
@@ -265,11 +265,13 @@ def test_cards_include_source_artifacts_and_no_execution_authority_language():
 
 def test_cards_include_daily_recommendation_fields_when_artifact_exists():
     payload = build_strategy_intelligence_payload(ROOT)
+    latest = read_latest_daily_recommendation_artifact(ROOT)
+    expected_artifact = latest.get("artifact_path")
 
     assert payload["summary"]["daily_recommendation_count"] == len(payload["cards"])
     for card in payload["cards"]:
         daily = card["daily_recommendation"]
-        assert daily["source_artifact"] == "data/automation/daily_recommendations/2026-06-28.json"
+        assert daily["source_artifact"] == expected_artifact
         assert daily["recommended_action"] in {"HOLD", "REVIEW", "REDUCE", "INCREASE"}
         assert daily["confidence"] in {"LOW", "MEDIUM", "HIGH", "REVIEW_REQUIRED"}
         assert daily["evidence_strength"] in {"MISSING", "WEAK", "PARTIAL", "STRONG"}

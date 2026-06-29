@@ -11,6 +11,7 @@ __all__ = [
     "build_daily_recommendation_artifact",
     "compact_automation_intelligence_summary",
     "build_review_draft_eligibility",
+    "build_strategy_factory_evidence_manifest",
     "create_review_draft_from_allocation_recommendation",
     "read_latest_daily_cycle_status",
     "read_latest_allocation_recommendation_artifact",
@@ -18,6 +19,7 @@ __all__ = [
     "run_daily_automation_cycle",
     "write_allocation_recommendation_artifact",
     "write_daily_recommendation_artifact",
+    "write_strategy_factory_evidence_manifest",
 ]
 
 
@@ -45,6 +47,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "read_latest_daily_cycle_status": read_latest_daily_cycle_status,
             "run_daily_automation_cycle": run_daily_automation_cycle,
+        }
+        return exports[name]
+    if name in {
+        "build_strategy_factory_evidence_manifest",
+        "write_strategy_factory_evidence_manifest",
+    }:
+        from src.automation.strategy_factory_evidence_manifest import (
+            build_strategy_factory_evidence_manifest,
+            write_strategy_factory_evidence_manifest,
+        )
+
+        exports = {
+            "build_strategy_factory_evidence_manifest": build_strategy_factory_evidence_manifest,
+            "write_strategy_factory_evidence_manifest": write_strategy_factory_evidence_manifest,
         }
         return exports[name]
     if name in {

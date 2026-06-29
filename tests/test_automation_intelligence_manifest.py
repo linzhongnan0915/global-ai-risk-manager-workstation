@@ -16,6 +16,7 @@ from src.automation import (
     build_automation_intelligence_manifest,
     build_daily_recommendation_artifact,
     build_review_draft_eligibility,
+    build_strategy_factory_evidence_manifest,
     create_review_draft_from_allocation_recommendation,
     read_latest_daily_cycle_status,
     read_latest_allocation_recommendation_artifact,
@@ -23,8 +24,10 @@ from src.automation import (
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
+    write_strategy_factory_evidence_manifest,
 )
 from src.reporting.operational_snapshot import load_snapshot_summary_for_response
+from src.strategy_intelligence import build_strategy_intelligence_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +69,7 @@ def _hashes(root: Path) -> dict[str, str]:
         if "automation/daily_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/allocation_recommendations" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/daily_cycle" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/strategy_factory_evidence" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -936,3 +940,209 @@ def test_daily_cycle_production_logic_has_no_hardcoded_strategy_literals() -> No
     )
     forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
     assert not any(token in source for token in forbidden)
+
+
+def _factory_alpha_fixture(tmp_path: Path) -> Path:
+    alpha = tmp_path / "alpha_research"
+    sf = alpha / "strategy_factory"
+    (sf / "candidate_results").mkdir(parents=True)
+    (sf / "candidate_portfolio").mkdir(parents=True)
+    (sf / "research_cards").mkdir(parents=True)
+    (sf / "codex_test_specs").mkdir(parents=True)
+    (sf / "evidence_reports" / "TEST_FACTORY_UID").mkdir(parents=True)
+    (alpha / "experiments" / "TEST_FACTORY_UID" / "outputs").mkdir(parents=True)
+    (sf / "candidate_results" / "test_candidate_registry.json").write_text(
+        json.dumps(
+            {
+                "candidates": [
+                    {
+                        "strategy_id": "TEST_FACTORY_UID",
+                        "candidate_id": "TEST_FACTORY_UID",
+                        "lifecycle_status": "TESTABLE_CANDIDATE",
+                        "decision": "WATCH_ONLY",
+                        "candidate_portfolio_eligible": False,
+                        "blocked_by": ["test_only_missing_dataset"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (sf / "candidate_portfolio" / "candidate_portfolio_registry.csv").write_text(
+        "candidate_id,status\nTEST_FACTORY_UID,WATCH_ONLY\n",
+        encoding="utf-8",
+    )
+    (sf / "research_cards" / "TEST_FACTORY_UID.md").write_text("# TEST_FACTORY_UID\n", encoding="utf-8")
+    (sf / "codex_test_specs" / "TEST_FACTORY_UID_test_spec.md").write_text("# TEST_FACTORY_UID\n", encoding="utf-8")
+    (sf / "evidence_reports" / "TEST_FACTORY_UID" / "evidence_report.md").write_text(
+        "# TEST_FACTORY_UID Evidence\n",
+        encoding="utf-8",
+    )
+    (sf / "evidence_reports" / "TEST_FACTORY_UID" / "missing_evidence.json").write_text(
+        json.dumps([{"missing_item": "test_only_missing_dataset", "severity": "BLOCKING"}]),
+        encoding="utf-8",
+    )
+    (alpha / "experiments" / "TEST_FACTORY_UID" / "outputs" / "ml_diagnostics_summary.json").write_text(
+        json.dumps({"status": "TEST_ONLY_DIAGNOSTIC"}),
+        encoding="utf-8",
+    )
+    return alpha
+
+
+def _strategy_intelligence_root(tmp_path: Path) -> Path:
+    root = _copy_root(tmp_path)
+    canonical = {
+        "strategies": [
+            {
+                "internal_id": "TEST_FACTORY_UID",
+                "strategy_uid": "TEST_FACTORY_UID",
+                "display_name": "Test-only Strategy",
+                "membership_state": "executed",
+                "current_weight": 0.1,
+                "target_weight": 0.1,
+            }
+        ]
+    }
+    (root / "dashboard/data/canonical_operational.json").write_text(json.dumps(canonical), encoding="utf-8")
+    return root
+
+
+def test_strategy_factory_evidence_manifest_loads_available_artifacts(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    manifest = build_strategy_factory_evidence_manifest(root, alpha_root=alpha)
+    summary = manifest["summary"]
+
+    assert manifest["status"] == "REVIEW_REQUIRED"
+    assert summary["candidate_count"] == 1
+    assert summary["research_card_count"] == 1
+    assert summary["test_spec_count"] == 1
+    assert summary["evidence_report_count"] == 1
+    assert summary["ml_gate_count"] == 1
+    assert summary["missing_evidence_count"] >= 1
+    assert manifest["items"][0]["candidate_id"] == "TEST_FACTORY_UID"
+
+
+def test_strategy_factory_evidence_manifest_missing_alpha_is_clean(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    manifest = build_strategy_factory_evidence_manifest(root, alpha_root=tmp_path / "missing_alpha")
+
+    assert manifest["status"] == "MISSING_ARTIFACT"
+    assert manifest["summary"]["candidate_count"] is None
+    assert manifest["items"] == []
+    assert manifest["warnings"]
+
+
+def test_strategy_factory_evidence_manifest_counts_are_dynamic(tmp_path: Path) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    sf = alpha / "strategy_factory"
+    registry = sf / "candidate_results" / "test_candidate_registry.json"
+    payload = json.loads(registry.read_text(encoding="utf-8"))
+    payload["candidates"].append({"strategy_id": "SECOND_TEST_UID", "candidate_portfolio_eligible": True})
+    registry.write_text(json.dumps(payload), encoding="utf-8")
+    (sf / "research_cards" / "SECOND_TEST_UID.md").write_text("# SECOND_TEST_UID\n", encoding="utf-8")
+
+    manifest = build_strategy_factory_evidence_manifest(root, alpha_root=alpha)
+
+    assert manifest["summary"]["candidate_count"] == 2
+    assert manifest["summary"]["research_card_count"] == 2
+
+
+def test_strategy_intelligence_card_gets_research_lineage_for_canonical_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+    card = payload["cards"][0]
+
+    assert card["strategy_uid"] == "TEST_FACTORY_UID"
+    assert card["research_lineage"]["candidate_id"] == "TEST_FACTORY_UID"
+    assert card["research_lineage"]["status"] == "MISSING_EVIDENCE"
+    assert card["research_lineage"]["source_artifacts"]
+
+
+def test_strategy_intelligence_card_research_lineage_not_available_without_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    registry = alpha / "strategy_factory" / "candidate_results" / "test_candidate_registry.json"
+    registry.write_text(json.dumps({"candidates": [{"strategy_id": "UNMATCHED_TEST_UID"}]}), encoding="utf-8")
+    (alpha / "strategy_factory" / "candidate_portfolio" / "candidate_portfolio_registry.csv").write_text(
+        "candidate_id,status\nUNMATCHED_TEST_UID,WATCH_ONLY\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+
+    assert payload["cards"][0]["research_lineage"]["status"] == "NOT_AVAILABLE"
+
+
+def test_strategy_factory_evidence_get_endpoint_is_read_only(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/strategy-factory-evidence/manifest")
+        assert status == 200
+        assert payload["summary"]["candidate_count"] == 1
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_strategy_factory_evidence_refresh_post_writes_only_cache(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/strategy-factory-evidence/refresh")
+        assert status == 201
+        assert payload["financial_state_mutated"] is False
+        assert (root / "data/automation/strategy_factory_evidence/manifest.json").exists()
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_dashboard_renders_factory_evidence_and_research_lineage_from_backend_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Strategy Factory Evidence" in source
+    assert "Research Lineage" in source
+    assert "strategy_factory_evidence_candidate_count" in source
+    assert "card.research_lineage" in source
+    assert "TEST_FACTORY_UID" not in source
+
+
+def test_strategy_factory_evidence_wiring_no_hardcoded_strategy_literals() -> None:
+    production_files = [
+        ROOT / "src/automation/strategy_factory_evidence_manifest.py",
+        ROOT / "src/automation/automation_intelligence_manifest.py",
+        ROOT / "scripts/run_workstation_server.py",
+    ]
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    for path in production_files:
+        source = path.read_text(encoding="utf-8")
+        assert not any(token in source for token in forbidden)

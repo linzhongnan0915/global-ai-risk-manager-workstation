@@ -17,6 +17,7 @@ from src.automation.allocation_recommendation_artifact import read_latest_alloca
 from src.automation.daily_cycle import read_latest_daily_cycle_status
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
 from src.automation.review_draft_eligibility import build_review_draft_eligibility
+from src.automation.strategy_factory_evidence_manifest import build_strategy_factory_evidence_manifest
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.strategy_intelligence import build_strategy_intelligence_payload
 
@@ -289,36 +290,21 @@ def _rebalance(root: Path) -> dict[str, Any]:
     }
 
 
-def _strategy_factory(alpha: Path) -> dict[str, Any]:
-    sf = alpha / "strategy_factory"
-    if not sf.exists():
-        return {
-            "status": "MISSING_ARTIFACT",
-            "candidate_registry_status": "MISSING_ARTIFACT",
-            "research_card_count": None,
-            "test_spec_count": None,
-            "evidence_report_count": None,
-            "review_required_count": None,
-        }
-    registry_paths = list((sf / "candidate_results").glob("*candidate*registry*.json"))
-    research_cards = list((sf / "research_cards").glob("*.md"))
-    test_specs = list((sf / "codex_test_specs").glob("*.md"))
-    evidence_reports = list((sf / "evidence_reports").glob("*/evidence_report.md"))
-    review_required = 0
-    for registry_path in registry_paths:
-        payload = _read_json(registry_path, {})
-        for candidate in payload.get("candidates", []) if isinstance(payload, dict) else []:
-            decision = str((candidate or {}).get("decision") or "").upper()
-            eligible = bool((candidate or {}).get("candidate_portfolio_eligible"))
-            if decision in {"WATCH_ONLY", "BLOCKED_NEEDS_BOSS_API", "REJECTED"} or not eligible:
-                review_required += 1
+def _strategy_factory(root: Path, alpha: Path) -> dict[str, Any]:
+    manifest = build_strategy_factory_evidence_manifest(root, alpha_root=alpha)
+    summary = manifest.get("summary") or {}
+    status = manifest.get("status") or "NOT_AVAILABLE"
     return {
-        "status": "AVAILABLE",
-        "candidate_registry_status": "AVAILABLE" if registry_paths else "MISSING_ARTIFACT",
-        "research_card_count": len(research_cards),
-        "test_spec_count": len(test_specs),
-        "evidence_report_count": len(evidence_reports),
-        "review_required_count": review_required if registry_paths else None,
+        "status": status,
+        "candidate_registry_status": "MISSING_ARTIFACT" if status == "MISSING_ARTIFACT" else "AVAILABLE",
+        "candidate_count": summary.get("candidate_count"),
+        "research_card_count": summary.get("research_card_count"),
+        "test_spec_count": summary.get("test_spec_count"),
+        "evidence_report_count": summary.get("evidence_report_count"),
+        "ml_gate_count": summary.get("ml_gate_count"),
+        "missing_evidence_count": summary.get("missing_evidence_count"),
+        "review_required_count": summary.get("review_required_count"),
+        "warnings": manifest.get("warnings") if isinstance(manifest.get("warnings"), list) else [],
     }
 
 
@@ -454,7 +440,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     allocation = _allocation_recommendation(root_path)
     review_eligibility = _review_draft_eligibility(root_path)
     rebalance = _rebalance(root_path)
-    strategy = _strategy_factory(alpha)
+    strategy = _strategy_factory(root_path, alpha)
     intelligence = _strategy_intelligence(root_path)
     ml = _ml_intelligence(alpha, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
@@ -548,6 +534,15 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "review_draft_effective_date": review_eligibility.get("effective_date"),
         "rebalance_status": rebalance.get("apply_due_status") or rebalance.get("approved_plan_status") or "NOT_AVAILABLE",
         "strategy_factory_status": strategy.get("status") or "NOT_AVAILABLE",
+        "strategy_factory_evidence_status": strategy.get("status") or "NOT_AVAILABLE",
+        "strategy_factory_evidence_candidate_count": compact_count(strategy, "candidate_count"),
+        "strategy_factory_evidence_research_card_count": compact_count(strategy, "research_card_count"),
+        "strategy_factory_evidence_test_spec_count": compact_count(strategy, "test_spec_count"),
+        "strategy_factory_evidence_evidence_report_count": compact_count(strategy, "evidence_report_count"),
+        "strategy_factory_evidence_ml_gate_count": compact_count(strategy, "ml_gate_count"),
+        "strategy_factory_evidence_missing_evidence_count": compact_count(strategy, "missing_evidence_count"),
+        "strategy_factory_evidence_review_required_count": compact_count(strategy, "review_required_count"),
+        "strategy_factory_evidence_warnings": strategy.get("warnings") or [],
         "ml_intelligence_status": ml.get("status") or "NOT_AVAILABLE",
         "decomposition_status": decomposition.get("status") or "NOT_AVAILABLE",
         "review_required_count": review_required,

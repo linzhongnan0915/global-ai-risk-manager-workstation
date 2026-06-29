@@ -24,6 +24,7 @@ from scripts.validate_deployment_artifact import DeploymentArtifactError, valida
 from src.allocation.rebalance_simulation import simulate_rebalance
 from src.automation import (
     build_automation_intelligence_manifest,
+    build_strategy_factory_evidence_manifest,
     build_review_draft_eligibility,
     create_review_draft_from_allocation_recommendation,
     read_latest_daily_cycle_status,
@@ -32,6 +33,7 @@ from src.automation import (
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
+    write_strategy_factory_evidence_manifest,
 )
 from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
 from src.market.artifact_contract import ensure_dashboard_artifact
@@ -662,6 +664,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="automation-intelligence-manifest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/strategy-factory-evidence/manifest",
+            "/api/automation-intelligence/strategy-factory-evidence/manifest/",
+        }:
+            try:
+                self._send_json(build_strategy_factory_evidence_manifest(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-evidence-manifest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/daily-recommendations/latest",
             "/api/automation-intelligence/daily-recommendations/latest/",
         }:
@@ -886,6 +897,17 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(result, status=201 if result.get("ok") else 500)
             except Exception as exc:
                 self._send_safe_error(exc, context="daily-cycle-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/strategy-factory-evidence/refresh",
+            "/api/automation-intelligence/strategy-factory-evidence/refresh/",
+        }:
+            try:
+                path = write_strategy_factory_evidence_manifest(self.server_root)
+                payload = build_strategy_factory_evidence_manifest(self.server_root)
+                self._send_json({**payload, "artifact_path": str(path.relative_to(self.server_root)).replace("\\", "/")}, status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-factory-evidence-refresh")
             return
         if parsed.path in {"/api/strategy-factory/data/refresh-proxies", "/api/strategy-factory/data/refresh-proxies/"}:
             try:

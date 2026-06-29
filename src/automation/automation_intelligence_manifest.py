@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.allocation_recommendation_artifact import read_latest_allocation_recommendation_artifact
+from src.automation.blackbox_decomposition_manifest import build_blackbox_decomposition_manifest
 from src.automation.candidate_strategy_identity_bridge import build_candidate_strategy_identity_bridge
 from src.automation.daily_cycle import read_latest_daily_cycle_status
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
@@ -416,6 +417,28 @@ def _identity_bridge(root: Path, strategy_payload: dict[str, Any]) -> dict[str, 
     }
 
 
+def _blackbox_decomposition(root: Path, strategy_payload: dict[str, Any]) -> dict[str, Any]:
+    cache_path = root / "data" / "automation" / "blackbox_decomposition" / "manifest.json"
+    payload = _read_json(cache_path, {})
+    if not isinstance(payload, dict) or payload.get("source") != "blackbox_decomposition_manifest_v0":
+        payload = build_blackbox_decomposition_manifest(root, strategy_cards=strategy_payload.get("cards") or [])
+    summary = payload.get("summary") or {}
+    return {
+        "status": payload.get("status") or "NOT_WIRED",
+        "decomposition_available_count": summary.get("decomposition_available_count"),
+        "missing_decomposition_count": summary.get("missing_decomposition_count"),
+        "long_short_attribution_count": summary.get("long_short_attribution_count"),
+        "factor_exposure_count": summary.get("factor_exposure_count"),
+        "sector_exposure_count": summary.get("sector_exposure_count"),
+        "regime_evidence_count": summary.get("regime_evidence_count"),
+        "cost_sensitivity_count": summary.get("cost_sensitivity_count"),
+        "signal_bucket_count": summary.get("signal_bucket_count"),
+        "feature_importance_count": summary.get("feature_importance_count"),
+        "strategy_card_match_count": summary.get("strategy_card_match_count"),
+        "warnings": payload.get("warnings") if isinstance(payload.get("warnings"), list) else [],
+    }
+
+
 def _operator_summary(
     daily_cycle: dict[str, Any],
     daily: dict[str, Any],
@@ -427,6 +450,7 @@ def _operator_summary(
     ml: dict[str, Any],
     ml_patch: dict[str, Any],
     decomposition: dict[str, Any],
+    blackbox_decomposition: dict[str, Any],
 ) -> dict[str, Any]:
     review_items: list[str] = []
     warnings: list[str] = []
@@ -454,6 +478,8 @@ def _operator_summary(
         warnings.append("ML Intelligence Patch requires review or has missing evidence.")
     if decomposition["status"] in {"MISSING_EVIDENCE", "MISSING_ARTIFACT"}:
         warnings.append("Attribution/decomposition evidence remains missing or incomplete.")
+    if blackbox_decomposition["status"] in {"MISSING_DECOMPOSITION_EVIDENCE", "REVIEW_REQUIRED", "NOT_WIRED"}:
+        warnings.append("Black-box decomposition evidence remains missing or requires review.")
     if rebalance["safe_to_apply_now"]:
         overall = "REVIEW_REQUIRED"
     elif daily["status"] == "MISSING_ARTIFACT":
@@ -484,7 +510,20 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
     ml_patch = _ml_intelligence_patch(root_path, intelligence["payload"])
     identity_bridge = _identity_bridge(root_path, intelligence["payload"])
     decomposition = _decomposition(alpha, intelligence["payload"])
-    operator = _operator_summary(daily_cycle, daily, allocation, review_eligibility, rebalance, strategy, identity_bridge, ml, ml_patch, decomposition)
+    blackbox_decomposition = _blackbox_decomposition(root_path, intelligence["payload"])
+    operator = _operator_summary(
+        daily_cycle,
+        daily,
+        allocation,
+        review_eligibility,
+        rebalance,
+        strategy,
+        identity_bridge,
+        ml,
+        ml_patch,
+        decomposition,
+        blackbox_decomposition,
+    )
     return {
         "ok": True,
         "generated_at": generated_at,
@@ -503,6 +542,7 @@ def build_automation_intelligence_manifest(root: str | Path, *, now: datetime | 
         "ml_intelligence": ml,
         "ml_intelligence_patch": ml_patch,
         "decomposition": decomposition,
+        "blackbox_decomposition": blackbox_decomposition,
         "strategy_intelligence": intelligence["summary"],
         "operator_summary": operator,
         "safety": {
@@ -529,10 +569,12 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
     ml = manifest.get("ml_intelligence") or {}
     ml_patch = manifest.get("ml_intelligence_patch") or {}
     decomposition = manifest.get("decomposition") or {}
+    blackbox_decomposition = manifest.get("blackbox_decomposition") or {}
     review_required = len(operator.get("top_review_items") or [])
     review_required += int(strategy.get("review_required_count") or 0)
     missing_evidence = int(ml.get("ml_missing_evidence_count") or 0)
     missing_evidence += int(decomposition.get("missing_decomposition_count") or 0)
+    missing_evidence += int(blackbox_decomposition.get("missing_decomposition_count") or 0)
     def daily_count(key: str) -> int | None:
         value = daily.get(key)
         return int(value) if value is not None else None
@@ -605,6 +647,18 @@ def compact_automation_intelligence_summary(manifest: dict[str, Any]) -> dict[st
         "ml_intelligence_patch_strategy_card_match_count": compact_count(ml_patch, "strategy_card_match_count"),
         "ml_intelligence_patch_warnings": ml_patch.get("warnings") or [],
         "decomposition_status": decomposition.get("status") or "NOT_AVAILABLE",
+        "blackbox_decomposition_status": blackbox_decomposition.get("status") or "NOT_WIRED",
+        "blackbox_decomposition_available_count": compact_count(blackbox_decomposition, "decomposition_available_count"),
+        "blackbox_missing_decomposition_count": compact_count(blackbox_decomposition, "missing_decomposition_count"),
+        "blackbox_long_short_attribution_count": compact_count(blackbox_decomposition, "long_short_attribution_count"),
+        "blackbox_factor_exposure_count": compact_count(blackbox_decomposition, "factor_exposure_count"),
+        "blackbox_sector_exposure_count": compact_count(blackbox_decomposition, "sector_exposure_count"),
+        "blackbox_regime_evidence_count": compact_count(blackbox_decomposition, "regime_evidence_count"),
+        "blackbox_cost_sensitivity_count": compact_count(blackbox_decomposition, "cost_sensitivity_count"),
+        "blackbox_signal_bucket_count": compact_count(blackbox_decomposition, "signal_bucket_count"),
+        "blackbox_feature_importance_count": compact_count(blackbox_decomposition, "feature_importance_count"),
+        "blackbox_strategy_card_match_count": compact_count(blackbox_decomposition, "strategy_card_match_count"),
+        "blackbox_decomposition_warnings": blackbox_decomposition.get("warnings") or [],
         "review_required_count": review_required,
         "missing_evidence_count": missing_evidence,
         "paper_shadow_only": True,

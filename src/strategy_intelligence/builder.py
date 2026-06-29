@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.blackbox_decomposition_manifest import (
+    blackbox_decomposition_for_identity,
+    build_blackbox_decomposition_manifest,
+)
 from src.automation.candidate_strategy_identity_bridge import (
     bridge_match_for_strategy,
     build_candidate_strategy_identity_bridge,
@@ -371,11 +375,24 @@ def _not_available_ml_patch() -> dict[str, Any]:
     }
 
 
+def _not_available_blackbox_decomposition() -> dict[str, Any]:
+    return {
+        "status": "NOT_AVAILABLE",
+        "evidence_checklist": {},
+        "edge_summary": {},
+        "risk_flags": {},
+        "missing_evidence": ["No canonical Factory/activation lineage match."],
+        "source_artifacts": [],
+        "reason": "No canonical Factory/activation lineage match.",
+    }
+
+
 def _apply_identity_bridge(
     card: dict[str, Any],
     identity_bridge: dict[str, Any],
     factory_evidence: dict[str, Any],
     ml_patch_manifest: dict[str, Any],
+    blackbox_manifest: dict[str, Any],
 ) -> dict[str, Any]:
     match = bridge_match_for_strategy(identity_bridge, card.get("strategy_uid"))
     enriched = dict(card)
@@ -387,6 +404,7 @@ def _apply_identity_bridge(
     if not match:
         enriched["research_lineage"] = _not_available_research_lineage()
         enriched["ml_intelligence_patch"] = _not_available_ml_patch()
+        enriched["blackbox_decomposition"] = _not_available_blackbox_decomposition()
         return enriched
     identities = (
         match.get("candidate_id"),
@@ -397,6 +415,7 @@ def _apply_identity_bridge(
     )
     enriched["research_lineage"] = research_lineage_for_identity(factory_evidence, *identities)
     enriched["ml_intelligence_patch"] = ml_patch_for_identity(ml_patch_manifest, *identities)
+    enriched["blackbox_decomposition"] = blackbox_decomposition_for_identity(blackbox_manifest, *identities)
     return enriched
 
 
@@ -416,7 +435,15 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
         ml_patch_manifest=ml_patch_manifest,
         now=now,
     )
-    cards = [_apply_identity_bridge(card, identity_bridge, factory_evidence, ml_patch_manifest) for card in cards]
+    blackbox_manifest = build_blackbox_decomposition_manifest(
+        root,
+        strategy_cards=cards,
+        factory_manifest=factory_evidence,
+        ml_patch_manifest=ml_patch_manifest,
+        identity_bridge=identity_bridge,
+        now=now,
+    )
+    cards = [_apply_identity_bridge(card, identity_bridge, factory_evidence, ml_patch_manifest, blackbox_manifest) for card in cards]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})
@@ -476,6 +503,7 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             "daily_recommendation_artifact": daily_latest.get("artifact_path"),
             "strategy_factory_evidence_status": factory_evidence.get("status"),
             "identity_bridge_status": identity_bridge.get("status"),
+            "blackbox_decomposition_status": blackbox_manifest.get("status"),
         },
         "safety": {
             "state_mutation": False,

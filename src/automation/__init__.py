@@ -8,6 +8,7 @@ from typing import Any
 __all__ = [
     "build_automation_intelligence_manifest",
     "build_allocation_recommendation_artifact",
+    "build_blackbox_decomposition_manifest",
     "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
     "build_ml_intelligence_patch_manifest",
@@ -20,6 +21,7 @@ __all__ = [
     "read_latest_daily_recommendation_artifact",
     "run_daily_automation_cycle",
     "write_allocation_recommendation_artifact",
+    "write_blackbox_decomposition_manifest",
     "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
     "write_ml_intelligence_patch_manifest",
@@ -51,6 +53,20 @@ def __getattr__(name: str) -> Any:
         exports = {
             "read_latest_daily_cycle_status": read_latest_daily_cycle_status,
             "run_daily_automation_cycle": run_daily_automation_cycle,
+        }
+        return exports[name]
+    if name in {
+        "build_blackbox_decomposition_manifest",
+        "write_blackbox_decomposition_manifest",
+    }:
+        from src.automation.blackbox_decomposition_manifest import (
+            build_blackbox_decomposition_manifest,
+            write_blackbox_decomposition_manifest,
+        )
+
+        exports = {
+            "build_blackbox_decomposition_manifest": build_blackbox_decomposition_manifest,
+            "write_blackbox_decomposition_manifest": write_blackbox_decomposition_manifest,
         }
         return exports[name]
     if name in {

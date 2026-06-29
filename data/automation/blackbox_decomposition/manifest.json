@@ -1,0 +1,939 @@
+{
+  "ok": true,
+  "status": "PARTIAL",
+  "source": "blackbox_decomposition_manifest_v0",
+  "generated_at": "2026-06-29T01:13:31.238327+00:00",
+  "paper_shadow_only": true,
+  "financial_state_mutated": false,
+  "ml_training_performed": false,
+  "heavy_backtest_performed": false,
+  "summary": {
+    "candidate_count": 14,
+    "strategy_card_match_count": 0,
+    "decomposition_available_count": 6,
+    "missing_decomposition_count": 8,
+    "long_short_attribution_count": 0,
+    "factor_exposure_count": 0,
+    "sector_exposure_count": 0,
+    "regime_evidence_count": 1,
+    "cost_sensitivity_count": 4,
+    "signal_bucket_count": 0,
+    "feature_importance_count": 0,
+    "review_required_count": 0
+  },
+  "items": [
+    {
+      "candidate_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "strategy_uid": null,
+      "research_card_id": "ETF_FACTOR_PROXY_UNIVERSE_V0",
+      "test_spec_id": "ETF_FACTOR_PROXY_UNIVERSE_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "Black-box decomposition evidence artifacts are missing."
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "strategy_uid": null,
+      "research_card_id": "MACRO_REGIME_ALLOCATOR_V0",
+      "test_spec_id": "MACRO_REGIME_ALLOCATOR_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": true,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": null,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "institutional_asof_macro_history"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "regime_performance",
+          "path": "experiments/MACRO_REGIME_ALLOCATOR_V0/docs/decision_memo.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "regime_performance",
+          "path": "experiments/MACRO_REGIME_ALLOCATOR_V0/run_metadata.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "regime_performance",
+          "path": "strategy_factory/codex_test_specs/MACRO_REGIME_ALLOCATOR_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "regime_performance",
+          "path": "strategy_factory/research_cards/MACRO_REGIME_ALLOCATOR_V0.md",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "strategy_uid": null,
+      "research_card_id": "HEDGE_FUND_LINEAR_CLONE_V0",
+      "test_spec_id": "HEDGE_FUND_LINEAR_CLONE_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "target_hedge_fund_return_series"
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "strategy_uid": null,
+      "research_card_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0",
+      "test_spec_id": "COPPER_CROSS_METAL_POLICY_UNCERTAINTY_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "timestamped_alternative_data_for_google_trends_or_gdelt"
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "strategy_uid": null,
+      "research_card_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0",
+      "test_spec_id": "FORMULAIC_ALPHA_ADAPTER_LIBRARY_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "Black-box decomposition evidence artifacts are missing."
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "ML_RESEARCH_PROCESS_REFERENCE_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "specific_clean_timestamped_dataset_and_testable_signal"
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "EXISTING_GLOBAL_AI_RESEARCH_REPORT_V0",
+      "strategy_uid": null,
+      "research_card_id": null,
+      "test_spec_id": null,
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": null
+      },
+      "missing_evidence": [
+        "Black-box decomposition evidence artifacts are missing."
+      ],
+      "source_artifacts": [],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "strategy_uid": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "research_card_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0",
+      "test_spec_id": "FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": true,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": true,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": null,
+        "cost_fragility_risk": null,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ml_feature_matrix_manifest.json",
+        "missing ml_model_performance.csv",
+        "missing ml_incremental_lift.csv",
+        "missing parameter sensitivity grid",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/capacity_liquidity_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_sensitivity",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "experiments/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/outputs/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/FORMULAIC_DELAY1_ALPHA_ADAPTER_PILOT_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_MACRO_ML_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_MACRO_ML_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing liquidity/capacity audit",
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing liquidity column for liquidity bucket diagnostics"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/JPM_MACRO_ML_SECTOR_ROTATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "strategy_uid": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "research_card_id": "Research Card - JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0",
+      "test_spec_id": "JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "MISSING_DECOMPOSITION_EVIDENCE",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": false,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": true,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing liquidity/capacity audit",
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing true online price panel",
+        "missing liquidity column for liquidity bucket diagnostics",
+        "ML diagnostics not required for transparent first-run signal",
+        "True online price panel is Missing Evidence."
+      ],
+      "source_artifacts": [
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/JPM_ONLINE_PRICE_INFLATION_SECTOR_ROTATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "strategy_uid": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "research_card_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0",
+      "test_spec_id": "LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": true,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": false,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": null,
+        "cost_fragility_risk": true,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing walk_forward_summary.csv",
+        "missing ml_feature_matrix_manifest.json",
+        "missing ml_model_performance.csv",
+        "missing ml_incremental_lift.csv",
+        "missing parameter sensitivity grid",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/config/strategy_specification.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/docs/decision_memo.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/docs/liquidity_adjusted_momentum_closeout_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/docs/liquidity_adjusted_momentum_handoff.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/logs/run_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/baseline_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/capacity_liquidity_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/confounder_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/daily_strategy_returns.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/data_quality_audit.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/drawdown_series.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/equity_curve.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/executed_weights.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/legacy_backfill_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/ml_diagnostics_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/output_manifest.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/portfolio_metrics.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/research_gate_summary.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/research_threshold_evaluation.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/research_threshold_evaluation.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/robustness_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/robustness_summary.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/signal_diagnostics.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/spy_reference_metrics.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/target_weights.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/outputs/timing_contract.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/run_metadata.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "strategy_factory/codex_test_specs/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0_test_spec.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "strategy_factory/evidence_reports/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/evidence_report.md",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "liquidity_capacity",
+          "path": "strategy_factory/research_cards/LIQUIDITY_ADJUSTED_MOMENTUM_REVALIDATION_V0.md",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "strategy_uid": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "research_card_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0",
+      "test_spec_id": "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": true,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": true,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": null,
+        "cost_fragility_risk": null,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing ml_feature_matrix_manifest.json",
+        "missing ml_model_performance.csv",
+        "missing ml_incremental_lift.csv",
+        "missing parameter sensitivity grid",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/capacity_liquidity_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_sensitivity",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "experiments/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/outputs/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER_REVALIDATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "strategy_uid": "PRICE_EFFICIENCY_REVALIDATION_V0",
+      "research_card_id": "Price Efficiency Revalidation V0",
+      "test_spec_id": "PRICE_EFFICIENCY_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": true,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": true,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": null,
+        "cost_fragility_risk": null,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing walk_forward_summary.csv",
+        "missing ml_feature_matrix_manifest.json",
+        "missing ml_model_performance.csv",
+        "missing ml_incremental_lift.csv",
+        "missing parameter sensitivity grid",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/capacity_liquidity_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_sensitivity",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "experiments/PRICE_EFFICIENCY_REVALIDATION_V0/outputs/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/PRICE_EFFICIENCY_REVALIDATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    },
+    {
+      "candidate_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "strategy_uid": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0",
+      "research_card_id": "Residual Momentum 12-1 Revalidation V0",
+      "test_spec_id": "RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0 Test Spec",
+      "material_hash": null,
+      "decomposition_status": "PARTIAL",
+      "evidence_checklist": {
+        "long_short_attribution_available": false,
+        "factor_exposure_available": false,
+        "sector_exposure_available": false,
+        "beta_exposure_available": false,
+        "liquidity_capacity_available": true,
+        "regime_performance_available": false,
+        "cost_sensitivity_available": true,
+        "signal_bucket_available": false,
+        "feature_group_available": false,
+        "failure_periods_available": false
+      },
+      "edge_summary": {
+        "edge_thesis_available": true,
+        "economic_mechanism_available": true,
+        "return_source_available": false,
+        "failure_mode_available": false,
+        "causal_proof_claimed": false
+      },
+      "risk_flags": {
+        "factor_disguised_alpha_risk": true,
+        "sector_concentration_risk": true,
+        "liquidity_risk": null,
+        "cost_fragility_risk": null,
+        "regime_fragility_risk": true,
+        "overfit_or_data_mining_risk": false
+      },
+      "missing_evidence": [
+        "missing PIT data",
+        "missing delisting return coverage",
+        "missing corporate action adjustment proof",
+        "missing ML diagnostics",
+        "missing walk_forward_summary.csv",
+        "missing ml_feature_matrix_manifest.json",
+        "missing ml_model_performance.csv",
+        "missing ml_incremental_lift.csv",
+        "missing parameter sensitivity grid",
+        "missing ML feature matrix manifest",
+        "missing ML model performance artifact",
+        "missing ML incremental lift artifact",
+        "missing ML target definition"
+      ],
+      "source_artifacts": [
+        {
+          "kind": "liquidity_capacity",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/capacity_liquidity_summary.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "cost_sensitivity",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/cost_sensitivity.csv",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "experiments/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/outputs/missing_evidence.json",
+          "status": "AVAILABLE"
+        },
+        {
+          "kind": "missing_evidence",
+          "path": "strategy_factory/evidence_reports/RESIDUAL_MOMENTUM_12_1_REVALIDATION_V0/missing_evidence.json",
+          "status": "AVAILABLE"
+        }
+      ],
+      "strategy_card_match_status": "NOT_MATCHED"
+    }
+  ],
+  "warnings": []
+}

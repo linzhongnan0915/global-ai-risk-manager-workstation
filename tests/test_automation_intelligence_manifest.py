@@ -14,6 +14,7 @@ from scripts.run_workstation_server import WorkstationHandler
 from src.automation import (
     build_allocation_recommendation_artifact,
     build_automation_intelligence_manifest,
+    build_blackbox_decomposition_manifest,
     build_candidate_strategy_identity_bridge,
     build_daily_recommendation_artifact,
     build_ml_intelligence_patch_manifest,
@@ -25,6 +26,7 @@ from src.automation import (
     read_latest_daily_recommendation_artifact,
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
+    write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
     write_ml_intelligence_patch_manifest,
@@ -76,6 +78,7 @@ def _hashes(root: Path) -> dict[str, str]:
         and "automation/strategy_factory_evidence" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/ml_intelligence_patch" not in str(path.relative_to(root)).replace("\\", "/")
         and "automation/identity_bridge" not in str(path.relative_to(root)).replace("\\", "/")
+        and "automation/blackbox_decomposition" not in str(path.relative_to(root)).replace("\\", "/")
     }
 
 
@@ -1542,3 +1545,182 @@ def test_identity_bridge_no_hardcoded_strategy_literals_or_display_name_matching
     bridge_source = (ROOT / "src/automation/candidate_strategy_identity_bridge.py").read_text(encoding="utf-8")
     assert "display_name" not in bridge_source
     assert "strategy_name" not in bridge_source
+
+
+def _write_blackbox_artifacts(alpha: Path, identity: str) -> None:
+    outputs = alpha / "experiments" / identity / "outputs"
+    outputs.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "long_short_attribution.csv",
+        "factor_exposure_summary.csv",
+        "sector_exposure_by_decile.csv",
+        "beta_correlation_summary.csv",
+        "liquidity_capacity_summary.csv",
+        "regime_performance.csv",
+        "cost_sensitivity.csv",
+        "signal_bucket_summary.csv",
+        "feature_importance.csv",
+        "failure_periods.csv",
+    ):
+        (outputs / name).write_text("metric,value\nfixture,1\n", encoding="utf-8")
+
+
+def test_blackbox_decomposition_manifest_loads_available_artifacts(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_blackbox_artifacts(alpha, "TEST_FACTORY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    manifest = build_blackbox_decomposition_manifest(root, alpha_root=alpha)
+    item = manifest["items"][0]
+
+    assert manifest["summary"]["candidate_count"] == 1
+    assert manifest["summary"]["decomposition_available_count"] == 1
+    assert manifest["summary"]["long_short_attribution_count"] == 1
+    assert manifest["summary"]["factor_exposure_count"] == 1
+    assert manifest["summary"]["sector_exposure_count"] == 1
+    assert manifest["summary"]["regime_evidence_count"] == 1
+    assert manifest["summary"]["cost_sensitivity_count"] == 1
+    assert manifest["summary"]["signal_bucket_count"] == 1
+    assert manifest["summary"]["feature_importance_count"] == 1
+    assert item["decomposition_status"] == "AVAILABLE"
+    assert item["edge_summary"]["causal_proof_claimed"] is False
+
+
+def test_blackbox_missing_decomposition_artifacts_return_clean_missing(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    manifest = build_blackbox_decomposition_manifest(root, alpha_root=alpha)
+
+    assert manifest["status"] == "MISSING_DECOMPOSITION_EVIDENCE"
+    assert manifest["summary"]["decomposition_available_count"] == 0
+    assert manifest["summary"]["feature_importance_count"] == 0
+    assert manifest["items"][0]["decomposition_status"] == "MISSING_DECOMPOSITION_EVIDENCE"
+
+
+def test_blackbox_counts_require_real_artifacts(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    outputs = alpha / "experiments" / "TEST_FACTORY_UID" / "outputs"
+    outputs.mkdir(parents=True, exist_ok=True)
+    (outputs / "missing_evidence.json").write_text(json.dumps([{"missing_item": "feature_importance"}]), encoding="utf-8")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    manifest = build_blackbox_decomposition_manifest(root, alpha_root=alpha)
+
+    assert manifest["summary"]["feature_importance_count"] == 0
+    assert manifest["summary"]["long_short_attribution_count"] == 0
+    assert manifest["items"][0]["missing_evidence"]
+
+
+def test_strategy_intelligence_cards_get_blackbox_only_when_bridge_matches(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_blackbox_artifacts(alpha, "TEST_FACTORY_UID")
+    _write_activation_record(root, candidate_id="TEST_FACTORY_UID", strategy_uid="TEST_STRATEGY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+    activated = next(card for card in payload["cards"] if card["strategy_uid"] == "TEST_STRATEGY_UID")
+
+    assert activated["identity_bridge"]["match_status"] == "MATCHED"
+    assert activated["blackbox_decomposition"]["status"] == "AVAILABLE"
+    assert activated["blackbox_decomposition"]["evidence_checklist"]["long_short_attribution_available"] is True
+
+
+def test_strategy_intelligence_cards_show_blackbox_not_available_without_bridge_match(tmp_path: Path, monkeypatch) -> None:
+    root = _strategy_intelligence_root(tmp_path)
+    canonical = {
+        "strategies": [
+            {
+                "internal_id": "UNMATCHED_BLACKBOX_CARD_UID",
+                "strategy_uid": "UNMATCHED_BLACKBOX_CARD_UID",
+                "display_name": "Test-only Unmatched Blackbox Strategy",
+                "membership_state": "executed",
+                "current_weight": 0.1,
+                "target_weight": 0.1,
+            }
+        ]
+    }
+    (root / "dashboard/data/canonical_operational.json").write_text(json.dumps(canonical), encoding="utf-8")
+    alpha = _factory_alpha_fixture(tmp_path)
+    _write_blackbox_artifacts(alpha, "TEST_FACTORY_UID")
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+
+    payload = build_strategy_intelligence_payload(root)
+
+    assert payload["cards"][0]["identity_bridge"]["match_status"] == "MISSING_LINEAGE"
+    assert payload["cards"][0]["blackbox_decomposition"]["status"] == "NOT_AVAILABLE"
+
+
+def test_blackbox_decomposition_get_endpoint_is_read_only(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _fetch_json(f"http://127.0.0.1:{port}/api/automation-intelligence/blackbox-decomposition/manifest")
+        assert status == 200
+        assert "missing_decomposition_count" in payload["summary"]
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_blackbox_decomposition_refresh_post_writes_only_cache(tmp_path: Path, monkeypatch) -> None:
+    root = _copy_root(tmp_path)
+    alpha = _factory_alpha_fixture(tmp_path)
+    monkeypatch.setenv("STRATEGY_FACTORY_ALPHA_RESEARCH_ROOT", str(alpha))
+    before = _hashes(root)
+    original_root = WorkstationHandler.server_root
+    port = _free_port()
+    WorkstationHandler.server_root = root
+    server = ThreadingHTTPServer(("127.0.0.1", port), WorkstationHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _post_json(f"http://127.0.0.1:{port}/api/automation-intelligence/blackbox-decomposition/refresh")
+        assert status == 201
+        assert payload["financial_state_mutated"] is False
+        assert payload["ml_training_performed"] is False
+        assert payload["heavy_backtest_performed"] is False
+        assert (root / "data/automation/blackbox_decomposition/manifest.json").exists()
+        assert _hashes(root) == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+        WorkstationHandler.server_root = original_root
+
+
+def test_dashboard_renders_blackbox_decomposition_backend_fields_only() -> None:
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+
+    assert "Black-box Decomposition" in source
+    assert "blackbox_decomposition_status" in source
+    assert "card.blackbox_decomposition" in source
+    assert "UNMATCHED_BLACKBOX_CARD_UID" not in source
+
+
+def test_blackbox_decomposition_no_hardcoded_strategy_literals() -> None:
+    production_files = [
+        ROOT / "src/automation/blackbox_decomposition_manifest.py",
+        ROOT / "src/automation/automation_intelligence_manifest.py",
+        ROOT / "src/strategy_intelligence/builder.py",
+        ROOT / "scripts/run_workstation_server.py",
+    ]
+    forbidden = ["Copper", "Low Vol", "C3A", "WQ_ALPHA", "COMBINED_PORTFOLIO", "0.052631", "0.058823"]
+    for path in production_files:
+        source = path.read_text(encoding="utf-8")
+        assert not any(token in source for token in forbidden)

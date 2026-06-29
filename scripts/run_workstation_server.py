@@ -24,6 +24,7 @@ from scripts.validate_deployment_artifact import DeploymentArtifactError, valida
 from src.allocation.rebalance_simulation import simulate_rebalance
 from src.automation import (
     build_automation_intelligence_manifest,
+    build_blackbox_decomposition_manifest,
     build_candidate_strategy_identity_bridge,
     build_ml_intelligence_patch_manifest,
     build_strategy_factory_evidence_manifest,
@@ -34,6 +35,7 @@ from src.automation import (
     read_latest_daily_recommendation_artifact,
     run_daily_automation_cycle,
     write_allocation_recommendation_artifact,
+    write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
     write_ml_intelligence_patch_manifest,
@@ -692,6 +694,21 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="ml-intelligence-patch-manifest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/blackbox-decomposition/manifest",
+            "/api/automation-intelligence/blackbox-decomposition/manifest/",
+        }:
+            try:
+                strategy_payload = build_strategy_intelligence_payload(self.server_root)
+                self._send_json(
+                    build_blackbox_decomposition_manifest(
+                        self.server_root,
+                        strategy_cards=strategy_payload.get("cards") or [],
+                    )
+                )
+            except Exception as exc:
+                self._send_safe_error(exc, context="blackbox-decomposition-manifest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/identity-bridge/manifest",
             "/api/automation-intelligence/identity-bridge/manifest/",
         }:
@@ -960,6 +977,24 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json({**payload, "artifact_path": str(path.relative_to(self.server_root)).replace("\\", "/")}, status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="ml-intelligence-patch-refresh")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/blackbox-decomposition/refresh",
+            "/api/automation-intelligence/blackbox-decomposition/refresh/",
+        }:
+            try:
+                strategy_payload = build_strategy_intelligence_payload(self.server_root)
+                path = write_blackbox_decomposition_manifest(
+                    self.server_root,
+                    strategy_cards=strategy_payload.get("cards") or [],
+                )
+                payload = build_blackbox_decomposition_manifest(
+                    self.server_root,
+                    strategy_cards=strategy_payload.get("cards") or [],
+                )
+                self._send_json({**payload, "artifact_path": str(path.relative_to(self.server_root)).replace("\\", "/")}, status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="blackbox-decomposition-refresh")
             return
         if parsed.path in {
             "/api/automation-intelligence/identity-bridge/refresh",

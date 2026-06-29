@@ -576,6 +576,11 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .paper-proposal-note{margin-top:8px!important;color:#a9bdc0!important;font-size:10px!important;line-height:1.35!important}
 .factory-review-actions .tool-button{min-height:38px;display:grid;align-content:center;gap:2px;text-align:left;white-space:normal}
 .factory-review-actions .tool-button small{display:block;color:#9fb4b7;font-size:8px;line-height:1.2;font-weight:600;text-transform:none}
+.risk-factor-big-table th:first-child,.risk-factor-big-table td:first-child,.risk-heatmap-table th:first-child,.risk-heatmap-table td:first-child{position:sticky;left:0;z-index:3;background:#061519;min-width:140px;max-width:180px}
+.risk-factor-big-table th:nth-child(2),.risk-factor-big-table td:nth-child(2){position:sticky;left:140px;z-index:2;background:#061519;min-width:190px;max-width:240px}
+.risk-factor-big-table td:first-child strong,.risk-factor-big-table td:nth-child(2) strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.risk-factor-big-table .phase2-unallocated-row td,.risk-heatmap-table .phase2-unallocated-row td{background:#07160f!important}
+.risk-factor-big-table .phase2-unallocated-row td:nth-child(4)::after{content:" Research-only / missing-risk";display:block;margin-top:3px;color:#ffd36c;font-size:8px;text-transform:uppercase}
 @media(max-width:1550px){.workflow-diagram-v2{grid-template-columns:repeat(2,minmax(220px,1fr))}.strategy-analyst-layout-v2{grid-template-columns:1fr}.strategy-selector-list-v3{max-height:260px}.analyst-memo-grid-v3{grid-template-columns:1fr}}
 @media(max-width:1200px){.command-dynamic-center{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.workflow-diagram-v2{grid-template-columns:1fr}.strategy-card-row-v3{grid-template-columns:1fr;grid-template-areas:"main" "meta" "uid" "evidence"}.strategy-card-row-v3 em{justify-self:start}.strategy-card-meta{grid-template-columns:1fr}.analyst-memo-grid-v3 dl{grid-template-columns:1fr}.command-dynamic-center{grid-template-columns:1fr}.command-dynamic-wide{grid-column:auto}.command-family-mix{grid-template-columns:1fr}}

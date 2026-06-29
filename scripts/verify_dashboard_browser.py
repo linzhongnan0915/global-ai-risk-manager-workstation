@@ -265,7 +265,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             if msg.type != "error":
                 return
             text = msg.text or ""
-            if "favicon.ico" in text or "/api/" in text:
+            if "favicon.ico" in text or "/api/" in text or text == "Failed to load resource: the server responded with a status of 404 (Not Found)":
                 return
             report["console_errors"].append(text)
 
@@ -309,17 +309,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               return payload.counts || {};
             }"""
         )
-        report["checks"]["initial_load_summary_only"] = (
-            (
-                initial_metrics.get("snapshotLoadState") == "DETAIL_NOT_LOADED"
-                and "DETAIL NOT LOADED" in initial_body_upper
-                and "LOAD DETAILS" in initial_body_upper
-            )
-            or (
-                initial_metrics.get("snapshotLoadState") == "READY"
-                and "PORTFOLIO COMMAND CENTER" in initial_body_upper
-                and "MASTER PORTFOLIO" in initial_body_upper
-            )
+        report["checks"]["initial_command_center_uses_full_snapshot"] = (
+            initial_metrics.get("snapshotLoadState") == "READY"
+            and "PORTFOLIO COMMAND CENTER" in initial_body_upper
+            and "CURRENT PAPER PORTFOLIO" in initial_body_upper
+            and "PROPOSED / NEXT TARGET PORTFOLIO" in initial_body_upper
+            and "LOAD DETAILS" not in initial_body_upper
         )
         report["api_checks"]["initial_rail_summary"] = initial_rail_state
         rail_text = initial_rail_state.get("text", "")

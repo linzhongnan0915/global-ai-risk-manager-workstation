@@ -335,6 +335,47 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             page.wait_for_timeout(500)
             initial_body_text = page.locator("body").inner_text()
             initial_body_upper = initial_body_text.upper()
+        command_center_semantics = page.evaluate(
+            """
+            () => {
+              const required = [
+                'Current Paper Portfolio',
+                'Proposed / Next Target Portfolio',
+                'Current vs Proposed Allocation / Family Mix',
+                'Candidates Added',
+                'Estimated Turnover / Cost',
+                'Top Increases / Reductions',
+                'Top Contributors / Detractors',
+                'Next Required Actions',
+              ];
+              const bodyText = (document.querySelector('[data-command-center-dynamic="true"]')?.textContent || document.body.innerText || '').toLowerCase();
+              const dynamic = document.querySelector('[data-command-center-dynamic="true"]');
+              const aboveFoldBlocked = [...document.querySelectorAll('.today-brief-v2,.automation-operator-brief-v2')]
+                .filter((el) => {
+                  const rect = el.getBoundingClientRect();
+                  return rect.top < window.innerHeight && rect.bottom > 0;
+                });
+              return {
+                hasDynamicCommandCenter: !!dynamic,
+                hasCurrentPaperPortfolio: bodyText.includes('current paper portfolio'),
+                hasProposedTargetPortfolio: bodyText.includes('proposed / next target portfolio'),
+                missingRequiredLabels: required.filter((label) => !bodyText.includes(label.toLowerCase())),
+                aboveFoldBlockedBriefCount: aboveFoldBlocked.length,
+                dynamicTop: dynamic ? dynamic.getBoundingClientRect().top : null,
+              };
+            }
+            """
+        )
+        report["checks"]["command_center_not_blocker_wall_above_fold"] = (
+            command_center_semantics["hasDynamicCommandCenter"]
+            and command_center_semantics["aboveFoldBlockedBriefCount"] == 0
+            and not command_center_semantics["missingRequiredLabels"]
+        )
+        report["checks"]["command_center_current_and_proposed_portfolios"] = (
+            command_center_semantics["hasCurrentPaperPortfolio"]
+            and command_center_semantics["hasProposedTargetPortfolio"]
+        )
+        report["api_checks"]["command_center_semantics"] = command_center_semantics
         report["checks"]["current_served_labels"] = (
             "WORKFLOW" in initial_body_upper
             and "DAILY INTELLIGENCE REPORT" in initial_body_upper

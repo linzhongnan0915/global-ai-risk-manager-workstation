@@ -19,6 +19,11 @@ SOURCE_PATH = ROOT / "dashboard/data/shadow_live_bundle.json"
 CONTRACT_PATH = ROOT / "dashboard/data/canonical_operational.json"
 
 
+# Legacy fixture assertions in this file intentionally pin the committed release
+# fixture in dashboard/data/canonical_operational.json. They are not production
+# assumptions and should not be copied into dashboard or backend logic.
+
+
 def source_bundle() -> dict:
     return json.loads(SOURCE_PATH.read_text(encoding="utf-8"))
 
@@ -245,6 +250,11 @@ def test_application_shell_and_shared_components_are_wired():
 def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
+    active_command_page = app.rsplit("function page()", 1)[1].split("function rescueV2CardMissingCount", 1)[0]
+
+    assert "commandCenterDynamic(c)" in active_command_page
+    assert "rescueV2TodayBrief(c)" not in active_command_page
+    assert "automationIntelligenceStrip(c)" not in active_command_page
 
     for marker in (
         "Shadow-Live Paper PM Command Workflow",
@@ -277,10 +287,24 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "Score",
         "Action",
         "Reason",
-        "Apply Suggested Targets",
+        "Current Paper Portfolio",
+        "Proposed / Next Target Portfolio",
+        "Current vs Proposed Allocation / Family Mix",
+        "Candidates Added",
+        "Estimated Turnover / Cost",
+        "Top Increases / Reductions",
+        "Top Contributors / Detractors",
+        "Next Required Actions",
+        "Reset to Suggested",
         "Normalize to 100%",
         "Reset to Current",
         "Save Draft",
+        "Approved Plan",
+        "None / Not Approved",
+        "Effective Date",
+        "Not Scheduled",
+        "Reports and paper review drafts use editable Target %",
+        "Accept / Approve creates an approved paper plan artifact only after explicit confirmation",
         "Next Scheduled Biweekly Proposal",
         "/api/automation-intelligence/paper-allocation-proposal/latest",
         "/api/paper-rebalance/recommendation-review-draft",
@@ -293,6 +317,7 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     assert ".allocation-decision-header,.allocation-decision-row" in css
     assert ".allocation-edit-table{min-width:1320px" in css
     assert ".allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}" in css
+    assert ".command-dynamic-center" in css
     assert app.count("function allocationPage()") >= 1
     assert "allocation-workbench-layout" in app
     assert "canvas.__commandChartPoints" in app

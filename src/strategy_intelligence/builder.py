@@ -28,9 +28,9 @@ from src.automation.strategy_factory_evidence_manifest import (
 )
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.reporting.operational_snapshot import (
-    REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS,
     SNAPSHOT_VERSION,
     _entity_inventory,
+    _included_in_current_workstation,
     _paths,
     _read_json,
     _strategy_factory_active_unallocated_records,
@@ -238,7 +238,7 @@ def _current_rows(root: Path) -> list[dict[str, Any]]:
         deepcopy(row)
         for row in canonical.get("strategies") or []
         if row.get("membership_state") == "executed"
-        and row.get("internal_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+        and _included_in_current_workstation(row)
     ]
     by_uid = {str(row.get("internal_id")): row for row in rows if row.get("internal_id")}
     for activation in _strategy_factory_active_unallocated_records(root):

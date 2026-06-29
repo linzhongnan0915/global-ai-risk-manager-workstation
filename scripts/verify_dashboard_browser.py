@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import socket
 import subprocess
 import sys
@@ -19,14 +20,11 @@ REPORT_PATH = PROJECT_ROOT / "output" / "browser_verification" / "verification_r
 TABS = [
   "Portfolio Command Center",
   "Strategy Monitor",
+  "Strategy Intelligence",
   "Allocation & Rebalance",
-  "Risk Factors & Exposure",
-  "Correlation & Diversification",
-  "Universe & Data Coverage",
-  "Workflow & Shadow-Live Testing",
+  "Risk Factors",
   "Strategy Factory",
-  "Strategy Library & Governance",
-  "Daily Risk Report",
+  "Daily Intelligence Report",
 ]
 
 VIEWPORTS = (
@@ -152,9 +150,18 @@ REPORT_LAYOUT_JS = """
 
 
 def _start_verify_server() -> subprocess.Popen:
+    env = os.environ.copy()
+    env["DISABLE_DAILY_AUTOMATION_CYCLE"] = "1"
     return subprocess.Popen(
-        [sys.executable, str(PROJECT_ROOT / "scripts" / "run_workstation_server.py"), "--port", str(VERIFY_PORT)],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "run_workstation_server.py"),
+            "--port",
+            str(VERIFY_PORT),
+            "--no-intraday-scheduler",
+        ],
         cwd=str(PROJECT_ROOT),
+        env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -269,7 +276,164 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         page.on("response", capture_bad_response)
         page.goto(report["url"], wait_until="load", timeout=120000)
         page.wait_for_selector(".workflow-tabs, button[data-page]", timeout=120000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(12000)
+        v1_state = page.evaluate(
+            """
+            () => {
+              const text = document.body.innerText;
+              const q = (sel) => document.querySelector(sel);
+              const qa = (sel) => Array.from(document.querySelectorAll(sel));
+              const top = (sel) => {
+                const el = q(sel);
+                return el ? Math.round(el.getBoundingClientRect().top) : null;
+              };
+              return {
+                detailLoadedEquivalent: Boolean(q('.command-board')) && !text.includes('Detail Not Loaded'),
+                commandBoardExists: Boolean(q('.command-board')),
+                automationBriefExists: Boolean(q('.automation-intelligence-strip')),
+                kpiTop: top('.command-status-strip'),
+                automationTop: top('.automation-intelligence-strip'),
+                boardTop: top('.command-board'),
+                mainNavLabels: qa('nav > button').map((b) => b.innerText.trim()).filter((t) => /^\\d+\\./.test(t)),
+                leftRailDataVisible: text.includes('DATA'),
+                leftRailSettingsVisible: text.includes('SETTINGS'),
+              };
+            }
+            """
+        )
+        expected_tabs = [f"{index}. {tab}" for index, tab in enumerate(TABS, start=1)]
+        report["checks"]["homepage_auto_loads_command_center"] = (
+            v1_state["detailLoadedEquivalent"] is True
+            and v1_state["commandBoardExists"] is True
+            and v1_state["automationBriefExists"] is True
+        )
+        report["checks"]["automation_after_kpis_before_board"] = (
+            v1_state["kpiTop"] is not None
+            and v1_state["automationTop"] is not None
+            and v1_state["boardTop"] is not None
+            and v1_state["kpiTop"] < v1_state["automationTop"] < v1_state["boardTop"]
+        )
+        report["checks"]["boss_nav_is_v1_seven_tabs"] = v1_state["mainNavLabels"] == expected_tabs
+        report["checks"]["advanced_pages_remain_on_left_rail"] = (
+            v1_state["leftRailDataVisible"] is True and v1_state["leftRailSettingsVisible"] is True
+        )
+        report["api_checks"]["homepage_dom_state"] = v1_state
+
+        for tab_name in TABS:
+            page.locator(f'button[data-page="{tab_name}"]').click()
+            page.wait_for_timeout(600)
+            body_text = page.locator("body").inner_text()
+            report["tabs"].append({"tab": tab_name, "loaded": tab_name in body_text})
+
+        page.locator('button[data-page="Allocation & Rebalance"]').click()
+        page.wait_for_timeout(600)
+        allocation_state = page.evaluate(
+            """
+            () => {
+              const text = document.body.innerText;
+              const legacy = document.querySelector('details.allocation-legacy-tool');
+              return {
+                backendEndpoint: text.includes('/api/automation-intelligence/allocation-recommendations/latest'),
+                targetWeightSum: text.includes('TARGET WEIGHT SUM') && text.includes('1'),
+                sumsTo100: text.includes('SUMS TO 100%') && text.includes('true'),
+                allocationChangeRecommended: text.includes('ALLOCATION CHANGE') && text.includes('false'),
+                reviewDraftAllowed: text.includes('REVIEW DRAFT ALLOWED') && text.includes('false'),
+                legacyCollapsed: Boolean(legacy) && legacy.open === false,
+                staleDirectionalCurrent: text.includes('INCREASE') || text.includes('REDUCE'),
+                staleResidualCurrent: text.includes('90.08%') || text.includes('RESIDUAL CASH'),
+              };
+            }
+            """
+        )
+        report["checks"]["allocation_truth_reconciled"] = (
+            allocation_state["backendEndpoint"]
+            and allocation_state["targetWeightSum"]
+            and allocation_state["sumsTo100"]
+            and allocation_state["allocationChangeRecommended"]
+            and allocation_state["reviewDraftAllowed"]
+            and allocation_state["legacyCollapsed"]
+            and not allocation_state["staleDirectionalCurrent"]
+            and not allocation_state["staleResidualCurrent"]
+        )
+        report["api_checks"]["allocation_dom_state"] = allocation_state
+
+        page.locator('button[data-page="Risk Factors"]').click()
+        page.wait_for_timeout(600)
+        risk_labels = page.evaluate(
+            """() => {
+              const text = document.body.innerText;
+              return ['PORTFOLIO_RISK_DATA','RESEARCH_RISK_EVIDENCE','MISSING_RISK_DATA','NOT IN PORTFOLIO RISK SUMMARY','RESEARCH ONLY / ZERO WEIGHT'].filter((label) => text.includes(label));
+            }"""
+        )
+        report["checks"]["risk_factors_classify_research_only_rows"] = (
+            "PORTFOLIO_RISK_DATA" in risk_labels
+            and "RESEARCH_RISK_EVIDENCE" in risk_labels
+            and "NOT IN PORTFOLIO RISK SUMMARY" in risk_labels
+        )
+        report["api_checks"]["risk_labels"] = risk_labels
+
+        page.locator('button[data-page="Strategy Intelligence"]').click()
+        page.wait_for_timeout(600)
+        strategy_intelligence_state = page.evaluate(
+            """() => {
+              const text = document.body.innerText;
+              const source = document.querySelector('details.strategy-source-details');
+              return {
+                sections: ['Analyst Brief',"Today's Action",'Why this action','Edge Thesis / Mechanism','Evidence Gate','What To Review Next','Source Artifacts'].filter((label) => text.includes(label)),
+                analystBrief: Boolean(document.querySelector('.strategy-analyst-brief')),
+                sourceArtifactsCollapsed: Boolean(source) && source.open === false,
+              };
+            }"""
+        )
+        report["checks"]["strategy_intelligence_analyst_brief"] = (
+            strategy_intelligence_state["analystBrief"]
+            and strategy_intelligence_state["sourceArtifactsCollapsed"]
+            and len(strategy_intelligence_state["sections"]) >= 6
+        )
+        report["api_checks"]["strategy_intelligence_dom_state"] = strategy_intelligence_state
+
+        page.locator('button[data-page="Strategy Factory"]').click()
+        page.wait_for_timeout(600)
+        factory_state = page.evaluate(
+            """() => {
+              const text = document.body.innerText.toLowerCase();
+              const source = Array.from(document.querySelectorAll('details.source-details, details.factory-debug-collapsed'));
+              return {
+                primary: ['candidate thesis','signal idea','evidence status','readiness','portfolio candidate state','primary next action'].filter((label) => text.includes(label)),
+                sourceDetailsCollapsed: source.length > 0 && source.every((node) => node.open === false),
+                sourceDetailsCount: source.length,
+              };
+            }"""
+        )
+        report["checks"]["strategy_factory_boss_view"] = (
+            len(factory_state["primary"]) == 6 and factory_state["sourceDetailsCollapsed"]
+        )
+        report["api_checks"]["strategy_factory_dom_state"] = factory_state
+
+        page.locator('button[data-page="Daily Intelligence Report"]').click()
+        page.wait_for_timeout(600)
+        daily_state = page.evaluate(
+            """() => {
+              const text = document.body.innerText;
+              return {
+                sections: ['PORTFOLIO STATE SUMMARY','DAILY STRATEGY ACTIONS','ALLOCATION IMPACT','REVIEW DRAFT ELIGIBILITY','TOP REVIEW ITEMS','ML EVIDENCE GAPS','BLACK-BOX DECOMPOSITION COVERAGE','STRATEGY FACTORY EVIDENCE STATUS','Paper/shadow-only workstation'].filter((label) => text.includes(label)),
+                oldStaticDailyRiskReport: text.includes('DAILY REPORT STAGING STATUS'),
+              };
+            }"""
+        )
+        report["checks"]["daily_intelligence_report_operator_memo"] = (
+            len(daily_state["sections"]) == 9 and not daily_state["oldStaticDailyRiskReport"]
+        )
+        report["api_checks"]["daily_report_dom_state"] = daily_state
+
+        report["checks"]["no_console_errors"] = len(report["console_errors"]) == 0
+        unique_tabs = {entry["tab"] for entry in report["tabs"]}
+        report["checks"]["tabs_loaded"] = unique_tabs == set(TABS)
+        report["passed"] = all(report["checks"].values())
+        REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"]}, indent=2))
+        browser.close()
+        return 0 if report["passed"] else 1
         served_snapshot = page.evaluate(
             """async () => {
                 const response = await fetch(`/api/operational-snapshot?ts=${Date.now()}`);

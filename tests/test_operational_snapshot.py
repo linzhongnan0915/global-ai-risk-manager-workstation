@@ -253,6 +253,28 @@ def _write_durable_activation(root: Path, *, suffix: str, display_label: str) ->
         "active_strategy": True,
         "live_trading": False,
         "brokerage_execution": False,
+        "evidence_metrics": {
+            "sharpe": 0.71,
+            "annual_return": 0.12,
+            "max_drawdown": -0.18,
+            "volatility": 0.2,
+            "turnover": 0.03,
+            "evidence_score": 42.0,
+        },
+        "source_variant": {
+            "metrics": {
+                "sharpe": 0.71,
+                "annual_return": 0.12,
+                "max_drawdown": -0.18,
+                "volatility": 0.2,
+                "turnover": 0.03,
+            },
+            "ranking": {"evidence_score": 42.0},
+            "artifact_paths": {
+                "variant_metrics": f"test-only/runtime_alignment_{suffix}/variant_metrics.json",
+                "variant_evidence_report": f"test-only/runtime_alignment_{suffix}/variant_evidence_report.md",
+            },
+        },
     }
     destination = root / "data" / "strategy_factory" / "portfolio_candidates" / candidate_id
     destination.mkdir(parents=True, exist_ok=True)
@@ -306,6 +328,19 @@ def test_production_like_snapshot_uses_durable_strategy_factory_activations_with
         assert row["pnl_status"] == "ZERO_WEIGHT_NO_NAV_PNL_IMPACT"
         assert row["live_trading"] is False
         assert row["brokerage_execution"] is False
+        assert row["research_evidence"]["research_metrics"]["sharpe"] == pytest.approx(0.71)
+        assert row["research_evidence"]["source_artifacts"]
+
+    risk_rows = [
+        row for row in snapshot["risk_factor_market_proxy_table"]
+        if row.get("strategy_id") in {first["strategy_uid"], second["strategy_uid"]}
+    ]
+    assert len(risk_rows) == 2
+    for row in risk_rows:
+        assert row["risk_metric_source"] == "RESEARCH_RISK_EVIDENCE"
+        assert row["risk_data_status"] == "ACTIVE_UNALLOCATED_RESEARCH_ONLY"
+        assert row["included_in_portfolio_risk_summary"] is False
+        assert row["research_metrics"]["sharpe"] == pytest.approx(0.71)
 
 
 def test_paper_rebalance_and_operational_snapshot_universe_counts_align_from_durable_activations(tmp_path: Path):

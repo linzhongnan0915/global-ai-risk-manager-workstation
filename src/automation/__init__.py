@@ -12,6 +12,7 @@ __all__ = [
     "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
     "build_ml_intelligence_patch_manifest",
+    "build_paper_allocation_proposal",
     "compact_automation_intelligence_summary",
     "build_review_draft_eligibility",
     "build_strategy_factory_evidence_manifest",
@@ -19,12 +20,18 @@ __all__ = [
     "read_latest_daily_cycle_status",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
+    "read_latest_paper_allocation_proposal",
+    "read_latest_strategy_factory_job",
+    "read_strategy_factory_job",
     "run_daily_automation_cycle",
+    "run_selected_batch_job",
     "write_allocation_recommendation_artifact",
     "write_blackbox_decomposition_manifest",
     "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
     "write_ml_intelligence_patch_manifest",
+    "write_paper_allocation_proposal",
+    "write_paper_allocation_report",
     "write_strategy_factory_evidence_manifest",
 ]
 
@@ -140,6 +147,49 @@ def __getattr__(name: str) -> Any:
             "build_allocation_recommendation_artifact": build_allocation_recommendation_artifact,
             "read_latest_allocation_recommendation_artifact": read_latest_allocation_recommendation_artifact,
             "write_allocation_recommendation_artifact": write_allocation_recommendation_artifact,
+        }
+        return exports[name]
+    if name in {
+        "build_paper_allocation_proposal",
+        "read_latest_paper_allocation_proposal",
+        "write_paper_allocation_proposal",
+    }:
+        from src.automation.paper_allocation_proposal import (
+            build_paper_allocation_proposal,
+            read_latest_paper_allocation_proposal,
+            write_paper_allocation_proposal,
+        )
+
+        exports = {
+            "build_paper_allocation_proposal": build_paper_allocation_proposal,
+            "read_latest_paper_allocation_proposal": read_latest_paper_allocation_proposal,
+            "write_paper_allocation_proposal": write_paper_allocation_proposal,
+        }
+        return exports[name]
+    if name in {
+        "write_paper_allocation_report",
+    }:
+        from src.automation.paper_allocation_report import write_paper_allocation_report
+
+        exports = {
+            "write_paper_allocation_report": write_paper_allocation_report,
+        }
+        return exports[name]
+    if name in {
+        "read_latest_strategy_factory_job",
+        "read_strategy_factory_job",
+        "run_selected_batch_job",
+    }:
+        from src.automation.strategy_factory_selected_batch_job import (
+            read_latest_strategy_factory_job,
+            read_strategy_factory_job,
+            run_selected_batch_job,
+        )
+
+        exports = {
+            "read_latest_strategy_factory_job": read_latest_strategy_factory_job,
+            "read_strategy_factory_job": read_strategy_factory_job,
+            "run_selected_batch_job": run_selected_batch_job,
         }
         return exports[name]
     if name in {

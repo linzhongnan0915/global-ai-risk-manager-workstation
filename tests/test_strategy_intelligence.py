@@ -357,7 +357,7 @@ def test_dashboard_strategy_intelligence_tab_is_summary_first_without_fake_rows(
     assert "/api/strategy-intelligence?ts=" in source
     assert '"Strategy Intelligence":strategyIntelligencePage' in source
     assert '["Universe & Data Coverage","Strategy Factory","Strategy Intelligence"]' in source
-    assert '["Portfolio Command Center","Universe & Data Coverage","Strategy Factory","Strategy Intelligence"]' in source
+    assert '["Portfolio Command Center","Universe & Data Coverage","Strategy Factory","Strategy Intelligence","Workflow"]' in source
     assert "Pending Detail" in page_source
     assert "no fake rows are rendered" in page_source
     assert "Strategy Intelligence Preview" in page_source

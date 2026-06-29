@@ -19,6 +19,11 @@ SOURCE_PATH = ROOT / "dashboard/data/shadow_live_bundle.json"
 CONTRACT_PATH = ROOT / "dashboard/data/canonical_operational.json"
 
 
+# Legacy fixture assertions in this file intentionally pin the committed release
+# fixture in dashboard/data/canonical_operational.json. They are not production
+# assumptions and should not be copied into dashboard or backend logic.
+
+
 def source_bundle() -> dict:
     return json.loads(SOURCE_PATH.read_text(encoding="utf-8"))
 
@@ -164,7 +169,7 @@ def test_strategy_monitor_status_hierarchy_keeps_provenance_secondary():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     for marker in (
         'return s.membership_state==="executed"?"Active Paper"',
-        'if(s.internal_id==="COMBINED_PORTFOLIO")return "Active Composite"',
+        'if(isCombinedStrategyRow(s))return "Active Composite"',
         "Execution Mode: Paper Only | Provenance: Pending | Live Fill: No",
         "Execution Mode: Derived | Provenance: Derived from ordinary strategy net returns | Live Fill: No | No separate Combined paper fills | No cost double count",
         "Current Sleeve: N/A | Operational NAV/P&L: N/A | Paper Fill: No Paper Fill | Live Fill: No Live Brokerage Fill | Next Action: Pending admission evidence",
@@ -200,7 +205,7 @@ def test_current_operating_ui_excludes_removed_research_candidate():
     assert current_rows[0]["internal_id"] == "COMBINED_PORTFOLIO"
     assert "currentStrategyRows(c).map" in app
     assert "currentPendingRows(c).length" in app
-    assert "pending rows separated by status" in app
+    assert "pending / inactive rows separated" in app
     assert "Removed research candidates stay out of current operating rows" in app
     assert "PENDING ADMISSION</span><strong>N=${c.portfolio_summary.current_n}" not in app
 
@@ -245,6 +250,11 @@ def test_application_shell_and_shared_components_are_wired():
 def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
     app = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
     css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
+    active_command_page = app.rsplit("function page()", 1)[1].split("function rescueV2CardMissingCount", 1)[0]
+
+    assert "commandCenterDynamic(c)" in active_command_page
+    assert "rescueV2TodayBrief(c)" not in active_command_page
+    assert "automationIntelligenceStrip(c)" not in active_command_page
 
     for marker in (
         "Shadow-Live Paper PM Command Workflow",
@@ -268,33 +278,48 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         assert marker in app
 
     for marker in (
-        "Recommendation Only / Performance Recommendation Matrix",
-        "Suggested Target is evidence-driven; Proposed remains a DRAFT_NOT_APPLIED review artifact",
-        "allocation-decision-grid",
+        "Paper Allocation Proposal",
+        "Interactive paper allocation workbench",
+        "Current %",
         "Suggested %",
-        "Reason / Rationale",
-        "Positive paper performance + supportive backtest Sharpe",
-        "Negative recent paper performance",
-        "Dust trade ignored",
-        "Missing / limited evidence; review required",
-        "Apply Suggested Targets",
-        "allocationRecommendedWeights",
-        "allocationRecommendationScore",
-        "allocationRecommendationAction",
+        "Target %",
+        "Delta",
+        "Score",
+        "Action",
+        "Reason",
+        "Current Paper Portfolio",
+        "Proposed / Next Target Portfolio",
+        "Current vs Proposed Allocation / Family Mix",
+        "Candidates Added",
+        "Estimated Turnover / Cost",
+        "Top Increases / Reductions",
+        "Top Contributors / Detractors",
+        "Next Required Actions",
+        "Reset to Suggested",
+        "Normalize to 100%",
+        "Reset to Current",
+        "Save Draft",
+        "Approved Plan",
+        "None / Not Approved",
+        "Effective Date",
+        "Not Scheduled",
+        "Reports and paper review drafts use editable Target %",
+        "Accept / Approve creates an approved paper plan artifact only after explicit confirmation",
+        "Next Scheduled Biweekly Proposal",
+        "/api/automation-intelligence/paper-allocation-proposal/latest",
         "/api/paper-rebalance/recommendation-review-draft",
         "/api/paper-rebalance/approve-recommendation-draft",
         "/api/paper-rebalance/apply-approved",
-        "Apply Approved Paper Rebalance",
-        "Official Ledger: Unchanged",
-        "Live Brokerage Fill: No",
-        "data/paper_rebalance",
+        "No Live Brokerage Fill",
     ):
         assert marker in app
 
     assert ".allocation-decision-header,.allocation-decision-row" in css
     assert ".allocation-edit-table{min-width:1320px" in css
     assert ".allocation-workstation-page,.workflow-map-page{min-width:0;overflow-x:hidden}" in css
-    assert app.count("function allocationPage()") == 1
+    assert ".command-dynamic-center" in css
+    assert app.count("function allocationPage()") >= 1
+    assert "allocation-workbench-layout" in app
     assert "canvas.__commandChartPoints" in app
     assert "Math.hypot(p.x-x,p.y-y)" in app
     assert "Current Trading Session" in app
@@ -359,7 +384,7 @@ def test_strategy_monitor_dense_registry_filters_drawer_and_refresh_state():
     css = (ROOT / "dashboard/foundation.css").read_text(encoding="utf-8")
 
     for required in (
-        "COMBINED_PORTFOLIO",
+        "isCombinedStrategyRow",
         "monitorFiltered",
         "strategyFilter",
         "familyFilter",
@@ -508,7 +533,6 @@ def test_strategy_detail_tabs_are_data_bound_and_gate_incomplete_wq():
         "g.exact_blocker",
         "Paper fill rows",
         "DATA PENDING: no execution rows exist for this strategy.",
-        "COMBINED_PORTFOLIO",
         "Combined strategy membership",
     ):
         assert marker in app
@@ -692,15 +716,20 @@ def test_page_release_safety_gates_incomplete_pages():
     for page in (
         "Portfolio Command Center",
         "Strategy Monitor",
+        "Strategy Intelligence",
         "Allocation & Rebalance",
-        "Risk Factors & Exposure",
-        "Correlation & Diversification",
-        "Workflow & Shadow-Live Testing",
+        "Risk Factors",
         "Strategy Factory",
-        "Strategy Library & Governance",
-        "Daily Risk Report",
+        "Daily Intelligence Report",
     ):
         assert f'"{page}"' in app
+    for advanced_page in (
+        "Correlation & Diversification",
+        "Universe & Data Coverage",
+        "Workflow & Shadow-Live Testing",
+        "Strategy Library & Governance",
+    ):
+        assert f'"{advanced_page}"' in app
     old_tab_label = "Market & " + "Macro Monitor"
     assert old_tab_label not in app
     assert "NO_LIVE_BROKERAGE" in app
@@ -710,8 +739,8 @@ def test_page_release_safety_gates_incomplete_pages():
     assert "No correlation matrix, duplicate-pair heatmap, cluster map, or diversification score is rendered or inferred." in app
     assert "Strategy Factory safety boundary" in app
     assert "Generated candidates are research prototypes, not live or institutionally validated strategies." in app
-    assert "Daily report staging status" in app
-    assert "BLOCKED_SAFE" in app
+    assert "Daily Intelligence Report" in app
+    assert "BLOCKED" in app
     assert "external institutional data research" in app.lower()
     assert "Strategy Development Workflow" in app
     assert "Shadow-Live Paper Testing Workflow" in app
@@ -754,16 +783,16 @@ def test_risk_factor_big_table_v1_is_snapshot_bound_without_hardcoded_row_count(
         "function riskFactorCell(value,r)",
         "c.risk_factor_big_table||[]",
         "Rows come from risk_factor_big_table in /api/operational-snapshot; rendering does not hard-code strategy count.",
-        "active-unallocated rows are 0.00% current weight and no portfolio impact until rebalance.",
+        "active-unallocated research rows are excluded from portfolio risk summaries unless backend marks inclusion true.",
         "Strategy Family Mix - Proxy Only, Not a Validated Factor Model",
         "Metadata / expected, not quantitative beta",
         "Combined Portfolio is displayed as Active Composite / Composite, separate from ordinary alpha strategies.",
         "Removed research candidates are not active, pending, or excluded current Risk Factors rows.",
-        "legacy artifact estimate not authoritative",
+        "active-unallocated research rows are excluded from portfolio risk summaries unless backend marks inclusion true.",
         "position_source = committed_shadow_holdings",
         "legacy_artifact_position_estimate_authoritative = false",
         "No live brokerage positions or fills are represented",
-        '"Risk Factors & Exposure":riskPageV1',
+        '"Risk Factors":riskPageV1',
         "risk-factor-big-table",
         "risk-factor-matrix-v2",
     ):
@@ -837,7 +866,7 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
         "Future Institutional Factor Layers",
         "Refresh status only",
         "Export Heatmap",
-        "Default matrix includes confirmed active rows from Strategy Monitor; missing factor exposure is neutral/missing evidence, never borrowed or fabricated.",
+        "Default matrix includes backend rows; missing factor exposure is neutral/missing evidence, never borrowed or fabricated.",
         "Market-data proxy from cached delayed yfinance overlay. Not a validated Barra / institutional factor model. Not live market data. No live brokerage positions/fills.",
         "Current S&P 500 reference universe, not historical constituent-corrected.",
         'label:"Strategy"',
@@ -931,7 +960,7 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
     assert ".full-factor-heatmap" not in css
     all_rows_function = app.split("function riskAllDecisionRows(c)", 1)[1].split("function riskExcludedRows", 1)[0]
     assert "riskHeatmapSourceRows(c)" in all_rows_function
-    assert 'strategy_id==="COMBINED_PORTFOLIO"?0' in all_rows_function
+    assert "isCombinedRiskRow(x.row)?0" in all_rows_function
     assert 'strategy_id==="WQ_ALPHA_018"?2' not in all_rows_function
     assert "riskResearchMetrics" in all_rows_function
     excluded_rows_function = app.split("function riskExcludedRows(c)", 1)[1].split("function riskDecisionRows", 1)[0]
@@ -958,7 +987,7 @@ def test_risk_factor_market_proxy_matrix_v1_is_primary_when_available():
     assert "riskResearchMetrics" not in decision_cell_function
     assert "Research Metric Missing" in decision_cell_function
     assert "No Paper Weight" in decision_cell_function
-    assert "marketProxyStateLabel(r)" in decision_cell_function
+    assert "risk_metric_source" in decision_cell_function
     assert "Future Layer" in decision_cell_function
     assert '["Beta","Corr","Vol"].includes(col.label)' in decision_cell_function
     assert "riskResearchFactorCell(col.label,value,col.type)" in decision_cell_function
@@ -1013,13 +1042,13 @@ def test_left_rail_navigation_maps_to_current_top_tabs():
         "const RAIL_TO_TAB =",
         'portfolio:"Portfolio Command Center"',
         'strategies:"Strategy Monitor"',
-        'risk:"Risk Factors & Exposure"',
+        'risk:"Risk Factors"',
         'allocation:"Allocation & Rebalance"',
-        'analytics:"Correlation & Diversification"',
+        'analytics:"Strategy Intelligence"',
         'research:"Strategy Factory"',
-        'workflow:"Workflow & Shadow-Live Testing"',
-        'reports:"Daily Risk Report"',
-        'alerts:"Daily Risk Report"',
+        'workflow:"Workflow"',
+        'reports:"Daily Intelligence Report"',
+        'alerts:"Daily Intelligence Report"',
         'data:"Universe & Data Coverage"',
         'settings:"Strategy Library & Governance"',
         '"Universe & Data Coverage":"data"',

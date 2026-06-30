@@ -221,3 +221,78 @@ def test_selected_batch_job_writes_stage_artifact_without_financial_mutation(tmp
     assert (tmp_path / result["artifact_path"]).exists()
     assert {row["status"] for row in result["job"]["stages"]} <= {"COMPLETE", "NOT_WIRED", "FAILED"}
     assert all("name" in row and "output_count" in row for row in result["job"]["stages"])
+
+
+def test_p0_generation_paths_do_not_mutate_canonical_paper_state(tmp_path: Path, monkeypatch) -> None:
+    """Observed before/after byte-hash proof that P0 proposal/report/job generation
+    never mutates canonical paper financial artifacts.
+
+    This replaces self-reported ``financial_state_mutated: False`` flags (which only
+    prove a dict literal) with an assertion on the actual bytes of the canonical
+    approved-plan / applied-event / current-target files.
+    """
+    import hashlib
+    import json as _json
+
+    from src.automation import strategy_factory_selected_batch_job as job_module
+    from src.automation.paper_allocation_proposal import (
+        read_latest_paper_allocation_proposal,
+        write_paper_allocation_proposal,
+    )
+
+    paper_dir = tmp_path / "data" / "paper_rebalance"
+    paper_dir.mkdir(parents=True)
+    canonical_seed = {
+        "approved_rebalance_plans.json": {
+            "plans": [{"plan_id": "seed-plan", "status": "APPROVED_WAITING_EFFECTIVE_DATE"}]
+        },
+        "applied_rebalance_events.json": {"events": []},
+        "current_paper_target_weights.json": {"weights": {}},
+    }
+    before: dict[str, str] = {}
+    for name, payload in canonical_seed.items():
+        path = paper_dir / name
+        path.write_text(_json.dumps(payload, indent=2), encoding="utf-8")
+        before[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    now = datetime(2026, 6, 29, tzinfo=timezone.utc)
+
+    missing = read_latest_paper_allocation_proposal(tmp_path)
+    assert missing["ok"] is False
+    assert not (tmp_path / "data" / "automation" / "allocation_proposals").exists()
+
+    write_paper_allocation_proposal(tmp_path, now=now, strategy_intelligence_payload=_cards())
+    proposal = build_paper_allocation_proposal(
+        tmp_path, now=now, strategy_intelligence_payload=_cards()
+    )
+    write_paper_allocation_report(
+        tmp_path,
+        [
+            {
+                "strategy_uid": row["strategy_uid"],
+                "current_weight": row["current_weight"],
+                "target_weight": row["target_weight"],
+                "action": row["suggested_action"],
+            }
+            for row in proposal["rows"]
+        ],
+        now=now,
+    )
+
+    def fake_run_factory(root: Path, selected_material_ids: list[str]) -> dict:
+        run_dir = root / "output" / "strategy_factory" / "runs" / "hash-test-run"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return {
+            "ok": True,
+            "run": {"run_id": "hash-test-run", "selected_material_ids": selected_material_ids},
+            "candidate": {"strategy_id": "hash-test-candidate", "recommendation": "REVIEW_REQUIRED"},
+            "factory": {"stage_statuses": []},
+        }
+
+    monkeypatch.setattr(job_module, "run_factory", fake_run_factory)
+    monkeypatch.setattr(job_module, "base_state", lambda root: {"ok": True})
+    run_selected_batch_job(tmp_path, material_ids=["mat-a", "mat-b"])
+
+    for name in canonical_seed:
+        after = hashlib.sha256((paper_dir / name).read_bytes()).hexdigest()
+        assert after == before[name], f"P0 generation mutated canonical artifact {name}"

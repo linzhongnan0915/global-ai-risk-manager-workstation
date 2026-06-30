@@ -35,6 +35,7 @@ from src.automation import (
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
     read_latest_paper_allocation_proposal,
+    read_latest_risk_evidence_artifact,
     read_latest_strategy_factory_job,
     read_strategy_factory_job,
     run_daily_automation_cycle,
@@ -46,6 +47,7 @@ from src.automation import (
     write_ml_intelligence_patch_manifest,
     write_paper_allocation_report,
     write_paper_allocation_proposal,
+    write_risk_evidence_artifact,
     write_strategy_factory_evidence_manifest,
 )
 from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
@@ -819,6 +821,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="paper-allocation-proposal-latest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/risk-evidence/latest",
+            "/api/automation-intelligence/risk-evidence/latest/",
+        }:
+            try:
+                latest = read_latest_risk_evidence_artifact(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="risk-evidence-latest")
+            return
+        if parsed.path in {
             "/api/strategy-factory/jobs/latest",
             "/api/strategy-factory/jobs/latest/",
         }:
@@ -1047,6 +1059,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": False, "error": str(exc)}, status=400)
             except Exception as exc:
                 self._send_safe_error(exc, context="paper-allocation-report-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/risk-evidence/generate",
+            "/api/automation-intelligence/risk-evidence/generate/",
+        }:
+            try:
+                self._send_json(write_risk_evidence_artifact(self.server_root), status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="risk-evidence-generate")
             return
         if parsed.path in {
             "/api/automation-intelligence/review-draft/from-allocation-recommendation",

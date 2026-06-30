@@ -26,6 +26,7 @@ from src.automation.strategy_factory_evidence_manifest import (
     build_strategy_factory_evidence_manifest,
     research_lineage_for_identity,
 )
+from src.automation.strategy_factory_selected_batch_job import read_latest_strategy_factory_job
 from src.market.paper_rebalance import paper_rebalance_snapshot_payload
 from src.reporting.operational_snapshot import (
     REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS,
@@ -41,6 +42,29 @@ from src.strategy_intelligence.evidence_rules import decision_recommendation, ev
 from src.strategy_intelligence.mechanism_rules import classify_mechanism, research_decision
 from src.strategy_intelligence.ml_status_rules import ml_status
 from src.strategy_intelligence.schema import ARTIFACT_RELATIVE_PATH, COVERAGE_UNIVERSE, SCHEMA_VERSION
+
+LINEAGE_OUTPUT_KEYS = (
+    "research_cards",
+    "test_specs",
+    "evidence_reports",
+    "backtest_outputs",
+    "ml_gate_outputs",
+    "robustness_outputs",
+    "risk_outputs",
+    "regime_outputs",
+    "attribution_outputs",
+    "candidate_registry_updates",
+)
+
+MISSING_EVIDENCE_LABELS = (
+    "Missing ML Evidence",
+    "Missing Attribution",
+    "Missing Regime Evidence",
+    "Missing Risk Evidence",
+    "Missing Robustness Evidence",
+    "Institutional Validation Pending",
+    "Prototype Only",
+)
 
 
 def _atomic_write_json(path: Path, payload: Any) -> None:
@@ -60,6 +84,233 @@ def _relative(root: Path, path: Path) -> str:
         return str(path.relative_to(root)).replace("\\", "/")
     except ValueError:
         return str(path).replace("\\", "/")
+
+
+def _normalize_identity(value: Any) -> str:
+    return str(value or "").strip().replace("\\", "/").lower()
+
+
+def _status_is_available(value: Any) -> bool:
+    return str(value or "").upper() in {"AVAILABLE", "COMPLETE", "COMPLETED", "SUPPORTED"}
+
+
+def _lineage_item_identifiers(item: dict[str, Any]) -> set[str]:
+    identifiers: set[str] = set()
+    for key in ("strategy_uid", "candidate_id", "material_id", "material_hash", "artifact_path"):
+        normalized = _normalize_identity(item.get(key))
+        if normalized:
+            identifiers.add(normalized)
+    for key in ("material_ids", "material_hashes"):
+        values = item.get(key) if isinstance(item.get(key), list) else []
+        for value in values:
+            normalized = _normalize_identity(value)
+            if normalized:
+                identifiers.add(normalized)
+    return identifiers
+
+
+def _card_identifiers(card: dict[str, Any]) -> set[str]:
+    identifiers: set[str] = set()
+    for key in ("strategy_uid", "candidate_id", "material_hash"):
+        normalized = _normalize_identity(card.get(key))
+        if normalized:
+            identifiers.add(normalized)
+    lineage = card.get("research_lineage") if isinstance(card.get("research_lineage"), dict) else {}
+    bridge = card.get("identity_bridge") if isinstance(card.get("identity_bridge"), dict) else {}
+    for source in (lineage, bridge):
+        for key in ("strategy_uid", "candidate_id", "material_id", "material_hash", "research_card_id", "test_spec_id"):
+            normalized = _normalize_identity(source.get(key))
+            if normalized:
+                identifiers.add(normalized)
+    for artifact in card.get("source_artifacts") or []:
+        if not isinstance(artifact, dict):
+            continue
+        normalized = _normalize_identity(artifact.get("path"))
+        if normalized:
+            identifiers.add(normalized)
+    return identifiers
+
+
+def _lineage_item_summary(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "artifact_type": item.get("artifact_type"),
+        "artifact_path": item.get("artifact_path"),
+        "exists": bool(item.get("exists")),
+        "status": item.get("status") or "NOT_AVAILABLE",
+        "labels": item.get("labels") if isinstance(item.get("labels"), list) else [],
+        "material_ids": item.get("material_ids") if isinstance(item.get("material_ids"), list) else [],
+        "candidate_id": item.get("candidate_id"),
+        "strategy_uid": item.get("strategy_uid"),
+        "missing_reason": item.get("missing_reason"),
+    }
+
+
+def _selected_batch_lineage_items(latest_job: dict[str, Any]) -> list[dict[str, Any]]:
+    job = latest_job.get("job") if isinstance(latest_job.get("job"), dict) else {}
+    outputs = job.get("outputs") if isinstance(job.get("outputs"), dict) else {}
+    items: list[dict[str, Any]] = []
+    for key in LINEAGE_OUTPUT_KEYS:
+        for item in outputs.get(key) or []:
+            if isinstance(item, dict):
+                copied = dict(item)
+                copied["output_key"] = key
+                items.append(copied)
+    return items
+
+
+def _artifact_source_summary(latest_job: dict[str, Any], matched_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    sources: list[dict[str, Any]] = []
+    if latest_job.get("artifact_path"):
+        sources.append(
+            {
+                "artifact_type": "selected_batch_job",
+                "artifact_path": latest_job.get("artifact_path"),
+                "exists": bool(latest_job.get("ok")),
+                "status": latest_job.get("status") or "NOT_AVAILABLE",
+                "labels": ["Prototype Only"],
+                "match_status": "MATCHED_SAFE_IDENTIFIER" if matched_items else "NO_SAFE_IDENTIFIER_MATCH",
+            }
+        )
+    sources.extend(_lineage_item_summary(item) for item in matched_items)
+    return sources
+
+
+def _has_available_artifact(items: list[dict[str, Any]], artifact_type: str) -> bool:
+    return any(
+        item.get("artifact_type") == artifact_type
+        and item.get("exists") is True
+        and _status_is_available(item.get("status"))
+        for item in items
+    )
+
+
+def _status_from_available(available: bool, missing_label: str) -> str:
+    return "AVAILABLE" if available else missing_label
+
+
+def _first_available_item(items: list[dict[str, Any]], *artifact_types: str) -> dict[str, Any] | None:
+    wanted = set(artifact_types)
+    return next(
+        (
+            item
+            for item in items
+            if item.get("artifact_type") in wanted
+            and item.get("exists") is True
+            and _status_is_available(item.get("status"))
+        ),
+        None,
+    )
+
+
+def _advanced_artifact(item: dict[str, Any] | None, source: str) -> dict[str, Any] | None:
+    if not item:
+        return None
+    summary = _lineage_item_summary(item)
+    summary["source"] = source
+    return summary
+
+
+def _missing_advanced_reason(label: str) -> str:
+    return f"{label}; no matching artifact exists in selected-batch lineage."
+
+
+def _interpretability_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "ml_gate_output", "feature_importance", "interpretability_output")
+    available = artifact is not None
+    return {
+        "shap_status": "MISSING_ARTIFACT",
+        "permutation_importance_status": "MISSING_ARTIFACT",
+        "feature_importance_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "interpretability_labels": ["Prototype Only"] if available else ["Missing ML Evidence", "Prototype Only", "Institutional Validation Pending"],
+        "missing_reason": None if available else _missing_advanced_reason("Missing ML Evidence"),
+    }
+
+
+def _risk_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "risk_output", "risk_artifact", "stress_output")
+    available = artifact is not None
+    return {
+        "var_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "cvar_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "drawdown_stress_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "risk_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Risk Evidence"),
+    }
+
+
+def _regime_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "regime_evidence", "regime_output", "regime_artifact")
+    available = artifact is not None
+    return {
+        "regime_tag_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "current_regime_relevance_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "regime_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Regime Evidence"),
+    }
+
+
+def _attribution_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "attribution_output", "decomposition_output", "pnl_attribution")
+    available = artifact is not None
+    return {
+        "return_attribution_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "factor_attribution_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "pnl_source_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "attribution_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Attribution"),
+    }
+
+
+def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict[str, Any]:
+    card_ids = _card_identifiers(card)
+    all_items = _selected_batch_lineage_items(latest_job)
+    matched = [item for item in all_items if card_ids and card_ids.intersection(_lineage_item_identifiers(item))]
+    evidence_sources = [_lineage_item_summary(item) for item in matched]
+    ml_available = _has_available_artifact(matched, "ml_gate_output")
+    attribution_available = _has_available_artifact(matched, "attribution_output")
+    regime_available = _has_available_artifact(matched, "regime_evidence")
+    robustness_available = _has_available_artifact(matched, "robustness_output")
+    evidence_available = any(item.get("exists") is True for item in matched)
+    missing = list(card.get("missing_evidence") or [])
+    for label, available in (
+        ("Missing ML Evidence", ml_available),
+        ("Missing Attribution", attribution_available),
+        ("Missing Regime Evidence", regime_available),
+        ("Missing Risk Evidence", False),
+        ("Missing Robustness Evidence", robustness_available),
+        ("Institutional Validation Pending", False),
+        ("Prototype Only", False),
+    ):
+        if not available and label not in missing:
+            missing.append(label)
+    return {
+        "evidence_sources": evidence_sources,
+        "factory_lineage_sources": _artifact_source_summary(latest_job, matched),
+        "evidence_status": "Research Evidence Available" if evidence_available else "Missing Evidence",
+        "ml_evidence_status": _status_from_available(ml_available, "Missing ML Evidence"),
+        "attribution_status": _status_from_available(attribution_available, "Missing Attribution"),
+        "regime_evidence_status": _status_from_available(regime_available, "Missing Regime Evidence"),
+        "robustness_status": _status_from_available(robustness_available, "Missing Robustness Evidence"),
+        "interpretability_evidence": _interpretability_evidence(matched),
+        "risk_evidence": _risk_evidence(matched),
+        "regime_evidence": _regime_evidence(matched),
+        "attribution_evidence": _attribution_evidence(matched),
+        "missing_evidence": list(dict.fromkeys(missing)),
+    }
+
+
+def _apply_evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict[str, Any]:
+    manifest = _evidence_manifest(card, latest_job)
+    enriched = dict(card)
+    enriched["evidence_manifest"] = manifest
+    enriched["evidence_sources"] = manifest["evidence_sources"]
+    enriched["factory_lineage_sources"] = manifest["factory_lineage_sources"]
+    enriched["evidence_status"] = manifest["evidence_status"]
+    enriched["attribution_status"] = manifest["attribution_status"]
+    enriched["regime_evidence_status"] = manifest["regime_evidence_status"]
+    enriched["robustness_status"] = manifest["robustness_status"]
+    enriched["missing_evidence"] = manifest["missing_evidence"]
+    return enriched
 
 
 def _source_artifacts(root: Path, row: dict[str, Any], research_summary: dict[str, Any] | None) -> list[dict[str, str]]:
@@ -444,6 +695,8 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
         now=now,
     )
     cards = [_apply_identity_bridge(card, identity_bridge, factory_evidence, ml_patch_manifest, blackbox_manifest) for card in cards]
+    latest_selected_batch_job = read_latest_strategy_factory_job(root)
+    cards = [_apply_evidence_manifest(card, latest_selected_batch_job) for card in cards]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})
@@ -485,6 +738,9 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
         "research_lineage_review_required_count": sum(
             card["research_lineage"]["status"] in {"REVIEW_REQUIRED", "MISSING_EVIDENCE"} for card in cards
         ),
+        "selected_batch_lineage_status": latest_selected_batch_job.get("status") or "NOT_AVAILABLE",
+        "cards_with_selected_batch_evidence_sources": sum(bool(card["evidence_sources"]) for card in cards),
+        "cards_with_factory_lineage_sources": sum(bool(card["factory_lineage_sources"]) for card in cards),
     }
     return {
         "ok": True,
@@ -502,6 +758,8 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
             "strategy_intelligence_endpoint": "/api/strategy-intelligence",
             "daily_recommendation_artifact": daily_latest.get("artifact_path"),
             "strategy_factory_evidence_status": factory_evidence.get("status"),
+            "strategy_factory_selected_batch_job": latest_selected_batch_job.get("artifact_path"),
+            "strategy_factory_selected_batch_job_status": latest_selected_batch_job.get("status"),
             "identity_bridge_status": identity_bridge.get("status"),
             "blackbox_decomposition_status": blackbox_manifest.get("status"),
         },

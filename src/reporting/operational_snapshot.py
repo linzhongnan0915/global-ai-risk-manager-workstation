@@ -36,7 +36,6 @@ MARKET_PROXY_DISCLOSURE = (
     "Not a validated Barra / institutional factor model; Not live brokerage; "
     "Not live real-time market data."
 )
-REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS = {"WQ_ALPHA_018"}
 INTRADAY_OVERLAY_SCHEMA_VERSION = "intraday_overlay_v1"
 INTRADAY_OVERLAY_STALE_AFTER_SECONDS = 10 * 60
 REFRESH_INTERVAL_SECONDS = 300
@@ -55,6 +54,35 @@ PROVENANCE_LABELS = {
     "PRE_OPERATIONAL": "Pre-Operational",
     "INVALID_EXECUTION_RECORD": "Paper Provenance Pending",
 }
+
+
+def _is_combined_strategy(strategy: dict[str, Any]) -> bool:
+    return bool(
+        strategy.get("is_combined")
+        or strategy.get("strategy_role") == "COMPOSITE"
+        or strategy.get("sleeve_type") == "Composite"
+        or strategy.get("constituent_internal_ids")
+    )
+
+
+def _is_pre_operational_strategy(strategy: dict[str, Any]) -> bool:
+    return bool(
+        strategy.get("membership_state") == "approved_pending"
+        or strategy.get("current_operational_status") == "PRE_OPERATIONAL"
+        or strategy.get("operational_state") == "PRE_OPERATIONAL"
+    )
+
+
+def _included_in_current_workstation(strategy: dict[str, Any]) -> bool:
+    return not _is_pre_operational_strategy(strategy)
+
+
+def _is_combined_daily_row(row: dict[str, Any]) -> bool:
+    return bool(
+        row.get("strategy_role") == "COMPOSITE"
+        or row.get("record_label") == "DERIVED_FROM_ORDINARY_OPERATIONAL_LEDGERS"
+        or row.get("cost_treatment")
+    )
 
 
 def _read_json(path: Path, default: Any) -> Any:
@@ -99,6 +127,9 @@ def _strategy_factory_active_unallocated_records(root: Path) -> list[dict[str, A
             uid = str(activation.get("strategy_uid") or activation.get("strategy_id") or "").strip()
             if not uid or uid.startswith("#"):
                 continue
+            candidate = _read_json(path.parent / "portfolio_candidate.json", {})
+            if candidate:
+                activation = _merge_strategy_factory_candidate_evidence(activation, candidate)
             activation = {**activation, "activation_artifact_path": str(path.relative_to(root))}
             rows.append(activation)
     deduped: dict[str, dict[str, Any]] = {}
@@ -107,11 +138,66 @@ def _strategy_factory_active_unallocated_records(root: Path) -> list[dict[str, A
     return list(deduped.values())
 
 
+def _merge_strategy_factory_candidate_evidence(activation: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
+    """Attach candidate evidence only when canonical activation lineage agrees."""
+    activation_candidate_id = activation.get("candidate_id")
+    activation_run_id = activation.get("run_id") or activation.get("source_run_id")
+    activation_variant_id = activation.get("variant_id")
+    candidate_id = candidate.get("candidate_id")
+    candidate_run_id = candidate.get("run_id") or candidate.get("source_run_id")
+    candidate_variant_id = candidate.get("variant_id")
+    if activation_candidate_id and candidate_id and activation_candidate_id != candidate_id:
+        return activation
+    if activation_run_id and candidate_run_id and activation_run_id != candidate_run_id:
+        return activation
+    if activation_variant_id and candidate_variant_id and activation_variant_id != candidate_variant_id:
+        return activation
+    source_variant = candidate.get("source_variant") or {}
+    metrics = candidate.get("evidence_metrics") or source_variant.get("metrics") or {}
+    ranking = source_variant.get("ranking") or {}
+    artifacts = source_variant.get("artifact_paths") or {}
+    artifact_paths = [
+        artifacts.get("variant_metrics"),
+        artifacts.get("variant_evidence_report"),
+        artifacts.get("variant_ranking"),
+        artifacts.get("variant_robustness"),
+        artifacts.get("variant_ml_diagnostics"),
+    ]
+    return {
+        **activation,
+        "strategy_name": activation.get("strategy_name") or candidate.get("strategy_name") or candidate.get("variant_name"),
+        "thesis": candidate.get("thesis") or activation.get("thesis"),
+        "signal_formula": candidate.get("signal_formula") or activation.get("signal_formula"),
+        "evidence_status": activation.get("evidence_status")
+        or ((ranking.get("readiness_status") or {}).get("evidence_status"))
+        or candidate.get("evidence_status"),
+        "backtest_status": activation.get("backtest_status")
+        or ((ranking.get("readiness_status") or {}).get("backtest_status"))
+        or (metrics.get("status") if metrics else None),
+        "ml_evidence_status": activation.get("ml_evidence_status")
+        or ((source_variant.get("ml") or {}).get("ml_evidence_status"))
+        or ((ranking.get("source_evidence") or {}).get("ml_evidence_status")),
+        "research_metrics": {
+            **metrics,
+            "evidence_score": metrics.get("evidence_score") if metrics.get("evidence_score") is not None else ranking.get("evidence_score"),
+        },
+        "research_source_artifacts": [path for path in artifact_paths if path],
+        "research_date_range": metrics.get("date_range"),
+        "research_universe_count": metrics.get("universe_count"),
+    }
+
+
 def _strategy_factory_snapshot_row(activation: dict[str, Any]) -> dict[str, Any]:
     uid = str(activation.get("strategy_uid") or activation.get("strategy_id"))
     name = activation.get("strategy_name") or activation.get("variant_id") or uid
     display_label = activation.get("display_label") or activation.get("display_id") or "Display only"
     activated_date = str(activation.get("activated_at") or activation.get("created_at") or "")[:10] or None
+    research_metrics = activation.get("research_metrics") or {}
+    if activation.get("research_date_range") and not research_metrics.get("date_range"):
+        research_metrics = {**research_metrics, "date_range": activation.get("research_date_range")}
+    if activation.get("research_universe_count") is not None and research_metrics.get("universe_count") is None:
+        research_metrics = {**research_metrics, "universe_count": activation.get("research_universe_count")}
+    evidence_artifacts = activation.get("research_source_artifacts") or []
     return {
         "internal_id": uid,
         "strategy_id": uid,
@@ -198,10 +284,13 @@ def _strategy_factory_snapshot_row(activation: dict[str, Any]) -> dict[str, Any]
         "research_evidence": {
             "research_status": "Strategy Factory active-unallocated evidence pending rebalance",
             "research_metrics": {
+                **research_metrics,
                 "evidence_status": activation.get("evidence_status") or "Missing Evidence",
                 "data_quality_status": activation.get("data_quality_status") or "Missing Evidence",
                 "ml_evidence_status": activation.get("ml_evidence_status") or "MISSING_EVIDENCE",
             },
+            "evidence_artifact": evidence_artifacts[0] if evidence_artifacts else None,
+            "source_artifacts": evidence_artifacts,
         },
     }
 
@@ -357,6 +446,7 @@ def _combined_strategy_history(
     member_ids: list[str],
     *,
     sleeve_capital: float,
+    combined_strategy_id: str,
 ) -> list[dict[str, Any]]:
     """Derive Combined from ordinary operational net returns without adding trade cost rows."""
     members = [strategy_id for strategy_id in member_ids if strategy_id in histories_by_id]
@@ -390,7 +480,7 @@ def _combined_strategy_history(
         )
         derived.append(
             {
-                "strategy_id": "COMBINED_PORTFOLIO",
+                "strategy_id": combined_strategy_id,
                 "date": date_value,
                 "record_label": "DERIVED_FROM_ORDINARY_OPERATIONAL_LEDGERS",
                 "execution_provenance": provenance,
@@ -425,8 +515,8 @@ def _entity_inventory(
     ordinary_rows = [
         row for row in strategies
         if row.get("membership_state") == "executed"
-        and row.get("internal_id") != "COMBINED_PORTFOLIO"
-        and row.get("internal_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+        and not _is_combined_strategy(row)
+        and _included_in_current_workstation(row)
     ]
     for row in ordinary_rows:
         display_id = row.get("display_id") or "Display only"
@@ -448,7 +538,7 @@ def _entity_inventory(
                 else None if history_by_id.get(strategy_id) else "No operational daily ledger rows are present."
             ),
         })
-    combined = next((row for row in strategies if row["internal_id"] == "COMBINED_PORTFOLIO"), None)
+    combined = next((row for row in strategies if _is_combined_strategy(row)), None)
     if combined:
         entities.append({
             "display_id": combined["display_id"],
@@ -588,12 +678,12 @@ def _trading_session_lifecycle(
         blockers.append("NEXT_OPEN_TO_OPEN requires the next-open return endpoint; same-day close promotion would require a separate accounting decision.")
         ordinary_rows = [
             row for row in strategy_daily
-            if row.get("date") == current_session and row.get("strategy_id") != "COMBINED_PORTFOLIO"
+            if row.get("date") == current_session and not _is_combined_daily_row(row)
         ]
         expected_ordinary_ids = {
             row.get("strategy_id")
             for row in strategy_daily
-            if row.get("strategy_id") and row.get("strategy_id") != "COMBINED_PORTFOLIO"
+            if row.get("strategy_id") and not _is_combined_daily_row(row)
         }
         if expected_ordinary_ids and len({row.get("strategy_id") for row in ordinary_rows}) < len(expected_ordinary_ids):
             blockers.append("Missing complete ordinary strategy daily rows for the current trading session.")
@@ -627,7 +717,7 @@ def _trading_session_lifecycle(
         {
             "input": "Combined derived row",
             "status": "Derived complete" if current_session and any(
-                row.get("date") == current_session and row.get("strategy_id") == "COMBINED_PORTFOLIO"
+                row.get("date") == current_session and _is_combined_daily_row(row)
                 for row in strategy_daily
             ) else "Derived unavailable",
         },
@@ -764,16 +854,16 @@ def _proposal_state(strategies: list[dict[str, Any]], portfolio: dict[str, Any],
 
 
 def _wq_admission_gate(canonical: dict[str, Any]) -> dict[str, Any]:
-    """Gate WQ on canonical execution evidence only, not research validation text."""
-    strategy_id = "WQ_ALPHA_018"
+    """Gate the current approved-pending strategy on canonical execution evidence only."""
     pending = next(
-        (row for row in canonical.get("pending_membership", []) if row.get("internal_id") == strategy_id),
+        (row for row in canonical.get("pending_membership", []) if _is_pre_operational_strategy(row)),
         {},
     )
     strategy = next(
-        (row for row in canonical.get("strategies", []) if row.get("internal_id") == strategy_id),
+        (row for row in canonical.get("strategies", []) if _is_pre_operational_strategy(row)),
         {},
     )
+    strategy_id = strategy.get("internal_id") or pending.get("internal_id")
     as_of_date = canonical.get("portfolio_summary", {}).get("as_of_date")
     trades = [row for row in canonical.get("trades", []) if row.get("strategy_id") == strategy_id]
     holdings = [row for row in canonical.get("holdings", []) if row.get("strategy_id") == strategy_id]
@@ -849,9 +939,9 @@ def _missing_factor_value(value: Any) -> Any:
 
 
 def _sleeve_type(strategy: dict[str, Any]) -> str:
-    if strategy.get("internal_id") == "COMBINED_PORTFOLIO":
+    if _is_combined_strategy(strategy):
         return "Composite"
-    if strategy.get("membership_state") == "approved_pending":
+    if _is_pre_operational_strategy(strategy):
         return "Pending"
     if strategy.get("repair_state"):
         return "Repair"
@@ -861,9 +951,9 @@ def _sleeve_type(strategy: dict[str, Any]) -> str:
 
 
 def _primary_status(strategy: dict[str, Any]) -> str:
-    if strategy.get("membership_state") == "approved_pending" or strategy.get("internal_id") == "WQ_ALPHA_018":
+    if _is_pre_operational_strategy(strategy):
         return "APPROVED_PENDING / PRE_OPERATIONAL"
-    if strategy.get("internal_id") == "COMBINED_PORTFOLIO":
+    if _is_combined_strategy(strategy):
         return "Active Composite"
     if strategy.get("membership_state") == "executed":
         return "Active Paper"
@@ -884,12 +974,12 @@ def _missing_warning(strategy: dict[str, Any], factor_summary: dict[str, Any]) -
     warnings = []
     if all(factor_summary.get(column) in {None, "", "Missing Metadata"} for column in FACTOR_COLUMNS):
         warnings.append("Factor metadata missing")
-    if strategy.get("membership_state") == "approved_pending":
+    if _is_pre_operational_strategy(strategy):
         warnings.append("Data Pending")
         blocker = strategy.get("exact_blocker")
         if blocker:
             warnings.append(blocker)
-    if strategy.get("observation_count", 0) < 20 and strategy.get("membership_state") != "approved_pending":
+    if strategy.get("observation_count", 0) < 20 and not _is_pre_operational_strategy(strategy):
         warnings.append("Insufficient History")
     return " | ".join(warnings) if warnings else "N/A"
 
@@ -902,6 +992,109 @@ def _safe_number(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return numeric if math.isfinite(numeric) else None
+
+
+def _normalized_research_metrics(strategy: dict[str, Any]) -> dict[str, Any]:
+    metrics = (strategy.get("research_evidence") or {}).get("research_metrics") or {}
+    source_artifacts = []
+    evidence = strategy.get("research_evidence") or {}
+    for key in ("evidence_artifact", "research_summary_artifact", "validation_artifact"):
+        if evidence.get(key):
+            source_artifacts.append(evidence[key])
+    source_artifacts.extend(path for path in (evidence.get("source_artifacts") or []) if path)
+    deduped_artifacts = list(dict.fromkeys(source_artifacts))
+    date_range = metrics.get("date_range")
+    if isinstance(date_range, dict):
+        date_range = (
+            f"{date_range.get('start')} to {date_range.get('end')}"
+            if date_range.get("start") or date_range.get("end")
+            else None
+        )
+    return {
+        "sharpe": _safe_number(metrics.get("net_sharpe") if metrics.get("net_sharpe") is not None else metrics.get("sharpe")),
+        "annual_return": _safe_number(
+            metrics.get("annualized_return") if metrics.get("annualized_return") is not None else metrics.get("annual_return")
+        ),
+        "max_drawdown": _safe_number(metrics.get("max_drawdown")),
+        "volatility": _safe_number(
+            metrics.get("annualized_volatility") if metrics.get("annualized_volatility") is not None else metrics.get("volatility")
+        ),
+        "turnover": _safe_number(
+            metrics.get("average_daily_turnover") if metrics.get("average_daily_turnover") is not None else metrics.get("turnover")
+        ),
+        "evidence_score": _safe_number(metrics.get("evidence_score")),
+        "date_range": (
+            f"{metrics.get('sample_start')} to {metrics.get('sample_end')}"
+            if metrics.get("sample_start") or metrics.get("sample_end")
+            else date_range
+        ),
+        "universe_count": metrics.get("universe_count"),
+        "source_artifacts": deduped_artifacts,
+    }
+
+
+def _portfolio_risk_metrics(strategy: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "current_weight": _safe_number(strategy.get("current_weight")),
+        "daily_return": _safe_number(strategy.get("daily_return")),
+        "daily_pnl": _safe_number(strategy.get("daily_pnl")),
+        "current_drawdown": _safe_number(strategy.get("current_drawdown")),
+        "gross_exposure": _safe_number(strategy.get("gross_exposure")),
+        "net_exposure": _safe_number(strategy.get("net_exposure")),
+        "holdings_count": strategy.get("holdings_count"),
+        "observation_count": strategy.get("observation_count"),
+    }
+
+
+def _risk_data_classification(strategy: dict[str, Any]) -> dict[str, Any]:
+    research_metrics = _normalized_research_metrics(strategy)
+    portfolio_metrics = _portfolio_risk_metrics(strategy)
+    has_research_metrics = any(
+        research_metrics.get(key) is not None
+        for key in ("sharpe", "annual_return", "max_drawdown", "volatility", "turnover", "evidence_score")
+    )
+    has_portfolio_metrics = any(
+        portfolio_metrics.get(key) is not None
+        for key in ("daily_return", "daily_pnl", "current_drawdown", "gross_exposure", "net_exposure")
+    )
+    zero_weight = _safe_number(strategy.get("current_weight")) == 0.0
+    research_only = bool(strategy.get("strategy_factory_phase2") or zero_weight)
+    if has_portfolio_metrics and not research_only:
+        return {
+            "risk_metric_source": "PORTFOLIO_RISK_DATA",
+            "risk_data_status": "AVAILABLE",
+            "risk_data_reason": "Allocated paper strategy has portfolio/ledger risk fields in the operational snapshot.",
+            "included_in_portfolio_risk_summary": True,
+            "research_metrics": research_metrics,
+            "portfolio_metrics": portfolio_metrics,
+        }
+    if has_research_metrics:
+        status = "ACTIVE_UNALLOCATED_RESEARCH_ONLY" if research_only else "RESEARCH_ONLY_AVAILABLE"
+        return {
+            "risk_metric_source": "RESEARCH_RISK_EVIDENCE",
+            "risk_data_status": status,
+            "risk_data_reason": "Research metrics are present but are labelled research-only and excluded from portfolio risk summaries.",
+            "included_in_portfolio_risk_summary": False,
+            "research_metrics": research_metrics,
+            "portfolio_metrics": portfolio_metrics,
+        }
+    if research_only:
+        return {
+            "risk_metric_source": "MISSING_RISK_DATA",
+            "risk_data_status": "MISSING_RISK_DATA",
+            "risk_data_reason": "Active-unallocated research row has zero current weight and no loaded research metric artifact.",
+            "included_in_portfolio_risk_summary": False,
+            "research_metrics": research_metrics,
+            "portfolio_metrics": portfolio_metrics,
+        }
+    return {
+        "risk_metric_source": "MISSING_RISK_DATA",
+        "risk_data_status": "MISSING_RISK_DATA",
+        "risk_data_reason": "Neither portfolio risk metrics nor research risk evidence metrics are available.",
+        "included_in_portfolio_risk_summary": False,
+        "research_metrics": research_metrics,
+        "portfolio_metrics": portfolio_metrics,
+    }
 
 
 def _strategy_return_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1023,23 +1216,24 @@ def _benchmark_reference_payload(
     }
 
 
-def _risk_factor_contract_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _risk_factor_contract_summary(
+    rows: list[dict[str, Any]],
+    removed_current_ids: list[str] | None = None,
+) -> dict[str, Any]:
     visible = [
         row for row in rows
         if row.get("primary_status") != "APPROVED_PENDING / PRE_OPERATIONAL"
-        and row.get("strategy_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
     ]
     pending = [
         row for row in rows
         if row.get("primary_status") == "APPROVED_PENDING / PRE_OPERATIONAL"
-        and row.get("strategy_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
     ]
     return {
         "visible_active_strategy_count": len(visible),
         "pending_excluded_count": len(pending),
         "default_matrix_excludes": [],
         "pending_excluded_strategy_ids": [row.get("strategy_id") for row in pending if row.get("strategy_id")],
-        "removed_from_current_workstation_strategy_ids": sorted(REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS),
+        "removed_from_current_workstation_strategy_ids": list(removed_current_ids or []),
         "default_matrix_columns": [
             "Strategy",
             "Status",
@@ -1067,11 +1261,11 @@ def _risk_factor_contract_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _research_summary_payload(strategies: list[dict[str, Any]]) -> dict[str, Any]:
-    combined = next((row for row in strategies if row.get("internal_id") == "COMBINED_PORTFOLIO"), {})
+    combined = next((row for row in strategies if _is_combined_strategy(row)), {})
     combined_metrics = (combined.get("research_evidence") or {}).get("research_metrics") or {}
     active_metrics = []
     for strategy in strategies:
-        if strategy.get("internal_id") in {"COMBINED_PORTFOLIO", "WQ_ALPHA_018"}:
+        if _is_combined_strategy(strategy) or not _included_in_current_workstation(strategy):
             continue
         if strategy.get("operational_state") == "PRE_OPERATIONAL":
             continue
@@ -1450,18 +1644,19 @@ def _risk_factor_market_proxy_table(
     rows = []
     for strategy in strategies:
         strategy_id = strategy.get("internal_id")
-        if strategy_id in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS:
+        if not _included_in_current_workstation(strategy):
             continue
         strategy_history = history_by_id.get(strategy_id, [])
         current_holdings = holdings_by_id.get(strategy_id, [])
         return_rows = _strategy_return_rows(strategy_history)
-        pending = strategy.get("membership_state") == "approved_pending"
-        combined = strategy_id == "COMBINED_PORTFOLIO"
+        pending = _is_pre_operational_strategy(strategy)
+        combined = _is_combined_strategy(strategy)
         spy_beta, spy_correlation = _spy_beta_correlation(return_rows, benchmark_returns)
         research_factors = _research_factor_metrics(strategy, benchmark_returns)
         weighted_adv = _weighted_avg_dollar_volume(current_holdings, ticker_metrics)
         top_holding, top_5 = _concentration(current_holdings)
         price_coverage = _price_coverage(current_holdings, strategy, ticker_metrics)
+        risk_classification = _risk_data_classification(strategy)
         warnings = [
             "Not a validated Barra / institutional factor model",
             "Not live brokerage",
@@ -1502,6 +1697,16 @@ def _risk_factor_market_proxy_table(
                 "display_id": strategy.get("display_id"),
                 "display_name": strategy.get("display_name") or strategy.get("name") or "N/A",
                 "sleeve_type": _sleeve_type(strategy),
+                "strategy_role": "COMPOSITE" if combined else ("PRE_OPERATIONAL" if pending else "ORDINARY"),
+                "is_combined": combined,
+                "is_top_level": bool(strategy.get("membership_state") == "executed"),
+                "included_in_allocation_denominator": bool(strategy.get("membership_state") == "executed" and not pending),
+                "included_in_portfolio_risk_summary": risk_classification["included_in_portfolio_risk_summary"],
+                "risk_metric_source": risk_classification["risk_metric_source"],
+                "risk_data_status": risk_classification["risk_data_status"],
+                "risk_data_reason": risk_classification["risk_data_reason"],
+                "research_metrics": risk_classification["research_metrics"],
+                "portfolio_metrics": risk_classification["portfolio_metrics"],
                 "primary_status": _primary_status(strategy),
                 "current_weight": None if pending else strategy.get("current_weight"),
                 "capital": None if pending else strategy.get("ending_nav"),
@@ -1547,15 +1752,26 @@ def _risk_factor_big_table(strategies: list[dict[str, Any]], canonical: dict[str
     rows = []
     for strategy in strategies:
         factor_summary = strategy.get("factor_exposure") or strategy.get("factor_metadata") or {}
-        pending = strategy.get("membership_state") == "approved_pending"
-        combined = strategy.get("internal_id") == "COMBINED_PORTFOLIO"
+        pending = _is_pre_operational_strategy(strategy)
+        combined = _is_combined_strategy(strategy)
         source_note = "ordinary strategy operational daily ledgers" if combined else _evidence_source(strategy)
+        risk_classification = _risk_data_classification(strategy)
         rows.append(
             {
                 "strategy_id": strategy.get("internal_id"),
                 "display_id": strategy.get("display_id"),
                 "display_name": strategy.get("display_name") or strategy.get("name") or "N/A",
                 "sleeve_type": _sleeve_type(strategy),
+                "strategy_role": "COMPOSITE" if combined else ("PRE_OPERATIONAL" if pending else "ORDINARY"),
+                "is_combined": combined,
+                "is_top_level": bool(strategy.get("membership_state") == "executed"),
+                "included_in_allocation_denominator": bool(strategy.get("membership_state") == "executed" and not pending),
+                "included_in_portfolio_risk_summary": risk_classification["included_in_portfolio_risk_summary"],
+                "risk_metric_source": risk_classification["risk_metric_source"],
+                "risk_data_status": risk_classification["risk_data_status"],
+                "risk_data_reason": risk_classification["risk_data_reason"],
+                "research_metrics": risk_classification["research_metrics"],
+                "portfolio_metrics": risk_classification["portfolio_metrics"],
                 "primary_status": _primary_status(strategy),
                 "capital_weight": strategy.get("sleeve_weight") if not pending else None,
                 "nav": None if pending else strategy.get("ending_nav"),
@@ -1675,21 +1891,27 @@ def build_operational_snapshot(
     for row in strategy_daily:
         corrected_history_by_id.setdefault(row["strategy_id"], []).append(row)
     combined_source = next(
-        (row for row in canonical["strategies"] if row.get("internal_id") == "COMBINED_PORTFOLIO"),
+        (row for row in canonical["strategies"] if _is_combined_strategy(row)),
         {},
     )
+    combined_strategy_id = combined_source.get("internal_id")
+    canonical_by_id = {row.get("internal_id"): row for row in canonical["strategies"]}
     combined_member_ids = [
         strategy_id
         for strategy_id in combined_source.get("constituent_internal_ids", [])
-        if strategy_id != "COMBINED_PORTFOLIO" and strategy_id != "WQ_ALPHA_018"
+        if strategy_id != combined_strategy_id
+        and _included_in_current_workstation(canonical_by_id.get(strategy_id, {}))
+        and not _is_combined_strategy(canonical_by_id.get(strategy_id, {}))
     ]
-    strategy_daily.extend(
-        _combined_strategy_history(
-            corrected_history_by_id,
-            combined_member_ids,
-            sleeve_capital=dynamic_sleeve_capital,
+    if combined_strategy_id:
+        strategy_daily.extend(
+            _combined_strategy_history(
+                corrected_history_by_id,
+                combined_member_ids,
+                sleeve_capital=dynamic_sleeve_capital,
+                combined_strategy_id=combined_strategy_id,
+            )
         )
-    )
     daily_by_id = {row["strategy_id"]: row for row in strategy_daily}
     history_by_id: dict[str, list[dict]] = {}
     for row in strategy_daily:
@@ -1702,13 +1924,13 @@ def build_operational_snapshot(
         holding_by_id.setdefault(row["strategy_id"], []).append(row)
 
     strategy_intraday = dict((intraday or {}).get("strategy_contribution") or {})
-    if intraday and strategy_intraday.get("COMBINED_PORTFOLIO") is None and combined_member_ids:
+    if intraday and combined_strategy_id and strategy_intraday.get(combined_strategy_id) is None and combined_member_ids:
         member_estimates = [
             float(strategy_intraday[strategy_id])
             for strategy_id in combined_member_ids
             if strategy_intraday.get(strategy_id) is not None
         ]
-        strategy_intraday["COMBINED_PORTFOLIO"] = (
+        strategy_intraday[combined_strategy_id] = (
             sum(member_estimates) / len(combined_member_ids)
             if len(member_estimates) == len(combined_member_ids) else None
         )
@@ -1742,7 +1964,7 @@ def build_operational_snapshot(
             membership_effective
             or first_reconstructed
             or first_verified
-            or (portfolio_dates["reconstructed_portfolio_start_date"] if internal_id == "COMBINED_PORTFOLIO" else None)
+            or (portfolio_dates["reconstructed_portfolio_start_date"] if _is_combined_strategy(source) else None)
         )
         strategy_history = [
             row for row in all_strategy_history
@@ -1764,7 +1986,7 @@ def build_operational_snapshot(
             intraday_unavailable_reason = "Pre-operational"
         elif intraday_pnl is not None:
             intraday_unavailable_reason = None
-        elif not current and internal_id != "COMBINED_PORTFOLIO":
+        elif not current and not _is_combined_strategy(source):
             intraday_unavailable_reason = "No current holdings"
         elif current and len(covered_current) != len(current):
             intraday_unavailable_reason = "Price unavailable"
@@ -1787,6 +2009,12 @@ def build_operational_snapshot(
         strategy_record = {
                 **deepcopy(source),
                 **metadata_by_id[internal_id],
+                "is_combined": _is_combined_strategy(source),
+                "strategy_role": "COMPOSITE" if _is_combined_strategy(source) else ("PRE_OPERATIONAL" if _is_pre_operational_strategy(source) else "ORDINARY"),
+                "sleeve_type": _sleeve_type(source),
+                "is_top_level": bool(source.get("membership_state") == "executed"),
+                "included_in_allocation_denominator": bool(source.get("membership_state") == "executed" and not _is_pre_operational_strategy(source)),
+                "included_in_portfolio_risk_summary": bool(source.get("membership_state") == "executed" and not _is_pre_operational_strategy(source) and not source.get("strategy_factory_phase2")),
                 "sleeve_weight": None if source.get("membership_state") == "approved_pending" else dynamic_top_level_sleeve_weight,
                 "current_weight": None if source.get("membership_state") == "approved_pending" else source.get("current_weight"),
                 "effective_weight_basis": (
@@ -1854,7 +2082,7 @@ def build_operational_snapshot(
                 },
                 "research_evidence": deepcopy(research_by_id.get(internal_id)),
             }
-        if internal_id == "COMBINED_PORTFOLIO" and strategy_history:
+        if _is_combined_strategy(strategy_record) and strategy_history:
             strategy_record.update(
                 {
                     "data_status": "DERIVED_COMPLETE",
@@ -2042,7 +2270,15 @@ def build_operational_snapshot(
     )
     sp500_reference_payload = _sp500_reference_universe_payload(sp500_reference_universe)
     benchmark_reference_payload = _benchmark_reference_payload(canonical, market_proxy_cache)
-    risk_factor_contract_summary = _risk_factor_contract_summary(risk_factor_market_proxy_table)
+    removed_current_ids = sorted(
+        row.get("internal_id")
+        for row in canonical["strategies"]
+        if row.get("internal_id") and not _included_in_current_workstation(row)
+    )
+    risk_factor_contract_summary = _risk_factor_contract_summary(
+        risk_factor_market_proxy_table,
+        removed_current_ids,
+    )
     research_summary = _research_summary_payload(strategies)
     return {
         "snapshot_version": SNAPSHOT_VERSION,
@@ -2158,7 +2394,7 @@ def build_operational_snapshot(
         "strategy_cost_reconciliation": strategy_cost_reconciliation,
         "operational_status": deepcopy(canonical["operational_status"]),
         "pending_membership": None,
-        "removed_from_current_workstation_strategy_ids": sorted(REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS),
+        "removed_from_current_workstation_strategy_ids": removed_current_ids,
         "operational_universe": {
             "held_ticker_count": len(held_tickers),
             "current_price_covered_ticker_count": intraday_estimate["covered_tickers"],
@@ -2376,7 +2612,7 @@ def _paper_strategy_rows_from_snapshot(
     applied_weights = rebalance.get("weights") or {}
     for strategy in snapshot.get("strategies") or []:
         strategy_id = strategy.get("internal_id")
-        if not strategy_id or strategy_id in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS:
+        if not strategy_id or not _included_in_current_workstation(strategy):
             continue
         if strategy.get("membership_state") != "executed":
             continue
@@ -2902,7 +3138,7 @@ def _summary_source_snapshot(
     canonical = _read_json(_paths(root)["canonical"], {})
     canonical_strategies = [
         row for row in deepcopy(canonical.get("strategies") or [])
-        if row.get("internal_id") not in REMOVED_CURRENT_WORKSTATION_STRATEGY_IDS
+        if _included_in_current_workstation(row)
     ]
     activation_rows = [_strategy_factory_snapshot_row(row) for row in _strategy_factory_active_unallocated_records(root)]
     strategy_by_id = {

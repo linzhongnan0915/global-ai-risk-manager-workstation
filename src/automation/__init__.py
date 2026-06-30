@@ -13,6 +13,7 @@ __all__ = [
     "build_daily_recommendation_artifact",
     "build_ml_intelligence_patch_manifest",
     "build_paper_allocation_proposal",
+    "build_risk_evidence_artifact",
     "compact_automation_intelligence_summary",
     "build_review_draft_eligibility",
     "build_strategy_factory_evidence_manifest",
@@ -21,6 +22,7 @@ __all__ = [
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
     "read_latest_paper_allocation_proposal",
+    "read_latest_risk_evidence_artifact",
     "read_latest_strategy_factory_job",
     "read_strategy_factory_job",
     "run_daily_automation_cycle",
@@ -32,6 +34,7 @@ __all__ = [
     "write_ml_intelligence_patch_manifest",
     "write_paper_allocation_proposal",
     "write_paper_allocation_report",
+    "write_risk_evidence_artifact",
     "write_strategy_factory_evidence_manifest",
 ]
 
@@ -173,6 +176,23 @@ def __getattr__(name: str) -> Any:
 
         exports = {
             "write_paper_allocation_report": write_paper_allocation_report,
+        }
+        return exports[name]
+    if name in {
+        "build_risk_evidence_artifact",
+        "read_latest_risk_evidence_artifact",
+        "write_risk_evidence_artifact",
+    }:
+        from src.automation.risk_evidence import (
+            build_risk_evidence_artifact,
+            read_latest_risk_evidence_artifact,
+            write_risk_evidence_artifact,
+        )
+
+        exports = {
+            "build_risk_evidence_artifact": build_risk_evidence_artifact,
+            "read_latest_risk_evidence_artifact": read_latest_risk_evidence_artifact,
+            "write_risk_evidence_artifact": write_risk_evidence_artifact,
         }
         return exports[name]
     if name in {

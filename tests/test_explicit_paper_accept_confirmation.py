@@ -41,8 +41,10 @@ def _root_with_plan(tmp_path: Path) -> Path:
             "plans": [
                 {
                     "plan_id": "test-plan-id",
-                    "status": "Accepted Pending Application",
+                    "status": "Draft / Review",
                     "target_weights": {"test-strategy-uid": 0.1},
+                    "execution_mode": "Paper Only",
+                    "live_brokerage_fill": "No",
                 }
             ],
         },
@@ -100,70 +102,67 @@ class _ServerFixture:
         WorkstationHandler.operational_snapshot_bytes = self.original_bytes
 
 
-def test_explicit_apply_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
+def test_explicit_accept_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
     root = _root_with_plan(tmp_path)
     before = _hashes(root)
     calls: list[str] = []
     monkeypatch.setattr(
         server_module,
-        "apply_paper_rebalance_plan",
+        "accept_paper_rebalance_plan",
         lambda server_root, plan_id: calls.append(plan_id) or {"ok": True},
     )
 
     with _ServerFixture(root) as base:
-        status, payload = _post_json(f"{base}/api/paper-rebalance/apply", {"plan_id": "test-plan-id"})
+        status, payload = _post_json(f"{base}/api/paper-rebalance/accept", {"plan_id": "test-plan-id"})
 
     assert status == 400
-    assert payload["paper_apply_gated"] is True
-    assert "apply_confirmation" in payload["error"]
+    assert payload["paper_accept_gated"] is True
+    assert "accept_confirmation" in payload["error"]
     assert calls == []
     assert _hashes(root) == before
 
 
-def test_explicit_apply_with_wrong_confirmation_text_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
+def test_explicit_accept_with_wrong_confirmation_text_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
     root = _root_with_plan(tmp_path)
     before = _hashes(root)
     calls: list[str] = []
     monkeypatch.setattr(
         server_module,
-        "apply_paper_rebalance_plan",
+        "accept_paper_rebalance_plan",
         lambda server_root, plan_id: calls.append(plan_id) or {"ok": True},
     )
 
     with _ServerFixture(root) as base:
         status, payload = _post_json(
-            f"{base}/api/paper-rebalance/apply",
+            f"{base}/api/paper-rebalance/accept",
             {
                 "plan_id": "test-plan-id",
-                "apply_confirmation": True,
+                "accept_confirmation": True,
                 "confirmation_text": "WRONG_CONFIRMATION",
             },
         )
 
     assert status == 400
-    assert payload["paper_apply_gated"] is True
+    assert payload["paper_accept_gated"] is True
     assert "confirmation_text" in payload["error"]
     assert calls == []
     assert _hashes(root) == before
 
 
-def test_explicit_apply_with_confirmation_reaches_existing_apply_path(tmp_path, monkeypatch) -> None:
+def test_explicit_accept_with_confirmation_reaches_existing_accept_path(tmp_path, monkeypatch) -> None:
     root = _root_with_plan(tmp_path)
     calls: list[tuple[Path, str]] = []
 
-    def fake_apply(server_root: Path, plan_id: str) -> dict:
+    def fake_accept(server_root: Path, plan_id: str) -> dict:
         calls.append((server_root, plan_id))
         return {
-            "ok": True,
-            "current_paper_target": {
-                "applied_status": "Applied to Paper Allocation",
-                "execution_mode": "Paper Only",
-                "live_brokerage_fill": "No",
-            },
-            "cost_record": {"official_ledger_mutation": "No"},
+            "plan_id": plan_id,
+            "applied_status": "Accepted Pending Application",
+            "execution_mode": "Paper Only",
+            "live_brokerage_fill": "No",
         }
 
-    monkeypatch.setattr(server_module, "apply_paper_rebalance_plan", fake_apply)
+    monkeypatch.setattr(server_module, "accept_paper_rebalance_plan", fake_accept)
     monkeypatch.setattr(WorkstationHandler, "warm_operational_snapshot_cache", classmethod(lambda cls, *args, **kwargs: None))
     monkeypatch.setattr(
         WorkstationHandler,
@@ -173,93 +172,15 @@ def test_explicit_apply_with_confirmation_reaches_existing_apply_path(tmp_path, 
 
     with _ServerFixture(root) as base:
         status, payload = _post_json(
-            f"{base}/api/paper-rebalance/apply",
+            f"{base}/api/paper-rebalance/accept",
             {
                 "plan_id": "test-plan-id",
-                "apply_confirmation": True,
-                "confirmation_text": server_module.PAPER_APPLY_CONFIRMATION_TEXT,
+                "accept_confirmation": True,
+                "confirmation_text": server_module.PAPER_ACCEPT_CONFIRMATION_TEXT,
             },
         )
 
     assert status == 200
     assert calls == [(root, "test-plan-id")]
-    assert payload["current_paper_target"]["execution_mode"] == "Paper Only"
-    assert payload["current_paper_target"]["live_brokerage_fill"] == "No"
-
-
-def test_apply_approved_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
-    root = _root_with_plan(tmp_path)
-    before = _hashes(root)
-    calls: list[str | None] = []
-    monkeypatch.setattr(
-        server_module,
-        "apply_approved_rebalance_plan",
-        lambda server_root, snapshot, plan_id=None: calls.append(plan_id) or {"ok": True},
-    )
-
-    with _ServerFixture(root) as base:
-        status, payload = _post_json(f"{base}/api/paper-rebalance/apply-approved", {"plan_id": "test-plan-id"})
-
-    assert status == 400
-    assert payload["paper_apply_gated"] is True
-    assert "apply_confirmation" in payload["error"]
-    assert calls == []
-    assert _hashes(root) == before
-
-
-def test_apply_due_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
-    root = _root_with_plan(tmp_path)
-    before = _hashes(root)
-    calls: list[Path] = []
-    monkeypatch.setattr(
-        server_module,
-        "apply_due_approved_rebalance_plan",
-        lambda server_root, snapshot: calls.append(server_root) or {"ok": True},
-    )
-
-    with _ServerFixture(root) as base:
-        status, payload = _post_json(f"{base}/api/paper-rebalance/apply-due", {})
-
-    assert status == 400
-    assert payload["paper_apply_gated"] is True
-    assert "apply_confirmation" in payload["error"]
-    assert calls == []
-    assert _hashes(root) == before
-
-
-def test_apply_approved_with_confirmation_reaches_existing_apply_path(tmp_path, monkeypatch) -> None:
-    root = _root_with_plan(tmp_path)
-    calls: list[tuple[Path, dict, str | None]] = []
-
-    def fake_apply_approved(server_root: Path, snapshot: dict, plan_id: str | None = None) -> dict:
-        calls.append((server_root, snapshot, plan_id))
-        return {
-            "ok": True,
-            "applied_status": "Applied to Paper Allocation",
-            "execution_mode": "Paper Only",
-            "live_brokerage_fill": "No",
-        }
-
-    monkeypatch.setattr(server_module, "load_operational_snapshot_for_response", lambda *args, **kwargs: {"snapshot": "ok"})
-    monkeypatch.setattr(server_module, "apply_approved_rebalance_plan", fake_apply_approved)
-    monkeypatch.setattr(WorkstationHandler, "warm_operational_snapshot_cache", classmethod(lambda cls, *args, **kwargs: None))
-    monkeypatch.setattr(
-        WorkstationHandler,
-        "_paper_rebalance_response",
-        lambda self, extra=None: {"ok": True, **(extra or {})},
-    )
-
-    with _ServerFixture(root) as base:
-        status, payload = _post_json(
-            f"{base}/api/paper-rebalance/apply-approved",
-            {
-                "plan_id": "test-plan-id",
-                "apply_confirmation": True,
-                "confirmation_text": server_module.PAPER_APPLY_CONFIRMATION_TEXT,
-            },
-        )
-
-    assert status == 200
-    assert calls == [(root, {"snapshot": "ok"}, "test-plan-id")]
-    assert payload["paper_apply_result"]["execution_mode"] == "Paper Only"
-    assert payload["paper_apply_result"]["live_brokerage_fill"] == "No"
+    assert payload["plan"]["execution_mode"] == "Paper Only"
+    assert payload["plan"]["live_brokerage_fill"] == "No"

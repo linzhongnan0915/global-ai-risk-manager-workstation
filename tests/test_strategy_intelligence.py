@@ -325,6 +325,162 @@ def test_daily_recommendation_matching_uses_strategy_uid_not_display_name(tmp_pa
     assert payload["summary"]["daily_recommendation_missing_match_count"] == len(payload["cards"]) - 1
 
 
+def _write_selected_batch_job(root: Path, job: dict) -> None:
+    job_dir = root / "data" / "strategy_factory" / "jobs"
+    job_dir.mkdir(parents=True, exist_ok=True)
+    (job_dir / f"{job['job_id']}.json").write_text(json.dumps(job, indent=2), encoding="utf-8")
+
+
+def _lineage_item(
+    *,
+    artifact_type: str,
+    artifact_path: str | None,
+    exists: bool,
+    strategy_uid: str,
+    candidate_id: str,
+    status: str,
+    labels: list[str],
+) -> dict:
+    return {
+        "artifact_type": artifact_type,
+        "artifact_path": artifact_path,
+        "exists": exists,
+        "material_id": None,
+        "material_ids": ["test-material-id"],
+        "strategy_uid": strategy_uid,
+        "candidate_id": candidate_id,
+        "status": status,
+        "missing_reason": None if exists else f"{artifact_type} missing in focused test",
+        "labels": labels,
+    }
+
+
+def test_strategy_intelligence_cards_include_selected_batch_evidence_manifest(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    uid = baseline["cards"][0]["strategy_uid"]
+    candidate_id = f"candidate-for-{uid}"
+    artifact = root / "output" / "strategy_factory" / "runs" / "lineage-test" / "evidence_report.md"
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text("# Evidence\n", encoding="utf-8")
+    _write_selected_batch_job(
+        root,
+        {
+            "ok": True,
+            "source": "strategy_factory_selected_batch_job_v1",
+            "job_id": "lineage-test-job",
+            "generated_at": "2026-06-30T00:00:00+00:00",
+            "selected_material_count": 1,
+            "selected_material_ids": ["test-material-id"],
+            "selected_material_hashes": ["test-material-hash"],
+            "outputs": {
+                "research_cards": [],
+                "test_specs": [],
+                "evidence_reports": [
+                    _lineage_item(
+                        artifact_type="evidence_report",
+                        artifact_path=str(artifact),
+                        exists=True,
+                        strategy_uid=uid,
+                        candidate_id=candidate_id,
+                        status="AVAILABLE",
+                        labels=["Prototype Only"],
+                    )
+                ],
+                "backtest_outputs": [],
+                "ml_gate_outputs": [
+                    _lineage_item(
+                        artifact_type="ml_gate_output",
+                        artifact_path=None,
+                        exists=False,
+                        strategy_uid=uid,
+                        candidate_id=candidate_id,
+                        status="MISSING_ARTIFACT",
+                        labels=["Prototype Only", "Missing ML Evidence"],
+                    )
+                ],
+                "robustness_outputs": [
+                    _lineage_item(
+                        artifact_type="robustness_output",
+                        artifact_path=None,
+                        exists=False,
+                        strategy_uid=uid,
+                        candidate_id=candidate_id,
+                        status="MISSING_ARTIFACT",
+                        labels=["Prototype Only", "Missing Robustness Evidence"],
+                    )
+                ],
+                "candidate_registry_updates": [],
+            },
+        },
+    )
+
+    payload = build_strategy_intelligence_payload(root)
+    card = _cards_by_uid(payload)[uid]
+    manifest = card["evidence_manifest"]
+
+    assert manifest["evidence_sources"]
+    assert manifest["factory_lineage_sources"]
+    assert manifest["evidence_status"] == "Research Evidence Available"
+    assert manifest["ml_evidence_status"] == "Missing ML Evidence"
+    assert manifest["attribution_status"] == "Missing Attribution"
+    assert manifest["regime_evidence_status"] == "Missing Regime Evidence"
+    assert manifest["robustness_status"] == "Missing Robustness Evidence"
+    assert card["evidence_sources"][0]["artifact_type"] == "evidence_report"
+    assert card["evidence_sources"][0]["exists"] is True
+    assert "Missing ML Evidence" in card["missing_evidence"]
+    assert "Missing Attribution" in card["missing_evidence"]
+    assert "Missing Regime Evidence" in card["missing_evidence"]
+    assert "Missing Robustness Evidence" in card["missing_evidence"]
+
+
+def test_unmatched_selected_batch_job_is_visible_but_not_attached_as_fake_evidence(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    _write_selected_batch_job(
+        root,
+        {
+            "ok": True,
+            "source": "strategy_factory_selected_batch_job_v1",
+            "job_id": "unmatched-lineage-test-job",
+            "generated_at": "2026-06-30T00:00:00+00:00",
+            "selected_material_count": 1,
+            "selected_material_ids": ["unmatched-material-id"],
+            "selected_material_hashes": ["unmatched-material-hash"],
+            "outputs": {
+                "research_cards": [
+                    _lineage_item(
+                        artifact_type="research_card",
+                        artifact_path="output/strategy_factory/unmatched/research_card.md",
+                        exists=True,
+                        strategy_uid="unmatched-strategy-uid",
+                        candidate_id="unmatched-candidate-id",
+                        status="AVAILABLE",
+                        labels=["Prototype Only"],
+                    )
+                ],
+                "test_specs": [],
+                "evidence_reports": [],
+                "backtest_outputs": [],
+                "ml_gate_outputs": [],
+                "robustness_outputs": [],
+                "candidate_registry_updates": [],
+            },
+        },
+    )
+
+    payload = build_strategy_intelligence_payload(root)
+    first = payload["cards"][0]
+    manifest = first["evidence_manifest"]
+
+    assert manifest["evidence_sources"] == []
+    assert manifest["factory_lineage_sources"][0]["artifact_type"] == "selected_batch_job"
+    assert manifest["factory_lineage_sources"][0]["match_status"] == "NO_SAFE_IDENTIFIER_MATCH"
+    assert manifest["ml_evidence_status"] == "Missing ML Evidence"
+    assert manifest["attribution_status"] == "Missing Attribution"
+    assert manifest["regime_evidence_status"] == "Missing Regime Evidence"
+    assert manifest["robustness_status"] == "Missing Robustness Evidence"
+
+
 def test_strategy_intelligence_endpoint_is_200_and_read_only_for_paper_artifacts():
     before = _paper_artifact_hashes()
     original_root = WorkstationHandler.server_root

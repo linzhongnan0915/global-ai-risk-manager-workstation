@@ -34,6 +34,7 @@ from src.automation import (
     read_latest_daily_cycle_status,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
+    read_latest_daily_report_artifact,
     read_latest_paper_allocation_proposal,
     read_latest_risk_evidence_artifact,
     read_latest_strategy_factory_job,
@@ -44,6 +45,7 @@ from src.automation import (
     write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
     write_daily_recommendation_artifact,
+    write_daily_report_artifact,
     write_ml_intelligence_patch_manifest,
     write_paper_allocation_report,
     write_paper_allocation_proposal,
@@ -811,6 +813,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="allocation-recommendations-latest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/daily-report/latest",
+            "/api/automation-intelligence/daily-report/latest/",
+        }:
+            try:
+                latest = read_latest_daily_report_artifact(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-report-latest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/paper-allocation-proposal/latest",
             "/api/automation-intelligence/paper-allocation-proposal/latest/",
         }:
@@ -1030,6 +1042,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(write_allocation_recommendation_artifact(self.server_root), status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="allocation-recommendations-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/daily-report/generate",
+            "/api/automation-intelligence/daily-report/generate/",
+        }:
+            try:
+                self._send_json(write_daily_report_artifact(self.server_root), status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-report-generate")
             return
         if parsed.path in {
             "/api/automation-intelligence/paper-allocation-proposal/generate",

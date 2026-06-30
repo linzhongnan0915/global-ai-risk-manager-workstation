@@ -65,6 +65,7 @@ from src.market.approved_rebalance_plan import (
     apply_approved_rebalance_plan,
     apply_due_approved_rebalance_plan,
     create_approved_rebalance_plan,
+    paper_rebalance_automation_status,
 )
 from src.market.monthly_rebalance_proposal import (
     create_monthly_rebalance_proposal,
@@ -134,6 +135,38 @@ GZIP_MIN_BYTES = 512
 GZIP_EXTENSIONS = {".html", ".htm", ".js", ".css", ".json", ".svg"}
 MANUAL_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("MANUAL_REFRESH_COOLDOWN_SECONDS", "60"))
 BOOTSTRAP_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("BOOTSTRAP_REFRESH_COOLDOWN_SECONDS", "60"))
+BACKGROUND_PAPER_APPLY_ENV = "GLOBALAI_ALLOW_BACKGROUND_PAPER_APPLY"
+
+
+def background_paper_apply_enabled() -> bool:
+    return os.environ.get(BACKGROUND_PAPER_APPLY_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def background_paper_rebalance_apply_check(root: Path, *, snapshot: dict) -> dict:
+    if background_paper_apply_enabled():
+        result = apply_due_approved_rebalance_plan(root, snapshot=snapshot)
+        return {
+            **result,
+            "background_apply_enabled": True,
+            "background_apply_gated": False,
+            "authorization_source": BACKGROUND_PAPER_APPLY_ENV,
+        }
+    status = paper_rebalance_automation_status(root, snapshot=snapshot)
+    due = bool(status.get("effective_date_reached")) and not bool(status.get("already_applied"))
+    return {
+        **status,
+        "attempted": False,
+        "applied": False,
+        "background_apply_enabled": False,
+        "background_apply_gated": True,
+        "authorization_source": BACKGROUND_PAPER_APPLY_ENV,
+        "status": "BACKGROUND_APPLY_GATED" if due else status.get("status"),
+        "message": (
+            f"paper apply pending / gated; set {BACKGROUND_PAPER_APPLY_ENV}=1 only for explicit background apply authorization"
+            if due
+            else status.get("message", "background paper apply gated")
+        ),
+    }
 
 
 def resolve_server_bind(host: str | None = None, port: int | None = None) -> tuple[str, int]:
@@ -1656,11 +1689,13 @@ def _intraday_scheduler_loop(root: Path) -> None:
                         root,
                         scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
                     )
-                    automation_result = apply_due_approved_rebalance_plan(root, snapshot=automation_snapshot)
+                    automation_result = background_paper_rebalance_apply_check(root, snapshot=automation_snapshot)
                     if automation_result.get("applied"):
                         logger.info("Due paper rebalance automation applied: %s", automation_result.get("plan_id"))
                     elif automation_result.get("already_applied"):
                         logger.info("Due paper rebalance automation already applied: %s", automation_result.get("plan_id"))
+                    elif automation_result.get("background_apply_gated"):
+                        logger.info("Due paper rebalance automation gated: %s", automation_result.get("plan_id"))
                 except Exception as automation_exc:
                     logger.warning("Due paper rebalance automation check failed: %s", automation_exc)
                 if result.get("ok"):

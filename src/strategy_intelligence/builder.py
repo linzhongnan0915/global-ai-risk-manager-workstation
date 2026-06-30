@@ -50,6 +50,9 @@ LINEAGE_OUTPUT_KEYS = (
     "backtest_outputs",
     "ml_gate_outputs",
     "robustness_outputs",
+    "risk_outputs",
+    "regime_outputs",
+    "attribution_outputs",
     "candidate_registry_updates",
 )
 
@@ -57,6 +60,7 @@ MISSING_EVIDENCE_LABELS = (
     "Missing ML Evidence",
     "Missing Attribution",
     "Missing Regime Evidence",
+    "Missing Risk Evidence",
     "Missing Robustness Evidence",
     "Institutional Validation Pending",
     "Prototype Only",
@@ -184,6 +188,79 @@ def _status_from_available(available: bool, missing_label: str) -> str:
     return "AVAILABLE" if available else missing_label
 
 
+def _first_available_item(items: list[dict[str, Any]], *artifact_types: str) -> dict[str, Any] | None:
+    wanted = set(artifact_types)
+    return next(
+        (
+            item
+            for item in items
+            if item.get("artifact_type") in wanted
+            and item.get("exists") is True
+            and _status_is_available(item.get("status"))
+        ),
+        None,
+    )
+
+
+def _advanced_artifact(item: dict[str, Any] | None, source: str) -> dict[str, Any] | None:
+    if not item:
+        return None
+    summary = _lineage_item_summary(item)
+    summary["source"] = source
+    return summary
+
+
+def _missing_advanced_reason(label: str) -> str:
+    return f"{label}; no matching artifact exists in selected-batch lineage."
+
+
+def _interpretability_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "ml_gate_output", "feature_importance", "interpretability_output")
+    available = artifact is not None
+    return {
+        "shap_status": "MISSING_ARTIFACT",
+        "permutation_importance_status": "MISSING_ARTIFACT",
+        "feature_importance_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "interpretability_labels": ["Prototype Only"] if available else ["Missing ML Evidence", "Prototype Only", "Institutional Validation Pending"],
+        "missing_reason": None if available else _missing_advanced_reason("Missing ML Evidence"),
+    }
+
+
+def _risk_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "risk_output", "risk_artifact", "stress_output")
+    available = artifact is not None
+    return {
+        "var_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "cvar_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "drawdown_stress_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "risk_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Risk Evidence"),
+    }
+
+
+def _regime_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "regime_evidence", "regime_output", "regime_artifact")
+    available = artifact is not None
+    return {
+        "regime_tag_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "current_regime_relevance_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "regime_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Regime Evidence"),
+    }
+
+
+def _attribution_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
+    artifact = _first_available_item(matched, "attribution_output", "decomposition_output", "pnl_attribution")
+    available = artifact is not None
+    return {
+        "return_attribution_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "factor_attribution_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "pnl_source_status": "PENDING" if available else "MISSING_ARTIFACT",
+        "attribution_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
+        "missing_reason": None if available else _missing_advanced_reason("Missing Attribution"),
+    }
+
+
 def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict[str, Any]:
     card_ids = _card_identifiers(card)
     all_items = _selected_batch_lineage_items(latest_job)
@@ -199,6 +276,7 @@ def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict
         ("Missing ML Evidence", ml_available),
         ("Missing Attribution", attribution_available),
         ("Missing Regime Evidence", regime_available),
+        ("Missing Risk Evidence", False),
         ("Missing Robustness Evidence", robustness_available),
         ("Institutional Validation Pending", False),
         ("Prototype Only", False),
@@ -213,6 +291,10 @@ def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict
         "attribution_status": _status_from_available(attribution_available, "Missing Attribution"),
         "regime_evidence_status": _status_from_available(regime_available, "Missing Regime Evidence"),
         "robustness_status": _status_from_available(robustness_available, "Missing Robustness Evidence"),
+        "interpretability_evidence": _interpretability_evidence(matched),
+        "risk_evidence": _risk_evidence(matched),
+        "regime_evidence": _regime_evidence(matched),
+        "attribution_evidence": _attribution_evidence(matched),
         "missing_evidence": list(dict.fromkeys(missing)),
     }
 

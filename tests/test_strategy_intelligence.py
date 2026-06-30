@@ -426,11 +426,27 @@ def test_strategy_intelligence_cards_include_selected_batch_evidence_manifest(tm
     assert manifest["attribution_status"] == "Missing Attribution"
     assert manifest["regime_evidence_status"] == "Missing Regime Evidence"
     assert manifest["robustness_status"] == "Missing Robustness Evidence"
+    assert manifest["interpretability_evidence"]["shap_status"] == "MISSING_ARTIFACT"
+    assert manifest["interpretability_evidence"]["permutation_importance_status"] == "MISSING_ARTIFACT"
+    assert manifest["interpretability_evidence"]["feature_importance_artifact"] is None
+    assert "Missing ML Evidence" in manifest["interpretability_evidence"]["interpretability_labels"]
+    assert manifest["risk_evidence"]["var_status"] == "MISSING_ARTIFACT"
+    assert manifest["risk_evidence"]["cvar_status"] == "MISSING_ARTIFACT"
+    assert manifest["risk_evidence"]["drawdown_stress_status"] == "MISSING_ARTIFACT"
+    assert manifest["risk_evidence"]["risk_artifact"] is None
+    assert manifest["regime_evidence"]["regime_tag_status"] == "MISSING_ARTIFACT"
+    assert manifest["regime_evidence"]["current_regime_relevance_status"] == "MISSING_ARTIFACT"
+    assert manifest["regime_evidence"]["regime_artifact"] is None
+    assert manifest["attribution_evidence"]["return_attribution_status"] == "MISSING_ARTIFACT"
+    assert manifest["attribution_evidence"]["factor_attribution_status"] == "MISSING_ARTIFACT"
+    assert manifest["attribution_evidence"]["pnl_source_status"] == "MISSING_ARTIFACT"
+    assert manifest["attribution_evidence"]["attribution_artifact"] is None
     assert card["evidence_sources"][0]["artifact_type"] == "evidence_report"
     assert card["evidence_sources"][0]["exists"] is True
     assert "Missing ML Evidence" in card["missing_evidence"]
     assert "Missing Attribution" in card["missing_evidence"]
     assert "Missing Regime Evidence" in card["missing_evidence"]
+    assert "Missing Risk Evidence" in card["missing_evidence"]
     assert "Missing Robustness Evidence" in card["missing_evidence"]
 
 
@@ -479,6 +495,95 @@ def test_unmatched_selected_batch_job_is_visible_but_not_attached_as_fake_eviden
     assert manifest["attribution_status"] == "Missing Attribution"
     assert manifest["regime_evidence_status"] == "Missing Regime Evidence"
     assert manifest["robustness_status"] == "Missing Robustness Evidence"
+
+
+def test_strategy_intelligence_advanced_evidence_sections_include_existing_artifacts(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    uid = baseline["cards"][0]["strategy_uid"]
+    candidate_id = f"candidate-for-{uid}"
+    artifact = root / "output" / "strategy_factory" / "runs" / "advanced-lineage" / "artifact.json"
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text("{}", encoding="utf-8")
+    outputs = {
+        "research_cards": [],
+        "test_specs": [],
+        "evidence_reports": [],
+        "backtest_outputs": [],
+        "ml_gate_outputs": [
+            _lineage_item(
+                artifact_type="ml_gate_output",
+                artifact_path=str(artifact),
+                exists=True,
+                strategy_uid=uid,
+                candidate_id=candidate_id,
+                status="AVAILABLE",
+                labels=["Prototype Only"],
+            )
+        ],
+        "robustness_outputs": [],
+        "candidate_registry_updates": [],
+        "risk_outputs": [
+            _lineage_item(
+                artifact_type="risk_output",
+                artifact_path=str(artifact),
+                exists=True,
+                strategy_uid=uid,
+                candidate_id=candidate_id,
+                status="AVAILABLE",
+                labels=["Prototype Only"],
+            )
+        ],
+        "regime_outputs": [
+            _lineage_item(
+                artifact_type="regime_evidence",
+                artifact_path=str(artifact),
+                exists=True,
+                strategy_uid=uid,
+                candidate_id=candidate_id,
+                status="AVAILABLE",
+                labels=["Prototype Only"],
+            )
+        ],
+        "attribution_outputs": [
+            _lineage_item(
+                artifact_type="attribution_output",
+                artifact_path=str(artifact),
+                exists=True,
+                strategy_uid=uid,
+                candidate_id=candidate_id,
+                status="AVAILABLE",
+                labels=["Prototype Only"],
+            )
+        ],
+    }
+    _write_selected_batch_job(
+        root,
+        {
+            "ok": True,
+            "source": "strategy_factory_selected_batch_job_v1",
+            "job_id": "advanced-lineage-test-job",
+            "generated_at": "2026-06-30T00:00:00+00:00",
+            "selected_material_count": 1,
+            "selected_material_ids": ["test-material-id"],
+            "selected_material_hashes": ["test-material-hash"],
+            "outputs": outputs,
+        },
+    )
+
+    payload = build_strategy_intelligence_payload(root)
+    manifest = _cards_by_uid(payload)[uid]["evidence_manifest"]
+
+    assert manifest["interpretability_evidence"]["feature_importance_artifact"]["exists"] is True
+    assert manifest["interpretability_evidence"]["feature_importance_artifact"]["source"] == "selected_batch_lineage"
+    assert manifest["interpretability_evidence"]["interpretability_labels"] == ["Prototype Only"]
+    assert manifest["risk_evidence"]["risk_artifact"]["artifact_type"] == "risk_output"
+    assert manifest["risk_evidence"]["risk_artifact"]["exists"] is True
+    assert manifest["risk_evidence"]["var_status"] == "PENDING"
+    assert manifest["regime_evidence"]["regime_artifact"]["artifact_type"] == "regime_evidence"
+    assert manifest["regime_evidence"]["regime_tag_status"] == "PENDING"
+    assert manifest["attribution_evidence"]["attribution_artifact"]["artifact_type"] == "attribution_output"
+    assert manifest["attribution_evidence"]["return_attribution_status"] == "PENDING"
 
 
 def test_strategy_intelligence_endpoint_is_200_and_read_only_for_paper_artifacts():

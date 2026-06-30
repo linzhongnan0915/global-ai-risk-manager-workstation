@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from src.automation.daily_recommendation_artifact import read_latest_daily_recommendation_artifact
+from src.automation.risk_evidence import read_latest_risk_evidence_artifact
 from src.automation.blackbox_decomposition_manifest import (
     blackbox_decomposition_for_identity,
     build_blackbox_decomposition_manifest,
@@ -226,15 +227,80 @@ def _interpretability_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _risk_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
-    artifact = _first_available_item(matched, "risk_output", "risk_artifact", "stress_output")
-    available = artifact is not None
+def _risk_metric_status(context: dict[str, Any] | None, metric_name: str, fallback: str) -> str:
+    metrics = context.get("risk_metrics") if isinstance(context, dict) else {}
+    metric = metrics.get(metric_name) if isinstance(metrics, dict) else {}
+    status = metric.get("status") if isinstance(metric, dict) else None
+    return str(status or fallback)
+
+
+def _risk_context_summary(context: dict[str, Any] | None, fallback: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    if not isinstance(context, dict):
+        return None
+    fallback = fallback if isinstance(fallback, dict) else {}
     return {
-        "var_status": "PENDING" if available else "MISSING_ARTIFACT",
-        "cvar_status": "PENDING" if available else "MISSING_ARTIFACT",
-        "drawdown_stress_status": "PENDING" if available else "MISSING_ARTIFACT",
-        "risk_artifact": _advanced_artifact(artifact, "selected_batch_lineage") if available else None,
-        "missing_reason": None if available else _missing_advanced_reason("Missing Risk Evidence"),
+        "status": context.get("status"),
+        "observation_count": context.get("observation_count", fallback.get("observation_count")),
+        "window_start": context.get("window_start", fallback.get("window_start")),
+        "window_end": context.get("window_end", fallback.get("window_end")),
+        "risk_metrics": context.get("risk_metrics") if isinstance(context.get("risk_metrics"), dict) else {},
+        "labels": context.get("labels") if isinstance(context.get("labels"), list) else [],
+    }
+
+
+def _strategy_risk_context(artifact: dict[str, Any], strategy_uid: str) -> dict[str, Any] | None:
+    for row in artifact.get("strategy_risk_evidence") or []:
+        if isinstance(row, dict) and str(row.get("strategy_uid") or "") == strategy_uid:
+            return row
+    return None
+
+
+def _risk_artifact_summary(latest_risk: dict[str, Any]) -> dict[str, Any] | None:
+    if not latest_risk.get("artifact_path"):
+        return None
+    return {
+        "artifact_type": "risk_evidence_artifact",
+        "artifact_path": latest_risk.get("artifact_path"),
+        "exists": bool(latest_risk.get("ok")),
+        "status": latest_risk.get("status") or "NOT_AVAILABLE",
+        "source": "latest_risk_evidence_artifact",
+    }
+
+
+def _risk_evidence(card: dict[str, Any], latest_risk: dict[str, Any]) -> dict[str, Any]:
+    if not latest_risk.get("ok"):
+        return {
+            "risk_artifact": _risk_artifact_summary(latest_risk),
+            "portfolio_risk_context": None,
+            "strategy_risk_context": None,
+            "var_status": "MISSING_ARTIFACT",
+            "cvar_status": "MISSING_ARTIFACT",
+            "drawdown_stress_status": "MISSING_ARTIFACT",
+            "realized_volatility_status": "MISSING_ARTIFACT",
+            "missing_reason": latest_risk.get("message") or "No latest risk evidence artifact exists.",
+            "labels": ["Prototype Only", "Paper Only", "Missing Risk Evidence", "Institutional Validation Pending"],
+        }
+    artifact = latest_risk.get("artifact") if isinstance(latest_risk.get("artifact"), dict) else {}
+    portfolio_context = artifact.get("portfolio_risk_evidence") if isinstance(artifact.get("portfolio_risk_evidence"), dict) else {}
+    strategy_context = _strategy_risk_context(artifact, str(card.get("strategy_uid") or ""))
+    fallback = str(portfolio_context.get("status") or "MISSING_DATA")
+    labels = artifact.get("labels") if isinstance(artifact.get("labels"), list) else []
+    missing_reasons: list[str] = []
+    for row in artifact.get("missing_data") or []:
+        if isinstance(row, dict) and row.get("missing_reason"):
+            missing_reasons.append(str(row.get("missing_reason")))
+    if strategy_context is None:
+        missing_reasons.append("No strategy-level risk evidence matched this card by strategy_uid.")
+    return {
+        "risk_artifact": _risk_artifact_summary(latest_risk),
+        "portfolio_risk_context": _risk_context_summary(portfolio_context, artifact),
+        "strategy_risk_context": _risk_context_summary(strategy_context),
+        "var_status": _risk_metric_status(portfolio_context, "historical_var_95", fallback),
+        "cvar_status": _risk_metric_status(portfolio_context, "historical_cvar_95", fallback),
+        "drawdown_stress_status": _risk_metric_status(portfolio_context, "max_drawdown", fallback),
+        "realized_volatility_status": _risk_metric_status(portfolio_context, "realized_volatility", fallback),
+        "missing_reason": "; ".join(dict.fromkeys(missing_reasons)) or None,
+        "labels": labels or ["Prototype Only", "Paper Only", "Institutional Validation Pending"],
     }
 
 
@@ -261,7 +327,7 @@ def _attribution_evidence(matched: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict[str, Any]:
+def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any], latest_risk: dict[str, Any]) -> dict[str, Any]:
     card_ids = _card_identifiers(card)
     all_items = _selected_batch_lineage_items(latest_job)
     matched = [item for item in all_items if card_ids and card_ids.intersection(_lineage_item_identifiers(item))]
@@ -272,11 +338,16 @@ def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict
     robustness_available = _has_available_artifact(matched, "robustness_output")
     evidence_available = any(item.get("exists") is True for item in matched)
     missing = list(card.get("missing_evidence") or [])
+    risk_block = _risk_evidence(card, latest_risk)
+    risk_available = all(
+        risk_block.get(key) == "COMPUTED"
+        for key in ("var_status", "cvar_status", "drawdown_stress_status", "realized_volatility_status")
+    )
     for label, available in (
         ("Missing ML Evidence", ml_available),
         ("Missing Attribution", attribution_available),
         ("Missing Regime Evidence", regime_available),
-        ("Missing Risk Evidence", False),
+        ("Missing Risk Evidence", risk_available),
         ("Missing Robustness Evidence", robustness_available),
         ("Institutional Validation Pending", False),
         ("Prototype Only", False),
@@ -292,15 +363,15 @@ def _evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict
         "regime_evidence_status": _status_from_available(regime_available, "Missing Regime Evidence"),
         "robustness_status": _status_from_available(robustness_available, "Missing Robustness Evidence"),
         "interpretability_evidence": _interpretability_evidence(matched),
-        "risk_evidence": _risk_evidence(matched),
+        "risk_evidence": risk_block,
         "regime_evidence": _regime_evidence(matched),
         "attribution_evidence": _attribution_evidence(matched),
         "missing_evidence": list(dict.fromkeys(missing)),
     }
 
 
-def _apply_evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any]) -> dict[str, Any]:
-    manifest = _evidence_manifest(card, latest_job)
+def _apply_evidence_manifest(card: dict[str, Any], latest_job: dict[str, Any], latest_risk: dict[str, Any]) -> dict[str, Any]:
+    manifest = _evidence_manifest(card, latest_job, latest_risk)
     enriched = dict(card)
     enriched["evidence_manifest"] = manifest
     enriched["evidence_sources"] = manifest["evidence_sources"]
@@ -696,7 +767,8 @@ def build_strategy_intelligence_payload(root: Path | str, *, now: datetime | Non
     )
     cards = [_apply_identity_bridge(card, identity_bridge, factory_evidence, ml_patch_manifest, blackbox_manifest) for card in cards]
     latest_selected_batch_job = read_latest_strategy_factory_job(root)
-    cards = [_apply_evidence_manifest(card, latest_selected_batch_job) for card in cards]
+    latest_risk_evidence = read_latest_risk_evidence_artifact(root)
+    cards = [_apply_evidence_manifest(card, latest_selected_batch_job, latest_risk_evidence) for card in cards]
     daily_artifact = daily_latest.get("artifact") or {}
     daily_summary = daily_artifact.get("summary") if isinstance(daily_artifact, dict) else {}
     inventory = _entity_inventory(rows, {}, {}, {})

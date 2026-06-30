@@ -183,6 +183,11 @@ def test_selected_batch_job_writes_stage_artifact_without_financial_mutation(tmp
                 "run_id": run_id,
                 "batch_id": "test-batch-id",
                 "selected_material_ids": selected_material_ids,
+                "selected_materials": [
+                    {"material_id": material_id, "material_hash": f"hash-{idx}"}
+                    for idx, material_id in enumerate(selected_material_ids, start=1)
+                ],
+                "batch_manifest": {"source": "TEST_SELECTED_BATCH"},
                 "run_manifest_path": str(run_dir / "run_manifest.json"),
                 "batch_manifest_path": str(run_dir / "batch_manifest.json"),
                 "generated_artifacts": {
@@ -215,12 +220,35 @@ def test_selected_batch_job_writes_stage_artifact_without_financial_mutation(tmp
     assert result["ok"] is True
     assert result["job"]["selected_material_count"] == len(material_ids)
     assert result["job"]["selected_material_ids"] == material_ids
+    assert result["job"]["selected_material_hashes"] == ["hash-1", "hash-2", "hash-3"]
+    assert result["job"]["selection_source"] == "TEST_SELECTED_BATCH"
     assert result["job"]["financial_state_mutated"] is False
     assert result["job"]["safety"]["approved_plan_created"] is False
     assert result["job"]["safety"]["paper_apply_created"] is False
     assert (tmp_path / result["artifact_path"]).exists()
-    assert {row["status"] for row in result["job"]["stages"]} <= {"COMPLETE", "NOT_WIRED", "FAILED"}
+    assert {row["status"] for row in result["job"]["stages"]} <= {"BLOCKED", "COMPLETE", "NOT_WIRED", "FAILED"}
     assert all("name" in row and "output_count" in row for row in result["job"]["stages"])
+    outputs = result["job"]["outputs"]
+    for key in (
+        "research_cards",
+        "test_specs",
+        "evidence_reports",
+        "backtest_outputs",
+        "ml_gate_outputs",
+        "robustness_outputs",
+        "candidate_registry_updates",
+    ):
+        assert outputs[key]
+        assert all("artifact_type" in row for row in outputs[key])
+        assert all("exists" in row for row in outputs[key])
+        assert all("status" in row for row in outputs[key])
+        assert all("labels" in row for row in outputs[key])
+    assert outputs["research_cards"][0]["material_id"] == material_ids[0]
+    assert outputs["ml_gate_outputs"][0]["exists"] is False
+    assert "Missing ML Evidence" in outputs["ml_gate_outputs"][0]["labels"]
+    assert outputs["robustness_outputs"][0]["exists"] is False
+    assert "Missing Robustness Evidence" in outputs["robustness_outputs"][0]["labels"]
+    assert outputs["candidate_registry_updates"][0]["candidate_id"] == "test-candidate-id"
 
 
 def test_p0_generation_paths_do_not_mutate_canonical_paper_state(tmp_path: Path, monkeypatch) -> None:

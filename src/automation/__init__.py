@@ -11,6 +11,7 @@ __all__ = [
     "build_blackbox_decomposition_manifest",
     "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
+    "build_daily_report_artifact",
     "build_ml_intelligence_patch_manifest",
     "build_paper_allocation_proposal",
     "build_risk_evidence_artifact",
@@ -21,6 +22,7 @@ __all__ = [
     "read_latest_daily_cycle_status",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
+    "read_latest_daily_report_artifact",
     "read_latest_paper_allocation_proposal",
     "read_latest_risk_evidence_artifact",
     "read_latest_strategy_factory_job",
@@ -31,6 +33,7 @@ __all__ = [
     "write_blackbox_decomposition_manifest",
     "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
+    "write_daily_report_artifact",
     "write_ml_intelligence_patch_manifest",
     "write_paper_allocation_proposal",
     "write_paper_allocation_report",
@@ -227,6 +230,23 @@ def __getattr__(name: str) -> Any:
             "build_daily_recommendation_artifact": build_daily_recommendation_artifact,
             "read_latest_daily_recommendation_artifact": read_latest_daily_recommendation_artifact,
             "write_daily_recommendation_artifact": write_daily_recommendation_artifact,
+        }
+        return exports[name]
+    if name in {
+        "build_daily_report_artifact",
+        "read_latest_daily_report_artifact",
+        "write_daily_report_artifact",
+    }:
+        from src.automation.daily_report import (
+            build_daily_report_artifact,
+            read_latest_daily_report_artifact,
+            write_daily_report_artifact,
+        )
+
+        exports = {
+            "build_daily_report_artifact": build_daily_report_artifact,
+            "read_latest_daily_report_artifact": read_latest_daily_report_artifact,
+            "write_daily_report_artifact": write_daily_report_artifact,
         }
         return exports[name]
     raise AttributeError(name)

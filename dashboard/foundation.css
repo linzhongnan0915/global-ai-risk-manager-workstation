@@ -488,6 +488,23 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .command-center .command-status-strip .metric-value{font-size:13px;line-height:1}
 .command-center .command-status-strip .metric-detail{display:none}
 .command-center .command-status-strip .sparkline{display:none}
+.command-center-pending{display:grid;gap:6px;align-content:start}
+.command-inline-status{min-height:34px;display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid #25525b;background:#061519;color:#d9eef2}
+.command-inline-status strong{font-size:11px;text-transform:uppercase}
+.command-inline-status span{min-width:0;color:#9fb4b7;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-inline-status.warning{border-color:#775b25;background:#171205}
+.command-summary-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.command-summary-strip .metric-card{height:62px}
+.command-source-strip{min-height:28px;display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:5px 7px;border:1px solid #244850;background:#041012;overflow:hidden}
+.command-source-strip span{display:inline-flex;align-items:center;gap:4px;color:#9fb4b7;font-size:8px;white-space:nowrap}
+.command-source-strip b{color:#cfe6e9;font-size:8px;text-transform:uppercase}
+.command-source-strip em{margin-left:auto;color:#ffd36c;font-size:8px;font-style:normal;white-space:nowrap}
+.source-badge{display:inline-flex;align-items:center;min-height:15px;margin-right:4px;padding:0 5px;border:1px solid #28535c;background:#071b1f;color:#cfe6e9;font-size:7px;font-weight:800;text-transform:uppercase;vertical-align:middle;white-space:nowrap}
+.source-paper{border-color:#2d7650;color:#a8f0bf}
+.source-official{border-color:#2d5f78;color:#a9dfff}
+.source-delayed{border-color:#8a6b27;color:#ffd36c}
+.source-missing{border-color:#733d3d;color:#ffb8b8}
+@media(max-width:1200px){.command-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .command-board{grid-template-rows:245px 225px 165px 150px}
 .command-board .allocation-body{height:187px;grid-template-columns:124px 1fr}
 .command-board .allocation-donut{width:112px;height:112px}

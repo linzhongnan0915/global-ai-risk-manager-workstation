@@ -467,8 +467,11 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
 
         page.on("console", capture_console)
         page.on("response", capture_bad_response)
+        startup_requests = []
+        page.on("request", lambda request: startup_requests.append({"method": request.method, "url": request.url}))
         page.goto(report["url"], wait_until="load", timeout=120000)
         page.wait_for_selector(".workflow-tabs, button[data-page]", timeout=120000)
+        page.wait_for_selector(".command-board", timeout=120000)
         page.wait_for_timeout(500)
         served_snapshot = page.evaluate(
             """async () => {
@@ -494,25 +497,35 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               return {text, metrics: summary};
             }"""
         )
-        summary_counts = page.evaluate(
-            """async () => {
-              const response = await fetch(`/api/snapshot-summary?ts=${Date.now()}`, {cache: 'no-store'});
-              const payload = await response.json();
-              return payload.counts || {};
+        command_startup_state = page.evaluate(
+            """() => {
+              const text = document.body.innerText || '';
+              const sourceText = document.querySelector('.command-source-strip')?.innerText || '';
+              const requests = window.__commandVerifierRequests || [];
+              return {
+                commandBoardVisible: document.querySelectorAll('.command-board').length === 1,
+                largeDetailGateVisible: /Detail Not Loaded|Operational Detail Pending|Pending Detail/i.test(text),
+                loadDetailsVisible: /Load Details|Load now/i.test(text),
+                sourceText,
+              };
             }"""
         )
-        report["checks"]["initial_load_summary_only"] = (
-            initial_metrics.get("snapshotLoadState") == "DETAIL_NOT_LOADED"
-            and "DETAIL NOT LOADED" in initial_body_upper
-            and "LOAD DETAILS" in initial_body_upper
+        refresh_posts = [
+            item for item in startup_requests
+            if item["method"] == "POST" and "/api/refresh-data" in item["url"]
+        ]
+        report["checks"]["command_center_direct_state_startup"] = (
+            command_startup_state["commandBoardVisible"] is True
+            and command_startup_state["largeDetailGateVisible"] is False
+            and command_startup_state["loadDetailsVisible"] is False
         )
-        report["api_checks"]["initial_rail_summary"] = initial_rail_state
-        rail_text = initial_rail_state.get("text", "")
-        report["checks"]["initial_rail_uses_summary_counts"] = (
-            f"Top-level active\n{summary_counts.get('top_level_active_count')}" in rail_text
-            and f"Ordinary\n{summary_counts.get('ordinary_active_count')}" in rail_text
-            and f"Combined\n{summary_counts.get('combined_active_count')}" in rail_text
-        )
+        report["checks"]["command_center_no_auto_post_refresh"] = len(refresh_posts) == 0
+        report["api_checks"]["command_center_startup"] = {
+            **command_startup_state,
+            "phase1Metrics": initial_metrics,
+            "refreshPosts": refresh_posts,
+            "initialRail": initial_rail_state,
+        }
         load_details = page.locator("[data-load-details]").first
         if load_details.count():
             load_details.click()
@@ -530,6 +543,22 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             and "COMBINED FAMILY MIX" not in initial_body_upper
             and "INVALID_EXECUTION_RECORD" not in initial_body_upper
         )
+        source_label_state = page.evaluate(
+            """() => {
+              const text = document.querySelector('.command-source-strip')?.innerText || '';
+              return {
+                text,
+                nav: /NAV\\s+(Paper Daily|Official Ledger|Delayed Estimate|Missing)/i.test(text),
+                pnl: /Daily P&L\\s+(Paper Daily|Official Ledger|Delayed Estimate|Missing)/i.test(text),
+                chart: /Chart\\s+(Paper Daily|Official Ledger|Delayed Estimate Marker|Missing)/i.test(text),
+                date: /Portfolio Date\\s+(Paper Daily|Official Ledger|Missing)/i.test(text),
+              };
+            }"""
+        )
+        report["checks"]["command_center_source_labels"] = all(
+            source_label_state[key] is True for key in ("nav", "pnl", "chart", "date")
+        )
+        report["api_checks"]["command_center_source_labels"] = source_label_state
         portfolio_label_state = {
             "portfolio_daily_date": "PORTFOLIO DAILY DATE" in initial_body_upper,
             "portfolio_daily_source": "PORTFOLIO DAILY SOURCE" in initial_body_upper,
@@ -580,12 +609,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                   || (/Recorded official closes/i.test(panel?.innerText || '') && /intraday pending until official close is recorded/i.test(panel?.innerText || ''))
                   || (/Official Ledger/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
                   || (/Paper Performance separate/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
-                  || (/Portfolio Daily/i.test(panel?.innerText || '') && /delayed intraday estimate/i.test(panel?.innerText || ''))
+                  || (/Portfolio Daily|Paper Daily/i.test(panel?.innerText || '') && /Delayed Estimate|delayed intraday estimate/i.test(panel?.innerText || ''))
                 ),
                 titleFullVisible: /Master Portfolio Daily Performance/i.test(title?.innerText || panel?.innerText || ''),
                 detailStripPresent: Boolean(detail),
                 detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
-                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Est\\.|Portfolio Daily/i.test(hoverText || detail?.innerText || ''),
+                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Estimate|Delayed Est\\.|Portfolio Daily|Paper Daily/i.test(hoverText || detail?.innerText || ''),
                 floatingTooltipVisible: tooltip ? getComputedStyle(tooltip).display !== 'none' && tooltip.classList.contains('visible') : false,
                 legendOverlapsCanvas: Boolean(cr && lr && overlap(lr, cr)),
                 detailOverlapsCanvas: Boolean(cr && dr && overlap(dr, cr)),

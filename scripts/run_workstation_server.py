@@ -171,8 +171,8 @@ def background_paper_rebalance_apply_check(root: Path, *, snapshot: dict) -> dic
     }
 
 
-def paper_apply_confirmation_error(body: dict) -> str | None:
-    if not str(body.get("plan_id") or "").strip():
+def paper_apply_confirmation_error(body: dict, *, require_plan_id: bool = True) -> str | None:
+    if require_plan_id and not str(body.get("plan_id") or "").strip():
         return "plan_id required"
     if body.get("apply_confirmation") is not True:
         return "apply_confirmation=true required for paper rebalance apply"
@@ -1486,6 +1486,10 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     self._send_json(self._paper_rebalance_response({"approved_rebalance_plan": plan}), status=201)
                     return
                 if parsed.path.rstrip("/").endswith("/apply-due"):
+                    confirmation_error = paper_apply_confirmation_error(body, require_plan_id=False)
+                    if confirmation_error:
+                        self._send_json({"ok": False, "error": confirmation_error, "paper_apply_gated": True}, status=400)
+                        return
                     snapshot = load_operational_snapshot_for_response(
                         self.server_root,
                         scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),
@@ -1498,6 +1502,10 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     self._send_json(self._paper_rebalance_response({"paper_apply_result": result}))
                     return
                 if parsed.path.rstrip("/").endswith("/apply-approved"):
+                    confirmation_error = paper_apply_confirmation_error(body)
+                    if confirmation_error:
+                        self._send_json({"ok": False, "error": confirmation_error, "paper_apply_gated": True}, status=400)
+                        return
                     snapshot = load_operational_snapshot_for_response(
                         self.server_root,
                         scheduler_enabled=bool(getattr(WorkstationHandler, "intraday_scheduler_enabled", False)),

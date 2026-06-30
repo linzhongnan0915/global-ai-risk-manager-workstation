@@ -185,3 +185,81 @@ def test_explicit_apply_with_confirmation_reaches_existing_apply_path(tmp_path, 
     assert calls == [(root, "test-plan-id")]
     assert payload["current_paper_target"]["execution_mode"] == "Paper Only"
     assert payload["current_paper_target"]["live_brokerage_fill"] == "No"
+
+
+def test_apply_approved_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
+    root = _root_with_plan(tmp_path)
+    before = _hashes(root)
+    calls: list[str | None] = []
+    monkeypatch.setattr(
+        server_module,
+        "apply_approved_rebalance_plan",
+        lambda server_root, snapshot, plan_id=None: calls.append(plan_id) or {"ok": True},
+    )
+
+    with _ServerFixture(root) as base:
+        status, payload = _post_json(f"{base}/api/paper-rebalance/apply-approved", {"plan_id": "test-plan-id"})
+
+    assert status == 400
+    assert payload["paper_apply_gated"] is True
+    assert "apply_confirmation" in payload["error"]
+    assert calls == []
+    assert _hashes(root) == before
+
+
+def test_apply_due_without_confirmation_is_rejected_without_mutation(tmp_path, monkeypatch) -> None:
+    root = _root_with_plan(tmp_path)
+    before = _hashes(root)
+    calls: list[Path] = []
+    monkeypatch.setattr(
+        server_module,
+        "apply_due_approved_rebalance_plan",
+        lambda server_root, snapshot: calls.append(server_root) or {"ok": True},
+    )
+
+    with _ServerFixture(root) as base:
+        status, payload = _post_json(f"{base}/api/paper-rebalance/apply-due", {})
+
+    assert status == 400
+    assert payload["paper_apply_gated"] is True
+    assert "apply_confirmation" in payload["error"]
+    assert calls == []
+    assert _hashes(root) == before
+
+
+def test_apply_approved_with_confirmation_reaches_existing_apply_path(tmp_path, monkeypatch) -> None:
+    root = _root_with_plan(tmp_path)
+    calls: list[tuple[Path, dict, str | None]] = []
+
+    def fake_apply_approved(server_root: Path, snapshot: dict, plan_id: str | None = None) -> dict:
+        calls.append((server_root, snapshot, plan_id))
+        return {
+            "ok": True,
+            "applied_status": "Applied to Paper Allocation",
+            "execution_mode": "Paper Only",
+            "live_brokerage_fill": "No",
+        }
+
+    monkeypatch.setattr(server_module, "load_operational_snapshot_for_response", lambda *args, **kwargs: {"snapshot": "ok"})
+    monkeypatch.setattr(server_module, "apply_approved_rebalance_plan", fake_apply_approved)
+    monkeypatch.setattr(WorkstationHandler, "warm_operational_snapshot_cache", classmethod(lambda cls, *args, **kwargs: None))
+    monkeypatch.setattr(
+        WorkstationHandler,
+        "_paper_rebalance_response",
+        lambda self, extra=None: {"ok": True, **(extra or {})},
+    )
+
+    with _ServerFixture(root) as base:
+        status, payload = _post_json(
+            f"{base}/api/paper-rebalance/apply-approved",
+            {
+                "plan_id": "test-plan-id",
+                "apply_confirmation": True,
+                "confirmation_text": server_module.PAPER_APPLY_CONFIRMATION_TEXT,
+            },
+        )
+
+    assert status == 200
+    assert calls == [(root, {"snapshot": "ok"}, "test-plan-id")]
+    assert payload["paper_apply_result"]["execution_mode"] == "Paper Only"
+    assert payload["paper_apply_result"]["live_brokerage_fill"] == "No"

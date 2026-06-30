@@ -331,6 +331,76 @@ def _write_selected_batch_job(root: Path, job: dict) -> None:
     (job_dir / f"{job['job_id']}.json").write_text(json.dumps(job, indent=2), encoding="utf-8")
 
 
+def _write_risk_evidence_artifact(root: Path, artifact: dict) -> Path:
+    path = root / "data" / "automation" / "risk_evidence" / "20260630T000000.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return path
+
+
+def _risk_metric(metric: str, status: str, value: float | None = None) -> dict:
+    return {
+        "metric": metric,
+        "status": status,
+        "value": value,
+        "observation_count": 5,
+        "min_observations_required": 20 if metric in {"historical_var_95", "historical_cvar_95"} else 2,
+        "missing_reason": None if status == "COMPUTED" else "Only 5 observations are available; 20 are required.",
+    }
+
+
+def _risk_artifact_for_test(strategy_uid: str, *, matched_strategy: bool = True) -> dict:
+    labels = [
+        "Prototype Only",
+        "Paper Only",
+        "Institutional Validation Pending",
+        "Missing Risk Evidence",
+        "Insufficient Risk History",
+    ]
+    portfolio = {
+        "status": "PARTIAL",
+        "observation_count": 5,
+        "window_start": "2026-06-04",
+        "window_end": "2026-06-11",
+        "risk_metrics": {
+            "historical_var_95": _risk_metric("historical_var_95", "INSUFFICIENT_HISTORY"),
+            "historical_cvar_95": _risk_metric("historical_cvar_95", "INSUFFICIENT_HISTORY"),
+            "max_drawdown": _risk_metric("max_drawdown", "COMPUTED", -0.02),
+            "realized_volatility": _risk_metric("realized_volatility", "COMPUTED", 0.01),
+        },
+        "labels": labels,
+    }
+    return {
+        "ok": True,
+        "source": "risk_evidence_artifact_v0",
+        "schema_version": "0.1.0",
+        "generated_at": "2026-06-30T00:00:00+00:00",
+        "paper_shadow_only": True,
+        "financial_state_mutated": False,
+        "input_source": "unit_test",
+        "input_artifacts": ["unit-test"],
+        "observation_count": 5,
+        "window_start": "2026-06-04",
+        "window_end": "2026-06-11",
+        "methodology": {"annualized": False, "confidence_level": 0.95},
+        "portfolio_risk_evidence": portfolio,
+        "strategy_risk_evidence": [
+            {
+                **portfolio,
+                "strategy_uid": strategy_uid if matched_strategy else f"not-{strategy_uid}",
+            }
+        ],
+        "missing_data": [
+            {
+                "scope": "portfolio_tail_metrics",
+                "status": "INSUFFICIENT_HISTORY",
+                "missing_reason": "5 observations found; 20 are required for historical VaR/CVaR.",
+            }
+        ],
+        "labels": labels,
+    }
+
+
 def _lineage_item(
     *,
     artifact_type: str,
@@ -448,6 +518,68 @@ def test_strategy_intelligence_cards_include_selected_batch_evidence_manifest(tm
     assert "Missing Regime Evidence" in card["missing_evidence"]
     assert "Missing Risk Evidence" in card["missing_evidence"]
     assert "Missing Robustness Evidence" in card["missing_evidence"]
+
+
+def test_strategy_intelligence_risk_evidence_missing_without_artifact(tmp_path: Path):
+    root = _copy_root(tmp_path)
+
+    payload = build_strategy_intelligence_payload(root)
+    risk = payload["cards"][0]["evidence_manifest"]["risk_evidence"]
+
+    assert risk["var_status"] == "MISSING_ARTIFACT"
+    assert risk["cvar_status"] == "MISSING_ARTIFACT"
+    assert risk["drawdown_stress_status"] == "MISSING_ARTIFACT"
+    assert risk["realized_volatility_status"] == "MISSING_ARTIFACT"
+    assert risk["risk_artifact"] is None
+    assert risk["portfolio_risk_context"] is None
+    assert risk["strategy_risk_context"] is None
+    assert "Missing Risk Evidence" in risk["labels"]
+
+
+def test_strategy_intelligence_links_portfolio_risk_artifact_insufficient_history(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    uid = baseline["cards"][0]["strategy_uid"]
+    _write_risk_evidence_artifact(root, _risk_artifact_for_test(uid))
+
+    payload = build_strategy_intelligence_payload(root)
+    risk = _cards_by_uid(payload)[uid]["evidence_manifest"]["risk_evidence"]
+
+    assert risk["risk_artifact"]["artifact_type"] == "risk_evidence_artifact"
+    assert risk["var_status"] == "INSUFFICIENT_HISTORY"
+    assert risk["cvar_status"] == "INSUFFICIENT_HISTORY"
+    assert risk["drawdown_stress_status"] == "COMPUTED"
+    assert risk["realized_volatility_status"] == "COMPUTED"
+    assert risk["portfolio_risk_context"]["risk_metrics"]["historical_var_95"]["status"] == "INSUFFICIENT_HISTORY"
+    assert "Insufficient Risk History" in risk["labels"]
+    assert risk["var_status"] != "AVAILABLE"
+
+
+def test_strategy_intelligence_attaches_strategy_risk_by_strategy_uid_only(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    uid = baseline["cards"][0]["strategy_uid"]
+    _write_risk_evidence_artifact(root, _risk_artifact_for_test(uid))
+
+    payload = build_strategy_intelligence_payload(root)
+    risk = _cards_by_uid(payload)[uid]["evidence_manifest"]["risk_evidence"]
+
+    assert risk["strategy_risk_context"]["status"] == "PARTIAL"
+    assert risk["strategy_risk_context"]["risk_metrics"]["max_drawdown"]["value"] == -0.02
+
+
+def test_strategy_intelligence_does_not_attach_unmatched_strategy_risk(tmp_path: Path):
+    root = _copy_root(tmp_path)
+    baseline = build_strategy_intelligence_payload(root)
+    uid = baseline["cards"][0]["strategy_uid"]
+    _write_risk_evidence_artifact(root, _risk_artifact_for_test(uid, matched_strategy=False))
+
+    payload = build_strategy_intelligence_payload(root)
+    risk = _cards_by_uid(payload)[uid]["evidence_manifest"]["risk_evidence"]
+
+    assert risk["portfolio_risk_context"]["status"] == "PARTIAL"
+    assert risk["strategy_risk_context"] is None
+    assert "No strategy-level risk evidence matched this card by strategy_uid." in risk["missing_reason"]
 
 
 def test_unmatched_selected_batch_job_is_visible_but_not_attached_as_fake_evidence(tmp_path: Path):
@@ -577,9 +709,8 @@ def test_strategy_intelligence_advanced_evidence_sections_include_existing_artif
     assert manifest["interpretability_evidence"]["feature_importance_artifact"]["exists"] is True
     assert manifest["interpretability_evidence"]["feature_importance_artifact"]["source"] == "selected_batch_lineage"
     assert manifest["interpretability_evidence"]["interpretability_labels"] == ["Prototype Only"]
-    assert manifest["risk_evidence"]["risk_artifact"]["artifact_type"] == "risk_output"
-    assert manifest["risk_evidence"]["risk_artifact"]["exists"] is True
-    assert manifest["risk_evidence"]["var_status"] == "PENDING"
+    assert manifest["risk_evidence"]["risk_artifact"] is None
+    assert manifest["risk_evidence"]["var_status"] == "MISSING_ARTIFACT"
     assert manifest["regime_evidence"]["regime_artifact"]["artifact_type"] == "regime_evidence"
     assert manifest["regime_evidence"]["regime_tag_status"] == "PENDING"
     assert manifest["attribution_evidence"]["attribution_artifact"]["artifact_type"] == "attribution_output"

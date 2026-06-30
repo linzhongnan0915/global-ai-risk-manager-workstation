@@ -213,6 +213,206 @@ def _assert_geometry(report: dict, geometry: dict, viewport: tuple[int, int], ta
     }
 
 
+def _open_page(page, tab: str) -> None:
+    button = page.locator(f'button[data-page="{tab}"]').first
+    if button.count():
+        button.click()
+    else:
+        page.get_by_role("button", name=tab).click()
+    page.wait_for_timeout(500)
+
+
+def _run_core_friction_checks(page, report: dict) -> None:
+    core_tabs = [
+        "Portfolio Command Center",
+        "Strategy Intelligence",
+        "Allocation & Rebalance",
+        "Strategy Factory",
+    ]
+    core_tab_results = {}
+    generic_results = {}
+    for tab in core_tabs:
+        _open_page(page, tab)
+        text = page.locator("body").inner_text()
+        state = page.evaluate(
+            """
+            () => {
+              const stage = document.querySelector('.main-stage');
+              const rect = stage?.getBoundingClientRect();
+              const aboveFoldText = [...document.querySelectorAll('.main-stage *')]
+                .filter((el) => {
+                  const r = el.getBoundingClientRect();
+                  return r.bottom > 0 && r.top < window.innerHeight && r.width > 0 && r.height > 0;
+                })
+                .map((el) => el.innerText || '')
+                .join('\\n')
+                .trim();
+              const bodyStart = (document.body?.innerText || '').trim().slice(0, 1200);
+              return {
+                hasStage: Boolean(stage),
+                stageHeight: rect?.height || 0,
+                stageWidth: rect?.width || 0,
+                stageTextLength: (stage?.innerText || '').trim().length,
+                aboveFoldTextLength: aboveFoldText.length,
+                conflictMarkers: /<<<<<<<|=======|>>>>>>>/.test(document.body?.innerText || ''),
+                rawJsonWall: /^\\s*[\\[{][\\s\\S]{200,}/.test(bodyStart) && /"\\w+"\\s*:/.test(bodyStart),
+                horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+              };
+            }
+            """
+        )
+        core_tab_results[tab] = tab in text and state["hasStage"] and state["stageTextLength"] > 40
+        generic_results[tab] = {
+            **state,
+            "no_giant_blank_main_stage": state["stageHeight"] > 120 and state["stageWidth"] > 600 and state["aboveFoldTextLength"] > 40,
+            "no_conflict_markers": not state["conflictMarkers"],
+            "no_raw_json_wall_above_fold": not state["rawJsonWall"],
+            "no_horizontal_overflow": not state["horizontalOverflow"],
+        }
+
+    report["api_checks"]["core_tabs_open"] = core_tab_results
+    report["checks"]["core_tabs_open"] = all(core_tab_results.values())
+    report["api_checks"]["generic_friction_checks"] = generic_results
+    report["checks"]["generic_no_giant_blank_main_stage"] = all(
+        row["no_giant_blank_main_stage"] for row in generic_results.values()
+    )
+    report["checks"]["generic_no_conflict_markers"] = all(
+        row["no_conflict_markers"] for row in generic_results.values()
+    )
+    report["checks"]["generic_no_raw_json_wall"] = all(
+        row["no_raw_json_wall_above_fold"] for row in generic_results.values()
+    )
+
+    _open_page(page, "Strategy Intelligence")
+    intelligence = page.evaluate(
+        """
+        async () => {
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const stage = document.querySelector('.main-stage') || document.scrollingElement;
+          const buttons = [...document.querySelectorAll('[data-intel-uid]')].filter((button) => button.dataset.intelUid);
+          const detailUid = () => document.querySelector('.strategy-intelligence-detail-header span')?.innerText?.trim() || '';
+          const activeUid = () => document.querySelector('[data-intel-uid].active')?.dataset?.intelUid || detailUid();
+          if (stage) stage.scrollTop = Math.min(220, Math.max(0, stage.scrollHeight - stage.clientHeight));
+          await sleep(80);
+          const beforeUid = activeUid();
+          const target = buttons.find((button) => button.dataset.intelUid !== beforeUid) || buttons[0];
+          const before = {
+            selectedUid: beforeUid,
+            detailUid: detailUid(),
+            stageTop: stage?.scrollTop || 0,
+            windowY: window.scrollY || 0,
+            buttonCount: buttons.length,
+          };
+          if (target) target.click();
+          await sleep(550);
+          const nextStage = document.querySelector('.main-stage') || document.scrollingElement;
+          const after = {
+            selectedUid: activeUid(),
+            detailUid: detailUid(),
+            stageTop: nextStage?.scrollTop || 0,
+            windowY: window.scrollY || 0,
+          };
+          return {
+            before,
+            after,
+            selected_detail_changes: buttons.length > 1 ? after.selectedUid !== before.selectedUid : after.selectedUid === before.selectedUid,
+            page_did_not_jump_to_top: before.stageTop <= 2 || after.stageTop > 2,
+          };
+        }
+        """
+    )
+    report["api_checks"]["strategy_intelligence_interaction"] = intelligence
+    report["checks"]["strategy_intelligence_selection_changes_detail"] = (
+        intelligence.get("selected_detail_changes") is True
+    )
+    report["checks"]["strategy_intelligence_selection_preserves_scroll"] = (
+        intelligence.get("page_did_not_jump_to_top") is True
+    )
+
+    _open_page(page, "Strategy Factory")
+    factory_before = page.evaluate(
+        """
+        () => {
+          const stage = document.querySelector('.main-stage') || document.scrollingElement;
+          if (stage) stage.scrollTop = 0;
+          const target = document.querySelector('.strategy-factory-page .factory-material-window')
+            || document.querySelector('.strategy-factory-page')
+            || stage;
+          const rect = target?.getBoundingClientRect();
+          return {
+            before_scroll_y: window.scrollY || 0,
+            before_stage_top: stage?.scrollTop || 0,
+            before_target_top: target?.scrollTop || 0,
+            target_selector: target?.className || target?.tagName || '',
+            target_scroll_height: target?.scrollHeight || 0,
+            target_client_height: target?.clientHeight || 0,
+            point: rect ? {x: rect.left + rect.width / 2, y: rect.top + Math.min(rect.height / 2, 120)} : {x: window.innerWidth / 2, y: window.innerHeight / 2},
+          };
+        }
+        """
+    )
+    page.mouse.move(factory_before["point"]["x"], factory_before["point"]["y"])
+    page.mouse.wheel(0, 700)
+    page.wait_for_timeout(350)
+    factory_after = page.evaluate(
+        """
+        () => {
+          const stage = document.querySelector('.main-stage') || document.scrollingElement;
+          const target = document.querySelector('.strategy-factory-page .factory-material-window')
+            || document.querySelector('.strategy-factory-page')
+            || stage;
+          return {
+            after_scroll_y: window.scrollY || 0,
+            after_stage_top: stage?.scrollTop || 0,
+            after_target_top: target?.scrollTop || 0,
+          };
+        }
+        """
+    )
+    factory_scroll = {**factory_before, **factory_after}
+    factory_scroll["stage_scroll_delta"] = factory_scroll["after_stage_top"] - factory_scroll["before_stage_top"]
+    factory_scroll["target_scroll_delta"] = factory_scroll["after_target_top"] - factory_scroll["before_target_top"]
+    factory_scroll["window_scroll_delta"] = factory_scroll["after_scroll_y"] - factory_scroll["before_scroll_y"]
+    factory_scroll["scroll_position_changed"] = any(
+        abs(factory_scroll[key]) > 2
+        for key in ("stage_scroll_delta", "target_scroll_delta", "window_scroll_delta")
+    )
+    report["api_checks"]["strategy_factory_scroll_behavior"] = factory_scroll
+    report["checks"]["strategy_factory_wheel_not_locked"] = factory_scroll["scroll_position_changed"] is True
+
+    _open_page(page, "Allocation & Rebalance")
+    allocation = page.evaluate(
+        """
+        () => {
+          const body = document.body?.innerText || '';
+          const proposalTable = document.querySelector('.p0-proposal-table');
+          const compactMissing = /No P0 paper allocation proposal generated yet/i.test(body);
+          const commandPanel = [...document.querySelectorAll('.panel')].find((panel) => /Proposal Operations|Operator/i.test(panel.innerText || ''));
+          const approvedPlanSeparate = /Existing Approved Paper Plan\\s+—\\s+Not Current P0 Proposal|Existing Approved Paper Plan - Not Current P0 Proposal/i.test(body);
+          const unsafeButtons = [...document.querySelectorAll('button')].filter((button) => /Approve Proposal|Manual Rebalance/i.test(button.innerText || ''));
+          return {
+            proposal_table_exists: Boolean(proposalTable),
+            compact_missing_proposal_state_exists: compactMissing,
+            right_command_panel_exists: Boolean(commandPanel),
+            existing_approved_plan_separate: approvedPlanSeparate,
+            unsafe_action_count: unsafeButtons.length,
+            unsafe_actions_disabled: unsafeButtons.every((button) => button.disabled || button.getAttribute('aria-disabled') === 'true'),
+            unsafe_action_labels: unsafeButtons.map((button) => ({text: button.innerText, disabled: button.disabled})),
+          };
+        }
+        """
+    )
+    report["api_checks"]["allocation_operator_states"] = allocation
+    report["checks"]["allocation_p0_table_or_compact_empty_state"] = (
+        allocation["proposal_table_exists"] or allocation["compact_missing_proposal_state_exists"]
+    )
+    report["checks"]["allocation_right_command_panel_exists"] = allocation["right_command_panel_exists"] is True
+    report["checks"]["allocation_approved_plan_separate"] = allocation["existing_approved_plan_separate"] is True
+    report["checks"]["allocation_future_unsafe_actions_disabled"] = (
+        allocation["unsafe_action_count"] >= 2 and allocation["unsafe_actions_disabled"] is True
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify Risk Manager workstation in browser.")
     parser.add_argument("--no-screenshots", action="store_true", help="Skip screenshot capture; geometry and interaction checks only.")
@@ -420,6 +620,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             page.wait_for_timeout(500)
 
         if True:
+            _run_core_friction_checks(page, report)
             workflow_tabs = [
                 "Portfolio Command Center",
                 "Strategy Monitor",

@@ -136,6 +136,7 @@ GZIP_EXTENSIONS = {".html", ".htm", ".js", ".css", ".json", ".svg"}
 MANUAL_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("MANUAL_REFRESH_COOLDOWN_SECONDS", "60"))
 BOOTSTRAP_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("BOOTSTRAP_REFRESH_COOLDOWN_SECONDS", "60"))
 BACKGROUND_PAPER_APPLY_ENV = "GLOBALAI_ALLOW_BACKGROUND_PAPER_APPLY"
+PAPER_APPLY_CONFIRMATION_TEXT = "APPLY_PAPER_REBALANCE"
 
 
 def background_paper_apply_enabled() -> bool:
@@ -167,6 +168,16 @@ def background_paper_rebalance_apply_check(root: Path, *, snapshot: dict) -> dic
             else status.get("message", "background paper apply gated")
         ),
     }
+
+
+def paper_apply_confirmation_error(body: dict) -> str | None:
+    if not str(body.get("plan_id") or "").strip():
+        return "plan_id required"
+    if body.get("apply_confirmation") is not True:
+        return "apply_confirmation=true required for paper rebalance apply"
+    if body.get("confirmation_text") != PAPER_APPLY_CONFIRMATION_TEXT:
+        return f'confirmation_text must equal "{PAPER_APPLY_CONFIRMATION_TEXT}"'
+    return None
 
 
 def resolve_server_bind(host: str | None = None, port: int | None = None) -> tuple[str, int]:
@@ -1512,6 +1523,10 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                     self._send_json(self._paper_rebalance_response({"plan": plan}))
                     return
                 if parsed.path.rstrip("/").endswith("/apply"):
+                    confirmation_error = paper_apply_confirmation_error(body)
+                    if confirmation_error:
+                        self._send_json({"ok": False, "error": confirmation_error, "paper_apply_gated": True}, status=400)
+                        return
                     result = apply_paper_rebalance_plan(self.server_root, plan_id)
                     self.warm_operational_snapshot_cache(self.server_root)
                     self._send_json(self._paper_rebalance_response(result))

@@ -57,3 +57,8 @@ data/reference/worldquant_alpha2_pilot_universe_500.csv
 # Generated WorldQuant Alpha #2 market-data files
 data/raw/worldquant_alpha2/*
 !data/raw/worldquant_alpha2/.gitkeep
+
+# Generated P0 paper allocation + strategy factory runtime artifacts (never commit)
+data/automation/allocation_proposals/
+data/automation/allocation_reports/
+data/strategy_factory/jobs/

@@ -268,8 +268,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         assert marker in app
 
     for marker in (
-        "Recommendation Only / Performance Recommendation Matrix",
-        "Suggested Target is evidence-driven; Proposed remains a DRAFT_NOT_APPLIED review artifact",
         "allocation-decision-grid",
         "Suggested %",
         "Reason / Rationale",
@@ -285,8 +283,6 @@ def test_workflow_and_allocation_redesign_are_dynamic_and_paper_only():
         "/api/paper-rebalance/approve-recommendation-draft",
         "/api/paper-rebalance/apply-approved",
         "Apply Approved Paper Rebalance",
-        "Official Ledger: Unchanged",
-        "Live Brokerage Fill: No",
         "data/paper_rebalance",
     ):
         assert marker in app

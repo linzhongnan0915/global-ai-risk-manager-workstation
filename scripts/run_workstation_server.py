@@ -34,6 +34,7 @@ from src.automation import (
     create_review_draft_from_allocation_recommendation,
     read_latest_daily_cycle_status,
     read_latest_daily_allocation_recommendation,
+    read_latest_biweekly_rebalance_proposal,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
     read_latest_daily_report_artifact,
@@ -46,6 +47,7 @@ from src.automation import (
     write_allocation_recommendation_artifact,
     write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
+    write_biweekly_rebalance_proposal_artifact,
     write_daily_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
     write_daily_report_artifact,
@@ -816,6 +818,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="daily-allocation-recommendations-latest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/biweekly-rebalance-proposal/latest",
+            "/api/automation-intelligence/biweekly-rebalance-proposal/latest/",
+        }:
+            try:
+                latest = read_latest_biweekly_rebalance_proposal(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="biweekly-rebalance-proposal-latest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/allocation-recommendations/latest",
             "/api/automation-intelligence/allocation-recommendations/latest/",
         }:
@@ -1055,6 +1067,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(write_daily_allocation_recommendation_artifact(self.server_root), status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="daily-allocation-recommendations-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/biweekly-rebalance-proposal/generate",
+            "/api/automation-intelligence/biweekly-rebalance-proposal/generate/",
+        }:
+            try:
+                result = write_biweekly_rebalance_proposal_artifact(self.server_root)
+                self._send_json(result, status=201 if result.get("ok") else 409)
+            except Exception as exc:
+                self._send_safe_error(exc, context="biweekly-rebalance-proposal-generate")
             return
         if parsed.path in {
             "/api/automation-intelligence/allocation-recommendations/generate",

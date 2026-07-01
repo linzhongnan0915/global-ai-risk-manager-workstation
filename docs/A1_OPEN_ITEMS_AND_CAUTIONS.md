@@ -26,15 +26,20 @@ Next PR:
 - Command Center freshness verification / post-merge audit if needed
 
 2. Daily Allocation Recommendation Engine
-Status: NOT DONE
+Status: PARTIAL
+Already done:
+- daily_allocation_recommendation_artifact_v1 backend artifact implemented
 Requirement:
 - every eligible strategy must receive a daily recommended target weight
 - output recommended_weight, current_weight, delta, action, rationale, evidence status, risk status
 - actions: HOLD / INCREASE / REDUCE / REVIEW / ZERO_WEIGHT
 - no hardcoded strategy names/counts/weights
 - no paper apply
+Still open:
+- Allocation UI wiring for daily allocation recommendation artifact
+- automation control layer wiring
 Next PR:
-- daily allocation recommendation artifact/spec
+- Allocation UI / automation control layer wiring
 
 3. Biweekly Rebalance Proposal
 Status: NOT DONE

@@ -11,6 +11,7 @@ __all__ = [
     "build_blackbox_decomposition_manifest",
     "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
+    "build_daily_allocation_recommendation_artifact",
     "build_daily_report_artifact",
     "build_ml_intelligence_patch_manifest",
     "build_paper_allocation_proposal",
@@ -20,6 +21,7 @@ __all__ = [
     "build_strategy_factory_evidence_manifest",
     "create_review_draft_from_allocation_recommendation",
     "read_latest_daily_cycle_status",
+    "read_latest_daily_allocation_recommendation",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
     "read_latest_daily_report_artifact",
@@ -33,6 +35,7 @@ __all__ = [
     "write_blackbox_decomposition_manifest",
     "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
+    "write_daily_allocation_recommendation_artifact",
     "write_daily_report_artifact",
     "write_ml_intelligence_patch_manifest",
     "write_paper_allocation_proposal",
@@ -213,6 +216,23 @@ def __getattr__(name: str) -> Any:
             "read_latest_strategy_factory_job": read_latest_strategy_factory_job,
             "read_strategy_factory_job": read_strategy_factory_job,
             "run_selected_batch_job": run_selected_batch_job,
+        }
+        return exports[name]
+    if name in {
+        "build_daily_allocation_recommendation_artifact",
+        "read_latest_daily_allocation_recommendation",
+        "write_daily_allocation_recommendation_artifact",
+    }:
+        from src.automation.daily_allocation_recommendation import (
+            build_daily_allocation_recommendation_artifact,
+            read_latest_daily_allocation_recommendation,
+            write_daily_allocation_recommendation_artifact,
+        )
+
+        exports = {
+            "build_daily_allocation_recommendation_artifact": build_daily_allocation_recommendation_artifact,
+            "read_latest_daily_allocation_recommendation": read_latest_daily_allocation_recommendation,
+            "write_daily_allocation_recommendation_artifact": write_daily_allocation_recommendation_artifact,
         }
         return exports[name]
     if name in {

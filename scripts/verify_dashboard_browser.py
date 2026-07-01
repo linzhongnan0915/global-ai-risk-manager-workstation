@@ -808,6 +808,13 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 ("reports", "Daily Risk Report"),
                 ("risk", "Risk Factors & Exposure"),
             ]
+            rail_content_markers = {
+                "Universe & Data Coverage": ["Universe & Data Coverage", "Data Source Status"],
+                "Workflow & Shadow-Live Testing": ["Workflow & Shadow-Live Testing", "workflow-map-page"],
+                "Strategy Library & Governance": ["Strategy Library & Governance", "Registry Entities"],
+                "Daily Risk Report": ["Daily Risk Report / Decision Log", "Daily strategy summary"],
+                "Risk Factors & Exposure": ["Risk Factor Exposure Matrix", "Risk Factors"],
+            }
             rail_results = {}
             for rail_key, expected_tab in rail_checks:
                 page.locator(f'[data-rail-key="{rail_key}"]').click()
@@ -819,11 +826,30 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 page.wait_for_timeout(350)
                 top_active = page.locator(f'button[data-page="{expected_tab}"].active').count() == 1
                 rail_active = page.locator(f'button[data-rail-key="{rail_key}"].active').count() == 1
-                stage_has_content = page.evaluate(
-                    "() => (document.querySelector('.main-stage')?.innerText || '').trim().length > 80"
+                content_state = page.evaluate(
+                    """
+                    (markers) => {
+                      const stage = document.querySelector('.main-stage');
+                      const text = stage?.innerText || '';
+                      const html = stage?.innerHTML || '';
+                      return {
+                        matched_markers: markers.filter((marker) => text.includes(marker) || html.includes(marker)),
+                        expected_markers: markers,
+                      };
+                    }
+                    """,
+                    arg=rail_content_markers[expected_tab],
                 )
-                rail_results[rail_key] = top_active and rail_active and stage_has_content
-            report["checks"]["left_rail_navigation"] = all(rail_results.values())
+                content_rendered = len(content_state["matched_markers"]) == len(content_state["expected_markers"])
+                rail_results[rail_key] = {
+                    "expected_tab": expected_tab,
+                    "top_active": top_active,
+                    "rail_active": rail_active,
+                    "content_rendered": content_rendered,
+                    **content_state,
+                    "passed": top_active and rail_active and content_rendered,
+                }
+            report["checks"]["left_rail_navigation"] = all(item["passed"] for item in rail_results.values())
             report["api_checks"]["left_rail_navigation"] = rail_results
             _open_page(page, "Strategy Monitor")
             page.wait_for_function(

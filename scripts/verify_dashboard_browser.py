@@ -309,6 +309,11 @@ def _open_page(page, tab: str) -> None:
         button.click()
     else:
         page.get_by_role("button", name=tab).click()
+    page.wait_for_function(
+        """(name) => document.querySelector(`button[data-page="${name}"].active`) !== null""",
+        arg=tab,
+        timeout=15000,
+    )
     page.wait_for_timeout(500)
 
 
@@ -803,23 +808,59 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 ("reports", "Daily Risk Report"),
                 ("risk", "Risk Factors & Exposure"),
             ]
+            rail_content_markers = {
+                "Universe & Data Coverage": ["Universe & Data Coverage", "Data Source Status"],
+                "Workflow & Shadow-Live Testing": ["Workflow & Shadow-Live Testing", "workflow-map-page"],
+                "Strategy Library & Governance": ["Strategy Library & Governance", "Registry Entities"],
+                "Daily Risk Report": ["Daily Risk Report / Decision Log", "Daily strategy summary"],
+                "Risk Factors & Exposure": ["Risk Factor Exposure Matrix", "Risk Factors"],
+            }
             rail_results = {}
             for rail_key, expected_tab in rail_checks:
                 page.locator(f'[data-rail-key="{rail_key}"]').click()
+                page.wait_for_function(
+                    """(name) => document.querySelector(`button[data-page="${name}"].active`) !== null""",
+                    arg=expected_tab,
+                    timeout=15000,
+                )
                 page.wait_for_timeout(350)
-                body_text = page.locator("body").inner_text()
                 top_active = page.locator(f'button[data-page="{expected_tab}"].active').count() == 1
                 rail_active = page.locator(f'button[data-rail-key="{rail_key}"].active').count() == 1
-                rail_results[rail_key] = expected_tab in body_text and top_active and rail_active
-            report["checks"]["left_rail_navigation"] = all(rail_results.values())
+                content_state = page.evaluate(
+                    """
+                    (markers) => {
+                      const stage = document.querySelector('.main-stage');
+                      const text = stage?.innerText || '';
+                      const html = stage?.innerHTML || '';
+                      return {
+                        matched_markers: markers.filter((marker) => text.includes(marker) || html.includes(marker)),
+                        expected_markers: markers,
+                      };
+                    }
+                    """,
+                    arg=rail_content_markers[expected_tab],
+                )
+                content_rendered = len(content_state["matched_markers"]) == len(content_state["expected_markers"])
+                rail_results[rail_key] = {
+                    "expected_tab": expected_tab,
+                    "top_active": top_active,
+                    "rail_active": rail_active,
+                    "content_rendered": content_rendered,
+                    **content_state,
+                    "passed": top_active and rail_active and content_rendered,
+                }
+            report["checks"]["left_rail_navigation"] = all(item["passed"] for item in rail_results.values())
             report["api_checks"]["left_rail_navigation"] = rail_results
-            page.locator('button[data-page="Strategy Monitor"]').click()
-            page.wait_for_timeout(500)
+            _open_page(page, "Strategy Monitor")
+            page.wait_for_function(
+                """() => document.querySelectorAll('.strategy-monitor-page .monitor-table tbody tr[data-row-id]').length > 0""",
+                timeout=15000,
+            )
             strategy_monitor_text = page.locator("body").inner_text()
             strategy_monitor_state = page.evaluate(
                 """
                 () => {
-                  const rows = [...document.querySelectorAll('.monitor-table tbody tr')];
+                  const rows = [...document.querySelectorAll('.strategy-monitor-page .monitor-table tbody tr[data-row-id]')];
                   const statusCells = rows.map((row) => row.querySelector('td:nth-child(4)')?.innerText || '');
                   const forbiddenStatusText = /Execution Mode|Provenance|Live Fill|Paper only|Derived \\/ no live fills|Paper only \\/ no live fills/i;
                   const pageOverflow = document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
@@ -864,12 +905,15 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             )
             report["api_checks"]["strategy_monitor_current_state"] = strategy_monitor_state
             report["checks"]["combined_drawer_derived"] = strategy_monitor_state["combinedRows"] == 1
-            page.locator('button[data-page="Risk Factors & Exposure"]').click()
-            page.wait_for_timeout(500)
+            _open_page(page, "Risk Factors & Exposure")
+            page.wait_for_function(
+                """() => document.querySelectorAll('.risk-factor-page .risk-heatmap-table tbody tr').length > 0""",
+                timeout=15000,
+            )
             risk_state = page.evaluate(
                 """
                 () => ({
-                  rows: document.querySelectorAll('.risk-heatmap-table tbody tr').length,
+                  rows: document.querySelectorAll('.risk-factor-page .risk-heatmap-table tbody tr').length,
                   pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
                 })
                 """

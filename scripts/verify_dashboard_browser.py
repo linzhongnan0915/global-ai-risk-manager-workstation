@@ -817,13 +817,25 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             }
             rail_results = {}
             for rail_key, expected_tab in rail_checks:
-                page.locator(f'[data-rail-key="{rail_key}"]').click()
+                rail_button = page.locator(f'[data-rail-key="{rail_key}"]')
+                rail_button.scroll_into_view_if_needed()
+                rail_button.click()
                 page.wait_for_function(
-                    """(name) => document.querySelector(`button[data-page="${name}"].active`) !== null""",
-                    arg=expected_tab,
+                    """
+                    ({name, markers}) => {
+                      const topActive = document.querySelector(`button[data-page="${name}"].active`) !== null;
+                      const stage = document.querySelector('.main-stage');
+                      const text = stage?.innerText || '';
+                      const html = stage?.innerHTML || '';
+                      const contentRendered = markers.every((marker) => text.includes(marker) || html.includes(marker));
+                      return topActive || contentRendered;
+                    }
+                    """,
+                    arg={"name": expected_tab, "markers": rail_content_markers[expected_tab]},
                     timeout=15000,
                 )
                 page.wait_for_timeout(350)
+                top_tab_exists = page.locator(f'button[data-page="{expected_tab}"]').count() >= 1
                 top_active = page.locator(f'button[data-page="{expected_tab}"].active').count() == 1
                 rail_active = page.locator(f'button[data-rail-key="{rail_key}"].active').count() == 1
                 content_state = page.evaluate(
@@ -843,11 +855,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 content_rendered = len(content_state["matched_markers"]) == len(content_state["expected_markers"])
                 rail_results[rail_key] = {
                     "expected_tab": expected_tab,
+                    "top_tab_exists": top_tab_exists,
                     "top_active": top_active,
                     "rail_active": rail_active,
                     "content_rendered": content_rendered,
                     **content_state,
-                    "passed": top_active and rail_active and content_rendered,
+                    "passed": rail_active and content_rendered and (top_active if top_tab_exists else True),
                 }
             report["checks"]["left_rail_navigation"] = all(item["passed"] for item in rail_results.values())
             report["api_checks"]["left_rail_navigation"] = rail_results

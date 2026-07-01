@@ -26,12 +26,14 @@ from src.automation import (
     build_automation_intelligence_manifest,
     build_blackbox_decomposition_manifest,
     build_candidate_strategy_identity_bridge,
+    build_daily_allocation_recommendation_artifact,
     build_ml_intelligence_patch_manifest,
     build_paper_allocation_proposal,
     build_strategy_factory_evidence_manifest,
     build_review_draft_eligibility,
     create_review_draft_from_allocation_recommendation,
     read_latest_daily_cycle_status,
+    read_latest_daily_allocation_recommendation,
     read_latest_allocation_recommendation_artifact,
     read_latest_daily_recommendation_artifact,
     read_latest_daily_report_artifact,
@@ -44,6 +46,7 @@ from src.automation import (
     write_allocation_recommendation_artifact,
     write_blackbox_decomposition_manifest,
     write_candidate_strategy_identity_bridge,
+    write_daily_allocation_recommendation_artifact,
     write_daily_recommendation_artifact,
     write_daily_report_artifact,
     write_ml_intelligence_patch_manifest,
@@ -803,6 +806,16 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_safe_error(exc, context="daily-recommendations-latest")
             return
         if parsed.path in {
+            "/api/automation-intelligence/daily-allocation-recommendations/latest",
+            "/api/automation-intelligence/daily-allocation-recommendations/latest/",
+        }:
+            try:
+                latest = read_latest_daily_allocation_recommendation(self.server_root)
+                self._send_json(latest, status=200 if latest.get("ok") else 404)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-allocation-recommendations-latest")
+            return
+        if parsed.path in {
             "/api/automation-intelligence/allocation-recommendations/latest",
             "/api/automation-intelligence/allocation-recommendations/latest/",
         }:
@@ -1033,6 +1046,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(write_daily_recommendation_artifact(self.server_root), status=201)
             except Exception as exc:
                 self._send_safe_error(exc, context="daily-recommendations-generate")
+            return
+        if parsed.path in {
+            "/api/automation-intelligence/daily-allocation-recommendations/generate",
+            "/api/automation-intelligence/daily-allocation-recommendations/generate/",
+        }:
+            try:
+                self._send_json(write_daily_allocation_recommendation_artifact(self.server_root), status=201)
+            except Exception as exc:
+                self._send_safe_error(exc, context="daily-allocation-recommendations-generate")
             return
         if parsed.path in {
             "/api/automation-intelligence/allocation-recommendations/generate",

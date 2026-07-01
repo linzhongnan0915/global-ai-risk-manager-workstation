@@ -815,53 +815,53 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 "Daily Risk Report": ["Daily Risk Report / Decision Log", "Daily strategy summary"],
                 "Risk Factors & Exposure": ["Risk Factor Exposure Matrix", "Risk Factors"],
             }
+            def rail_state(name: str, key: str) -> dict:
+                return page.evaluate(
+                    """
+                    ({name, key, markers}) => {
+                      const stage = document.querySelector('.main-stage');
+                      const text = stage?.innerText || '';
+                      const html = stage?.innerHTML || '';
+                      const topButton = document.querySelector(`button[data-page="${name}"]`);
+                      const activeTop = document.querySelector('button[data-page].active');
+                      const activeRail = document.querySelector('button[data-rail-key].active');
+                      const matched = markers.filter((marker) => text.includes(marker) || html.includes(marker));
+                      return {
+                        expected_tab: name,
+                        rail_key: key,
+                        top_tab_exists: topButton !== null,
+                        top_active: topButton?.classList.contains('active') || false,
+                        rail_active: document.querySelector(`button[data-rail-key="${key}"]`)?.classList.contains('active') || false,
+                        active_top_page: activeTop?.dataset.page || null,
+                        active_rail_key: activeRail?.dataset.railKey || null,
+                        matched_markers: matched,
+                        expected_markers: markers,
+                        content_rendered: matched.length === markers.length,
+                        main_stage_text_first_300: text.trim().slice(0, 300),
+                      };
+                    }
+                    """,
+                    arg={"name": name, "key": key, "markers": rail_content_markers[name]},
+                )
             rail_results = {}
             for rail_key, expected_tab in rail_checks:
                 rail_button = page.locator(f'[data-rail-key="{rail_key}"]')
                 rail_button.scroll_into_view_if_needed()
                 rail_button.click()
-                page.wait_for_function(
-                    """
-                    ({name, markers}) => {
-                      const topActive = document.querySelector(`button[data-page="${name}"].active`) !== null;
-                      const stage = document.querySelector('.main-stage');
-                      const text = stage?.innerText || '';
-                      const html = stage?.innerHTML || '';
-                      const contentRendered = markers.every((marker) => text.includes(marker) || html.includes(marker));
-                      return topActive || contentRendered;
-                    }
-                    """,
-                    arg={"name": expected_tab, "markers": rail_content_markers[expected_tab]},
-                    timeout=15000,
+                state_after_click = rail_state(expected_tab, rail_key)
+                deadline = time.time() + 15
+                while time.time() < deadline:
+                    state_after_click = rail_state(expected_tab, rail_key)
+                    if state_after_click["rail_active"] and state_after_click["content_rendered"]:
+                        if not state_after_click["top_tab_exists"] or state_after_click["top_active"]:
+                            break
+                    page.wait_for_timeout(250)
+                state_after_click["passed"] = (
+                    state_after_click["rail_active"]
+                    and state_after_click["content_rendered"]
+                    and (state_after_click["top_active"] if state_after_click["top_tab_exists"] else True)
                 )
-                page.wait_for_timeout(350)
-                top_tab_exists = page.locator(f'button[data-page="{expected_tab}"]').count() >= 1
-                top_active = page.locator(f'button[data-page="{expected_tab}"].active').count() == 1
-                rail_active = page.locator(f'button[data-rail-key="{rail_key}"].active').count() == 1
-                content_state = page.evaluate(
-                    """
-                    (markers) => {
-                      const stage = document.querySelector('.main-stage');
-                      const text = stage?.innerText || '';
-                      const html = stage?.innerHTML || '';
-                      return {
-                        matched_markers: markers.filter((marker) => text.includes(marker) || html.includes(marker)),
-                        expected_markers: markers,
-                      };
-                    }
-                    """,
-                    arg=rail_content_markers[expected_tab],
-                )
-                content_rendered = len(content_state["matched_markers"]) == len(content_state["expected_markers"])
-                rail_results[rail_key] = {
-                    "expected_tab": expected_tab,
-                    "top_tab_exists": top_tab_exists,
-                    "top_active": top_active,
-                    "rail_active": rail_active,
-                    "content_rendered": content_rendered,
-                    **content_state,
-                    "passed": rail_active and content_rendered and (top_active if top_tab_exists else True),
-                }
+                rail_results[rail_key] = state_after_click
             report["checks"]["left_rail_navigation"] = all(item["passed"] for item in rail_results.values())
             report["api_checks"]["left_rail_navigation"] = rail_results
             _open_page(page, "Strategy Monitor")

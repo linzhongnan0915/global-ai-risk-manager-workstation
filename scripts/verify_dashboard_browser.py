@@ -167,7 +167,7 @@ def _find_open_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _wait_for_server(timeout_seconds: int = 20) -> None:
+def _wait_for_server(timeout_seconds: int = 60) -> None:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
@@ -241,6 +241,19 @@ def _run_clean_runtime(no_screenshots: bool) -> int:
             cwd=str(PROJECT_ROOT),
             check=True,
         )
+        diff = subprocess.run(
+            ["git", "diff", "--binary", "HEAD", "--", ".", ":(exclude)data/**", ":(exclude)output/**"],
+            cwd=str(PROJECT_ROOT),
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout
+        if diff.strip():
+            subprocess.run(
+                ["git", "apply", "--binary", "--whitespace=nowarn", "-"],
+                cwd=str(temp_root),
+                input=diff,
+                check=True,
+            )
         command = [sys.executable, str(temp_root / "scripts" / "verify_dashboard_browser.py")]
         if no_screenshots:
             command.append("--no-screenshots")

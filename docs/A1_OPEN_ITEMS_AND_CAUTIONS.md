@@ -45,15 +45,21 @@ Next PR:
 - Allocation UI / automation control layer wiring
 
 3. Biweekly Rebalance Proposal
-Status: NOT DONE
+Status: PARTIAL
+Already done:
+- biweekly_paper_rebalance_proposal_v1 backend artifact implemented
 Requirement:
 - every two weeks generate paper rebalance proposal from latest recommendation targets
 - compare current vs recommended target
 - include cost/drift/min/max/risk/evidence constraints
 - proposal only; user confirmation required for accept/apply
 - no automatic paper apply
+Still open:
+- Allocation UI wiring for biweekly proposal artifact
+- explicit accept/apply integration remains separate and confirmation-gated
+- automation control layer wiring
 Next PR:
-- biweekly rebalance proposal artifact/spec
+- biweekly proposal UI / automation control layer wiring
 
 4. Allocation page cleanup
 Status: NOT DONE

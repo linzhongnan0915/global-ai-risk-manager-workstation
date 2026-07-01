@@ -12,6 +12,7 @@ __all__ = [
     "build_candidate_strategy_identity_bridge",
     "build_daily_recommendation_artifact",
     "build_daily_allocation_recommendation_artifact",
+    "build_biweekly_rebalance_proposal_artifact",
     "build_daily_report_artifact",
     "build_ml_intelligence_patch_manifest",
     "build_paper_allocation_proposal",
@@ -22,6 +23,7 @@ __all__ = [
     "create_review_draft_from_allocation_recommendation",
     "read_latest_daily_cycle_status",
     "read_latest_daily_allocation_recommendation",
+    "read_latest_biweekly_rebalance_proposal",
     "read_latest_allocation_recommendation_artifact",
     "read_latest_daily_recommendation_artifact",
     "read_latest_daily_report_artifact",
@@ -36,6 +38,7 @@ __all__ = [
     "write_candidate_strategy_identity_bridge",
     "write_daily_recommendation_artifact",
     "write_daily_allocation_recommendation_artifact",
+    "write_biweekly_rebalance_proposal_artifact",
     "write_daily_report_artifact",
     "write_ml_intelligence_patch_manifest",
     "write_paper_allocation_proposal",
@@ -233,6 +236,23 @@ def __getattr__(name: str) -> Any:
             "build_daily_allocation_recommendation_artifact": build_daily_allocation_recommendation_artifact,
             "read_latest_daily_allocation_recommendation": read_latest_daily_allocation_recommendation,
             "write_daily_allocation_recommendation_artifact": write_daily_allocation_recommendation_artifact,
+        }
+        return exports[name]
+    if name in {
+        "build_biweekly_rebalance_proposal_artifact",
+        "read_latest_biweekly_rebalance_proposal",
+        "write_biweekly_rebalance_proposal_artifact",
+    }:
+        from src.automation.biweekly_rebalance_proposal import (
+            build_biweekly_rebalance_proposal_artifact,
+            read_latest_biweekly_rebalance_proposal,
+            write_biweekly_rebalance_proposal_artifact,
+        )
+
+        exports = {
+            "build_biweekly_rebalance_proposal_artifact": build_biweekly_rebalance_proposal_artifact,
+            "read_latest_biweekly_rebalance_proposal": read_latest_biweekly_rebalance_proposal,
+            "write_biweekly_rebalance_proposal_artifact": write_biweekly_rebalance_proposal_artifact,
         }
         return exports[name]
     if name in {

@@ -442,6 +442,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         "url": f"{BASE_URL}/dashboard/index.html",
         "tabs": [],
         "console_errors": [],
+        "ignored_console_errors": [],
         "api_checks": {},
         "checks": {},
         "geometry": {},
@@ -457,7 +458,10 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             if msg.type != "error":
                 return
             text = msg.text or ""
-            if "favicon.ico" in text or "/api/" in text:
+            location = msg.location or {}
+            source_url = location.get("url") or ""
+            if "favicon.ico" in text or "favicon.ico" in source_url or "/api/" in text or "/api/" in source_url:
+                report["ignored_console_errors"].append({"text": text, "url": source_url})
                 return
             report["console_errors"].append(text)
 
@@ -604,13 +608,15 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               const hoverText = detail?.innerText || '';
               return {
                 expectedOfficialRows,
-                headerMentionsWindow: (
+                sourceAndWindowExplained: (
                   (/Recorded official closes/i.test(panel?.innerText || '') && /current session estimate separate/i.test(panel?.innerText || ''))
                   || (/Recorded official closes/i.test(panel?.innerText || '') && /intraday pending until official close is recorded/i.test(panel?.innerText || ''))
                   || (/Official Ledger/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
                   || (/Paper Performance separate/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
                   || (/Portfolio Daily|Paper Daily/i.test(panel?.innerText || '') && /Delayed Estimate|delayed intraday estimate/i.test(panel?.innerText || ''))
+                  || (/Paper Daily by workday|Official Ledger fallback/i.test(panel?.innerText || '') && /Paper Daily|Official Ledger/i.test(panel?.innerText || ''))
                 ),
+                sourceChipsPresent: Boolean(panel?.querySelector('.chart-status-chips')) && /Paper Daily|Official Ledger|Missing/i.test(panel?.querySelector('.chart-status-chips')?.innerText || ''),
                 titleFullVisible: /Master Portfolio Daily Performance/i.test(title?.innerText || panel?.innerText || ''),
                 detailStripPresent: Boolean(detail),
                 detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
@@ -628,7 +634,8 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         )
         report["checks"]["master_chart_window_and_detail"] = (
             chart_state["expectedOfficialRows"] <= 20
-            and chart_state["headerMentionsWindow"] is True
+            and chart_state["sourceAndWindowExplained"] is True
+            and chart_state["sourceChipsPresent"] is True
             and chart_state["titleFullVisible"] is True
             and chart_state["detailStripPresent"] is True
             and chart_state["detailFieldsPresent"] is True

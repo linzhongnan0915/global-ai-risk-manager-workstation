@@ -18,12 +18,13 @@ Already done:
 - direct-state startup work merged in PR #20
 - source labels added for NAV / Daily P&L / chart / portfolio date
 - dashboard verifier baseline updated to check current chart source labels and ignore expected missing-artifact API 404 resource messages without ignoring real JS errors
+- dashboard verifier clean-runtime mode and ENV_CONTAMINATED preflight added so local generated data/output cannot masquerade as UI row failures
 Still open:
 - verify new strategy additions update tables/charts correctly
 - verify daily P&L/date/chart freshness across paper daily / official ledger / delayed estimate
 - ensure stale/fallback states are visually clear
 - avoid fake empty dashboard and fake zeros
-- local runtime artifacts under data/** and output/** can alter dashboard verifier results; use clean-worktree verification when diagnosing verifier regressions and never stage generated artifacts
+- local runtime artifacts under data/** and output/** can alter dashboard verifier results; use verifier --clean-runtime when diagnosing verifier regressions and never stage generated artifacts
 Next PR:
 - Command Center freshness verification / post-merge audit if needed
 

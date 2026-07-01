@@ -8,6 +8,7 @@ import math
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -176,6 +177,82 @@ def _wait_for_server(timeout_seconds: int = 20) -> None:
         except Exception:
             time.sleep(0.5)
     raise RuntimeError(f"Workstation server did not start on port {VERIFY_PORT}")
+
+
+def _runtime_contamination_paths() -> list[str]:
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "status",
+                "--porcelain=v1",
+                "--ignored",
+                "--untracked-files=normal",
+                "--",
+                "data",
+                "output",
+            ],
+            cwd=str(PROJECT_ROOT),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return []
+    paths: list[str] = []
+    for line in result.stdout.splitlines():
+        if line.startswith(("?? ", "!! ")):
+            paths.append(line)
+    return paths
+
+
+def _fail_runtime_contaminated(paths: list[str]) -> int:
+    report = {
+        "passed": False,
+        "environment_status": "ENV_CONTAMINATED",
+        "message": (
+            "Untracked or ignored data/** or output/** runtime artifacts can alter "
+            "dashboard browser verification. Re-run with --clean-runtime for a "
+            "deterministic clean runtime, or --allow-dirty-runtime for explicit "
+            "local debugging."
+        ),
+        "contamination_paths": paths[:50],
+        "contamination_path_count": len(paths),
+        "checks": {},
+        "api_checks": {},
+        "console_errors": [],
+    }
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print("ENV_CONTAMINATED: untracked or ignored data/** or output/** artifacts detected.")
+    for path in paths[:20]:
+        print(f"  {path}")
+    if len(paths) > 20:
+        print(f"  ... {len(paths) - 20} more")
+    print(f"Wrote {REPORT_PATH}")
+    return 3
+
+
+def _run_clean_runtime(no_screenshots: bool) -> int:
+    temp_root = Path(tempfile.mkdtemp(prefix="rmw-dashboard-clean-runtime-"))
+    try:
+        subprocess.run(
+            ["git", "worktree", "add", "--detach", str(temp_root), "HEAD"],
+            cwd=str(PROJECT_ROOT),
+            check=True,
+        )
+        command = [sys.executable, str(temp_root / "scripts" / "verify_dashboard_browser.py")]
+        if no_screenshots:
+            command.append("--no-screenshots")
+        return subprocess.run(command, cwd=str(temp_root), check=False).returncode
+    finally:
+        subprocess.run(
+            ["git", "worktree", "remove", str(temp_root), "--force"],
+            cwd=str(PROJECT_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
 
 
 def _post_simulate(payload: dict) -> dict:
@@ -416,7 +493,24 @@ def _run_core_friction_checks(page, report: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify Risk Manager workstation in browser.")
     parser.add_argument("--no-screenshots", action="store_true", help="Skip screenshot capture; geometry and interaction checks only.")
+    parser.add_argument(
+        "--clean-runtime",
+        action="store_true",
+        help="Run verification from a temporary clean git worktree so local data/output artifacts cannot affect results.",
+    )
+    parser.add_argument(
+        "--allow-dirty-runtime",
+        action="store_true",
+        help="Run against the current worktree even when untracked/ignored data/output runtime artifacts are present.",
+    )
     args = parser.parse_args()
+
+    if args.clean_runtime:
+        return _run_clean_runtime(no_screenshots=args.no_screenshots)
+
+    contamination_paths = _runtime_contamination_paths()
+    if contamination_paths and not args.allow_dirty_runtime:
+        return _fail_runtime_contaminated(contamination_paths)
 
     try:
         from playwright.sync_api import sync_playwright

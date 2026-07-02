@@ -483,6 +483,8 @@ def _run_core_friction_checks(page, report: dict) -> None:
           const commandPanel = [...document.querySelectorAll('.panel')].find((panel) => /Proposal Operations|Operator/i.test(panel.innerText || ''));
           const approvedPlanSeparate = /Existing Approved Paper Plan\\s+—\\s+Not Current P0 Proposal|Existing Approved Paper Plan - Not Current P0 Proposal/i.test(body);
           const unsafeButtons = [...document.querySelectorAll('button')].filter((button) => /Approve Proposal|Manual Rebalance/i.test(button.innerText || ''));
+          const automationStrip = document.querySelector('.allocation-automation-strip');
+          const automationText = automationStrip?.innerText || '';
           return {
             proposal_table_exists: Boolean(proposalTable),
             compact_missing_proposal_state_exists: compactMissing,
@@ -491,6 +493,10 @@ def _run_core_friction_checks(page, report: dict) -> None:
             unsafe_action_count: unsafeButtons.length,
             unsafe_actions_disabled: unsafeButtons.every((button) => button.disabled || button.getAttribute('aria-disabled') === 'true'),
             unsafe_action_labels: unsafeButtons.map((button) => ({text: button.innerText, disabled: button.disabled})),
+            automation_status_strip: Boolean(automationStrip),
+            automation_daily_recommendation: /Daily Recommendation/i.test(automationText),
+            automation_rebalance_proposal: /Rebalance Proposal/i.test(automationText),
+            automation_no_auto_apply: /No auto-apply/i.test(automationText),
           };
         }
         """
@@ -503,6 +509,12 @@ def _run_core_friction_checks(page, report: dict) -> None:
     report["checks"]["allocation_approved_plan_separate"] = allocation["existing_approved_plan_separate"] is True
     report["checks"]["allocation_future_unsafe_actions_disabled"] = (
         allocation["unsafe_action_count"] >= 2 and allocation["unsafe_actions_disabled"] is True
+    )
+    report["checks"]["allocation_automation_status_strip"] = (
+        allocation["automation_status_strip"] is True
+        and allocation["automation_daily_recommendation"] is True
+        and allocation["automation_rebalance_proposal"] is True
+        and allocation["automation_no_auto_apply"] is True
     )
 
 
@@ -912,7 +924,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 """() => document.querySelectorAll('.strategy-monitor-page .monitor-table tbody tr[data-row-id]').length > 0""",
                 timeout=15000,
             )
-            strategy_monitor_text = page.locator("body").inner_text()
+            strategy_monitor_text = page.locator(".strategy-monitor-page").inner_text()
             strategy_monitor_state = page.evaluate(
                 """
                 () => {
@@ -943,6 +955,14 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 and "TOP-LEVEL ACTIVE" in strategy_monitor_text.upper()
                 and "PENDING APPROVAL" in strategy_monitor_text.upper()
             )
+            report["checks"]["strategy_monitor_boss_wording"] = (
+                "DISPLAY-ONLY LABEL; CANONICAL IDENTITY USES STRATEGY_UID" not in strategy_monitor_text.upper()
+                and "PRICE UNAVAILABLE" not in strategy_monitor_text.upper()
+            )
+            strategy_monitor_state["bossWordingFlags"] = {
+                "display_identity_phrase": "DISPLAY-ONLY LABEL; CANONICAL IDENTITY USES STRATEGY_UID" in strategy_monitor_text.upper(),
+                "price_unavailable": "PRICE UNAVAILABLE" in strategy_monitor_text.upper(),
+            }
             report["checks"]["strategy_monitor_current_rows"] = strategy_monitor_state["visibleRows"] == expected_top_level_rows
             report["checks"]["strategy_monitor_excludes_wq_pending"] = (
                 strategy_monitor_state["wqRows"] == 0

@@ -242,6 +242,9 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .allocation-kpis-v2{grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
 .allocation-layout-v2{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"matrix side" "trades side" "explain side";gap:6px;align-items:start}
 .allocation-layout-v2 .allocation-matrix-panel{min-width:0}
+.allocation-automation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:8px}
+.allocation-automation-grid div{min-width:0;border:1px solid var(--soft);padding:6px;background:#061113}
+.allocation-automation-grid span,.allocation-automation-grid em{display:block;color:var(--muted)}
 .allocation-decision-grid{width:100%;max-width:100%;overflow:hidden;border-top:1px solid var(--soft);background:#03090a}
 .allocation-decision-header,.allocation-decision-row{display:grid;grid-template-columns:minmax(180px,1.2fr) 74px 82px 82px 100px 92px minmax(150px,.9fr) minmax(190px,1.1fr);align-items:center;gap:0}
 .allocation-decision-header{position:sticky;top:0;z-index:3;min-height:31px;background:#082026;color:#b9cfd2;font-size:8px;font-weight:900;text-transform:uppercase}

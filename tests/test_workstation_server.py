@@ -6,7 +6,6 @@ import json
 import os
 import socket
 import threading
-import time
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
@@ -476,7 +475,7 @@ def test_operational_snapshot_endpoint_refreshes_stale_precomputed_paper_ledger_
         WorkstationHandler.operational_snapshot_bytes = original_bytes
 
 
-def test_operational_snapshot_endpoint_starts_controlled_bootstrap_refresh(monkeypatch, tmp_path):
+def test_operational_snapshot_endpoint_does_not_start_bootstrap_refresh_by_default(monkeypatch, tmp_path):
     root = _copy_canonical_root(tmp_path)
     config_dir = root / "data/config"
     config_dir.mkdir(parents=True)
@@ -520,15 +519,12 @@ def test_operational_snapshot_endpoint_starts_controlled_bootstrap_refresh(monke
     try:
         status, _, body = _fetch(f"http://127.0.0.1:{port}/api/operational-snapshot")
         payload = json.loads(body.decode("utf-8"))
-        deadline = time.time() + 2
-        while not calls and time.time() < deadline:
-            time.sleep(0.01)
         assert status == 200
-        assert payload["intraday_runtime_status"] == "PENDING"
-        assert payload["intraday_refresh_status"] == "pending"
-        assert calls
-        assert calls[0]["interval_minutes"] == 30
-        assert calls[0]["force"] is False
+        assert payload["intraday_runtime_status"] in {"REFRESH_NEEDED", "STALE", "PENDING"}
+        assert payload["intraday_refresh_status"] in {"refresh_needed", "stale", "pending"}
+        assert calls == []
+        assert (root / "output" / "intraday_latest.json").exists() is False
+        assert (root / "dashboard" / "data" / "performance" / "paper_portfolio_daily.json").exists() is False
     finally:
         server.shutdown()
         server.server_close()

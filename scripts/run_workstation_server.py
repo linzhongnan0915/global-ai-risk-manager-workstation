@@ -322,6 +322,18 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return {**lifecycle, "state": "closed", "reason": "intraday_refresh_disabled"}
         if lifecycle.get("state") not in {"refresh_needed", "stale"}:
             return lifecycle
+        bootstrap_enabled = os.environ.get("ENABLE_GET_INTRADAY_BOOTSTRAP", "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        if not bootstrap_enabled:
+            return {
+                **lifecycle,
+                "reason": lifecycle.get("reason") or "get_intraday_bootstrap_disabled",
+                "get_bootstrap_disabled": True,
+            }
         if not bool(getattr(cls, "request_bootstrap_enabled", False)):
             return lifecycle
         with cls.bootstrap_refresh_lock:

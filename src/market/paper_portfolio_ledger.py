@@ -504,6 +504,7 @@ def build_paper_portfolio_gap_fill_rows(
     existing_rows: list[dict[str, Any]],
     through_date: str,
     holidays: list[str] | set[str] | None = None,
+    include_through_date: bool = False,
     position_source: str = "committed_shadow_holdings",
     rebalance: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
@@ -515,6 +516,7 @@ def build_paper_portfolio_gap_fill_rows(
         existing_rows,
         through_date=through_date,
         holidays=holidays,
+        include_through_date=include_through_date,
     )
     if not missing_dates:
         return []
@@ -652,6 +654,148 @@ def build_paper_portfolio_gap_fill_rows(
                 },
             }
         )
+    return generated
+
+
+def build_paper_strategy_gap_fill_rows(
+    artifact: dict[str, Any],
+    fetch_result: dict[str, Any],
+    *,
+    existing_rows: list[dict[str, Any]],
+    missing_dates: list[str] | None = None,
+    through_date: str,
+    holidays: list[str] | set[str] | None = None,
+    include_through_date: bool = False,
+    position_source: str = "committed_shadow_holdings",
+    rebalance: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Fill missing strategy paper rows from delayed daily close history."""
+    price_history = _price_history_rows(fetch_result)
+    if not price_history:
+        return []
+    if missing_dates is None:
+        missing_dates = missing_paper_portfolio_business_dates(
+            existing_rows,
+            through_date=through_date,
+            holidays=holidays,
+            include_through_date=include_through_date,
+        )
+    if not missing_dates:
+        return []
+
+    prices = _price_lookup(price_history)
+    price_dates = sorted({row_date for _, row_date in prices})
+    if not price_dates:
+        return []
+
+    rebalance = rebalance or {}
+    applied_weights = rebalance.get("weights") or {}
+    prior_portfolio_nav = _to_float(artifact.get("initial_capital")) or 1_000_000.0
+    existing_by_strategy: dict[str, list[dict[str, Any]]] = {}
+    for row in existing_rows:
+        strategy_id = _strategy_id(row)
+        if strategy_id and row.get("date"):
+            existing_by_strategy.setdefault(strategy_id, []).append(deepcopy(row))
+    for rows in existing_by_strategy.values():
+        rows.sort(key=lambda row: str(row.get("date") or ""))
+
+    provider = fetch_result.get("daily_price_history_provider") or fetch_result.get("provider") or "yfinance"
+    generated: list[dict[str, Any]] = []
+    for row_date in missing_dates:
+        previous_price_date = max((price_date for price_date in price_dates if price_date < row_date), default=None)
+        if previous_price_date is None:
+            continue
+        for strategy in artifact.get("strategies") or []:
+            strategy_id = str(strategy.get("strategy_id") or strategy.get("internal_id") or "")
+            if not strategy_id:
+                continue
+            strategy_weight = _to_float(strategy.get("current_weight"))
+            if strategy_weight is None:
+                strategy_weight = _to_float((artifact.get("allocation") or {}).get("current_weights", {}).get(strategy_id))
+            applied_weight = _to_float(applied_weights.get(strategy_id))
+            effective_weight = applied_weight if applied_weight is not None else strategy_weight
+            if effective_weight is None or effective_weight == 0:
+                continue
+
+            strategy_return = 0.0
+            covered = 0
+            total = 0
+            missing_tickers: set[str] = set()
+            for position in (strategy.get("position_packet") or {}).get("latest_positions") or []:
+                ticker = str(position.get("source_ticker") or position.get("ticker") or "")
+                position_weight = _to_float(position.get("weight"))
+                if not ticker:
+                    continue
+                total += 1
+                previous_close = prices.get((ticker, previous_price_date))
+                close = prices.get((ticker, row_date))
+                if previous_close is None or close is None or previous_close == 0 or position_weight is None:
+                    missing_tickers.add(ticker)
+                    continue
+                covered += 1
+                strategy_return += position_weight * (close / previous_close - 1.0)
+            if covered == 0 or total == 0:
+                continue
+
+            prior_candidates = [
+                row for row in [*existing_by_strategy.get(strategy_id, []), *generated]
+                if _strategy_id(row) == strategy_id and str(row.get("date") or "") < row_date
+            ]
+            if prior_candidates:
+                prior_row = sorted(prior_candidates, key=lambda row: str(row.get("date") or ""))[-1]
+                prior_nav = _to_float(prior_row.get("ending_nav") or prior_row.get("nav"))
+            else:
+                prior_nav = prior_portfolio_nav * effective_weight
+            if prior_nav is None:
+                continue
+            gross_pnl = prior_nav * strategy_return
+            warning = (
+                "paper strategy daily gap fill uses delayed daily close history; "
+                "official ledger remains separate; not live brokerage execution"
+            )
+            if missing_tickers:
+                warning += f"; partial price coverage missing {len(missing_tickers)} tickers"
+            generated.append(
+                {
+                    "date": row_date,
+                    "trading_date": row_date,
+                    "strategy_id": strategy_id,
+                    "display_name": strategy.get("name") or strategy.get("display_name") or strategy_id,
+                    "as_of_time": row_date,
+                    "source": "Paper Strategy Daily Gap Fill",
+                    "source_artifact": str(PAPER_STRATEGY_DAILY_RELATIVE_PATH).replace("\\", "/"),
+                    "position_source": position_source,
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "live_brokerage_execution": False,
+                    "is_official_ledger": False,
+                    "provider": provider,
+                    "prior_nav": prior_nav,
+                    "beginning_nav": prior_nav,
+                    "gross_pnl": gross_pnl,
+                    "paper_transaction_cost": 0.0,
+                    "transaction_cost": 0.0,
+                    "daily_pnl": gross_pnl,
+                    "net_pnl": gross_pnl,
+                    "daily_return": gross_pnl / prior_nav if prior_nav else None,
+                    "nav": prior_nav + gross_pnl,
+                    "ending_nav": prior_nav + gross_pnl,
+                    "refresh_status": "gap_filled_from_delayed_daily_close",
+                    "price_coverage": {
+                        "priced": covered,
+                        "total": total,
+                        "status": "COMPLETE" if covered == total else "PARTIAL",
+                    },
+                    "latest_delayed_price_as_of": row_date,
+                    "applied_paper_target_weight": applied_weight,
+                    "applied_paper_rebalance_plan_id": rebalance.get("applied_plan_id"),
+                    "paper_rebalance_cost_included": False,
+                    "missing_tickers": sorted(missing_tickers),
+                    "stale_tickers": [],
+                    "warnings": [warning],
+                }
+            )
     return generated
 
 

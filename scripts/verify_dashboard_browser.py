@@ -20,14 +20,12 @@ REPORT_PATH = PROJECT_ROOT / "output" / "browser_verification" / "verification_r
 TABS = [
   "Portfolio Command Center",
   "Strategy Monitor",
+  "Strategy Intelligence",
   "Allocation & Rebalance",
   "Risk Factors & Exposure",
-  "Correlation & Diversification",
   "Universe & Data Coverage",
-  "Workflow & Shadow-Live Testing",
+  "Workflow",
   "Strategy Factory",
-  "Strategy Library & Governance",
-  "Daily Risk Report",
 ]
 
 VIEWPORTS = (
@@ -650,10 +648,19 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             initial_body_text = page.locator("body").inner_text()
             initial_body_upper = initial_body_text.upper()
         report["checks"]["current_served_labels"] = (
-            "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
-            and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
+            "PORTFOLIO COMMAND CENTER" in initial_body_upper
+            and "STRATEGY MONITOR" in initial_body_upper
+            and "STRATEGY INTELLIGENCE" in initial_body_upper
+            and "ALLOCATION & REBALANCE" in initial_body_upper
+            and "RISK FACTORS & EXPOSURE" in initial_body_upper
+            and "UNIVERSE & DATA COVERAGE" in initial_body_upper
+            and "WORKFLOW" in initial_body_upper
+            and "STRATEGY FACTORY" in initial_body_upper
             and "STRATEGY FAMILY MIX" in initial_body_upper
             and "FAMILY MIX BY ACTIVE STRATEGY GROUP" in initial_body_upper
+            and "WORKFLOW & SHADOW-LIVE TESTING" not in initial_body_upper
+            and "STRATEGY LIBRARY & GOVERNANCE" not in initial_body_upper
+            and "DAILY RISK REPORT" not in initial_body_upper
             and "MARKET & MACRO MONITOR" not in initial_body_upper
             and "STRATEGY LIBRARY & WORKFLOW" not in initial_body_upper
             and "COMBINED FAMILY MIX" not in initial_body_upper
@@ -782,13 +789,36 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
                 "Strategy Intelligence",
                 "Allocation & Rebalance",
                 "Risk Factors & Exposure",
-                "Correlation & Diversification",
                 "Universe & Data Coverage",
-                "Workflow & Shadow-Live Testing",
+                "Workflow",
                 "Strategy Factory",
+            ]
+            hidden_workflow_tabs = [
+                "Correlation & Diversification",
                 "Strategy Library & Governance",
                 "Daily Risk Report",
             ]
+            visible_tab_state = page.evaluate(
+                """
+                ({visible, hidden}) => {
+                  const labels = [...document.querySelectorAll('.workflow-tabs button[data-page]')]
+                    .map((button) => button.dataset.page || button.innerText.trim());
+                  return {
+                    labels,
+                    visible_present: visible.every((label) => labels.includes(label)),
+                    hidden_absent: hidden.every((label) => !labels.includes(label)),
+                    count: labels.length,
+                  };
+                }
+                """,
+                arg={"visible": workflow_tabs, "hidden": hidden_workflow_tabs},
+            )
+            report["checks"]["visible_tab_cleanup"] = (
+                visible_tab_state["visible_present"]
+                and visible_tab_state["hidden_absent"]
+                and visible_tab_state["count"] == len(workflow_tabs)
+            )
+            report["api_checks"]["visible_tab_cleanup"] = visible_tab_state
             for viewport in VIEWPORTS:
                 page.set_viewport_size({"width": viewport[0], "height": viewport[1]})
                 for index, tab in enumerate(workflow_tabs, start=1):
@@ -809,18 +839,24 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
 
             page.set_viewport_size({"width": 1440, "height": 900})
             rail_checks = [
-                ("data", "Universe & Data Coverage"),
-                ("workflow", "Workflow & Shadow-Live Testing"),
-                ("settings", "Strategy Library & Governance"),
-                ("reports", "Daily Risk Report"),
+                ("portfolio", "Portfolio Command Center"),
+                ("strategies", "Strategy Monitor"),
+                ("analytics", "Strategy Intelligence"),
+                ("allocation", "Allocation & Rebalance"),
                 ("risk", "Risk Factors & Exposure"),
+                ("data", "Universe & Data Coverage"),
+                ("workflow", "Workflow"),
+                ("research", "Strategy Factory"),
             ]
             rail_content_markers = {
-                "Universe & Data Coverage": ["Universe & Data Coverage", "Data Source Status"],
-                "Workflow & Shadow-Live Testing": ["Workflow & Shadow-Live Testing", "workflow-map-page"],
-                "Strategy Library & Governance": ["Strategy Library & Governance", "Registry Entities"],
-                "Daily Risk Report": ["Daily Risk Report / Decision Log", "Daily strategy summary"],
+                "Portfolio Command Center": ["Portfolio NAV", "Daily Performance"],
+                "Strategy Monitor": ["Strategy Monitor", "Strategy operational registry"],
+                "Strategy Intelligence": ["Strategy Intelligence", "Strategy Cards"],
+                "Allocation & Rebalance": ["Allocation & Rebalance", "Editable Paper Target Workflow"],
                 "Risk Factors & Exposure": ["Risk Factor Exposure Matrix", "Risk Factors"],
+                "Universe & Data Coverage": ["Universe & Data Coverage", "Data Source Status"],
+                "Workflow": ["Workflow", "workflow-map-page"],
+                "Strategy Factory": ["Strategy Factory", "DEMO SPINE"],
             }
             def rail_state(name: str, key: str) -> dict:
                 return page.evaluate(
@@ -945,7 +981,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
             report["checks"]["geometry_pass"] = geometry_pass
             unique_tabs = {entry["tab"] for entry in report["tabs"]}
-            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 11 and geometry_pass
+            report["passed"] = all(report["checks"].values()) and len(unique_tabs) == 8 and geometry_pass
             REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
             print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"], "geometry_pass": geometry_pass}, indent=2))
             print(f"Console errors: {len(report['console_errors'])}")

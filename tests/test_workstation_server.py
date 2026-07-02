@@ -571,7 +571,13 @@ def test_paper_rebalance_api_persists_pending_and_applied_paper_target(tmp_path)
 
         status, _, body = _post_json(
             f"{base}/api/paper-rebalance/accept",
-            json.dumps({"plan_id": plan_id}).encode("utf-8"),
+            json.dumps(
+                {
+                    "plan_id": plan_id,
+                    "accept_confirmation": True,
+                    "confirmation_text": "ACCEPT_PAPER_REBALANCE_PLAN",
+                }
+            ).encode("utf-8"),
         )
         payload = json.loads(body.decode("utf-8"))
         assert status == 200
@@ -579,7 +585,13 @@ def test_paper_rebalance_api_persists_pending_and_applied_paper_target(tmp_path)
 
         status, _, body = _post_json(
             f"{base}/api/paper-rebalance/apply",
-            json.dumps({"plan_id": plan_id}).encode("utf-8"),
+            json.dumps(
+                {
+                    "plan_id": plan_id,
+                    "apply_confirmation": True,
+                    "confirmation_text": "APPLY_PAPER_REBALANCE",
+                }
+            ).encode("utf-8"),
         )
         payload = json.loads(body.decode("utf-8"))
         assert status == 200
@@ -937,7 +949,7 @@ def test_strategy_factory_frontend_has_no_hardcoded_strategy_count():
     assert "factoryCandidateOutputPanel" in source
     assert "factoryCurrentRunCandidates" in source
     assert "factoryRealAlphaCandidates" in source
-    assert "Running selected batch..." in source
+    assert "Running selected batch job..." in source
     assert "Completed selected batch" in source
     assert "data-factory-select" in source
     assert "Candidate-derived evidence" in source

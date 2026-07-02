@@ -653,7 +653,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
             and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
             and "STRATEGY FAMILY MIX" in initial_body_upper
-            and ("PROXY ONLY" in initial_body_upper or "STYLE / FAMILY EXPOSURE PROXY" in initial_body_upper)
+            and "FAMILY MIX BY ACTIVE STRATEGY GROUP" in initial_body_upper
             and "MARKET & MACRO MONITOR" not in initial_body_upper
             and "STRATEGY LIBRARY & WORKFLOW" not in initial_body_upper
             and "COMBINED FAMILY MIX" not in initial_body_upper
@@ -661,33 +661,47 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
         )
         source_label_state = page.evaluate(
             """() => {
-              const text = document.querySelector('.command-source-strip')?.innerText || '';
+              const header = document.querySelector('.global-header')?.innerText || '';
+              const chart = document.querySelector('.primary-chart')?.innerText || '';
+              const retired = /Portfolio Daily Date|Portfolio Daily Source|Intraday Estimate Status|Latest Delayed Price|Official Ledger|Delayed Estimate|Paper Daily/i;
               return {
-                text,
-                nav: /NAV\\s+(Paper Daily|Official Ledger|Delayed Estimate|Missing)/i.test(text),
-                pnl: /Daily P&L\\s+(Paper Daily|Official Ledger|Delayed Estimate|Missing)/i.test(text),
-                chart: /Chart\\s+(Paper Daily|Official Ledger|Delayed Estimate Marker|Missing)/i.test(text),
-                date: /Portfolio Date\\s+(Paper Daily|Official Ledger|Missing)/i.test(text),
+                header,
+                chart,
+                current_date: /Current Date/i.test(header),
+                data_updated: /Data Updated/i.test(header) && /Data Updated/i.test(chart),
+                portfolio_nav: /Portfolio NAV/i.test(header),
+                daily_pnl: /Daily P&L/i.test(header),
+                retired_labels_hidden: !retired.test(header) && !/Official Ledger|Delayed Estimate|Paper Daily/i.test(chart),
               };
             }"""
         )
         report["checks"]["command_center_source_labels"] = all(
-            source_label_state[key] is True for key in ("nav", "pnl", "chart", "date")
+            source_label_state[key] is True
+            for key in ("current_date", "data_updated", "portfolio_nav", "daily_pnl", "retired_labels_hidden")
         )
         report["api_checks"]["command_center_source_labels"] = source_label_state
         portfolio_label_state = {
-            "portfolio_daily_date": "PORTFOLIO DAILY DATE" in initial_body_upper,
-            "portfolio_daily_source": "PORTFOLIO DAILY SOURCE" in initial_body_upper,
-            "intraday_estimate_status": "INTRADAY ESTIMATE STATUS" in initial_body_upper,
-            "last_next_session": (
-                "LAST / NEXT TRADING SESSION" in initial_body_upper
-                or ("LAST TRADING SESSION" in initial_body_upper and "NEXT TRADING SESSION" in initial_body_upper)
+            "current_date": "CURRENT DATE" in initial_body_upper,
+            "data_updated": "DATA UPDATED" in initial_body_upper,
+            "portfolio_nav": "PORTFOLIO NAV" in initial_body_upper,
+            "daily_pnl": "DAILY P&L" in initial_body_upper,
+            "retired_header_labels_hidden": not any(
+                label in initial_body_upper
+                for label in (
+                    "PORTFOLIO DAILY DATE",
+                    "PORTFOLIO DAILY SOURCE",
+                    "INTRADAY ESTIMATE STATUS",
+                    "LATEST DELAYED PRICE",
+                )
             ),
             "snapshot_date_available": latest_portfolio_daily_date is not None,
         }
         report["checks"]["portfolio_daily_label_precision"] = (
-            portfolio_label_state["portfolio_daily_date"]
-            and portfolio_label_state["last_next_session"]
+            portfolio_label_state["current_date"]
+            and portfolio_label_state["data_updated"]
+            and portfolio_label_state["portfolio_nav"]
+            and portfolio_label_state["daily_pnl"]
+            and portfolio_label_state["retired_header_labels_hidden"]
             and portfolio_label_state["snapshot_date_available"]
             and bool(served_snapshot.get("session_state"))
             and bool(served_snapshot.get("portfolio_summary"))
@@ -720,19 +734,12 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
               const hoverText = detail?.innerText || '';
               return {
                 expectedOfficialRows,
-                sourceAndWindowExplained: (
-                  (/Recorded official closes/i.test(panel?.innerText || '') && /current session estimate separate/i.test(panel?.innerText || ''))
-                  || (/Recorded official closes/i.test(panel?.innerText || '') && /intraday pending until official close is recorded/i.test(panel?.innerText || ''))
-                  || (/Official Ledger/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
-                  || (/Paper Performance separate/i.test(panel?.innerText || '') && /Intraday Estimate/i.test(panel?.innerText || ''))
-                  || (/Portfolio Daily|Paper Daily/i.test(panel?.innerText || '') && /Delayed Estimate|delayed intraday estimate/i.test(panel?.innerText || ''))
-                  || (/Paper Daily by workday|Official Ledger fallback/i.test(panel?.innerText || '') && /Paper Daily|Official Ledger/i.test(panel?.innerText || ''))
-                ),
-                sourceChipsPresent: Boolean(panel?.querySelector('.chart-status-chips')) && /Paper Daily|Official Ledger|Missing/i.test(panel?.querySelector('.chart-status-chips')?.innerText || ''),
-                titleFullVisible: /Master Portfolio Daily Performance/i.test(title?.innerText || panel?.innerText || ''),
+                sourceAndWindowExplained: /Portfolio NAV, daily P&L, and drawdown by date/i.test(panel?.innerText || ''),
+                sourceChipsPresent: Boolean(panel?.querySelector('.chart-status-chips')) && /^Data Updated:/i.test((panel?.querySelector('.chart-status-chips')?.innerText || '').trim()) && !/Paper Daily|Official Ledger|Delayed Estimate|Intraday/i.test(panel?.querySelector('.chart-status-chips')?.innerText || ''),
+                titleFullVisible: /Daily Performance/i.test(title?.innerText || panel?.innerText || ''),
                 detailStripPresent: Boolean(detail),
-                detailFieldsPresent: ['date','source','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)),
-                hoverUpdatesDetail: /Paper Performance|Official Ledger|Delayed Estimate|Delayed Est\\.|Portfolio Daily|Paper Daily/i.test(hoverText || detail?.innerText || ''),
+                detailFieldsPresent: ['date','nav','daily p&l','drawdown'].every((label) => (detail?.innerText || '').toLowerCase().includes(label)) && !/\\bSource\\b/i.test(detail?.innerText || ''),
+                hoverUpdatesDetail: ['date','nav','daily p&l'].every((label) => (hoverText || detail?.innerText || '').toLowerCase().includes(label)) && !/Paper Performance|Official Ledger|Delayed Estimate|Delayed Est\\.|Portfolio Daily|Paper Daily|\\bSource\\b/i.test(hoverText || detail?.innerText || ''),
                 floatingTooltipVisible: tooltip ? getComputedStyle(tooltip).display !== 'none' && tooltip.classList.contains('visible') : false,
                 legendOverlapsCanvas: Boolean(cr && lr && overlap(lr, cr)),
                 detailOverlapsCanvas: Boolean(cr && dr && overlap(dr, cr)),

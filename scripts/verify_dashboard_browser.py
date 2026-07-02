@@ -653,7 +653,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             "WORKFLOW & SHADOW-LIVE TESTING" in initial_body_upper
             and "STRATEGY LIBRARY & GOVERNANCE" in initial_body_upper
             and "STRATEGY FAMILY MIX" in initial_body_upper
-            and ("PROXY ONLY" in initial_body_upper or "STYLE / FAMILY EXPOSURE PROXY" in initial_body_upper)
+            and "FAMILY MIX BY ACTIVE STRATEGY GROUP" in initial_body_upper
             and "MARKET & MACRO MONITOR" not in initial_body_upper
             and "STRATEGY LIBRARY & WORKFLOW" not in initial_body_upper
             and "COMBINED FAMILY MIX" not in initial_body_upper

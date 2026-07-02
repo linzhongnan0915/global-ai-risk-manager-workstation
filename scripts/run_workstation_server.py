@@ -756,7 +756,11 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return
         if parsed.path in {"/api/automation/status", "/api/automation/status/"}:
             try:
-                self._send_json(build_automation_control_status(self.server_root))
+                try:
+                    scheduler_status = build_refresh_status_payload(self._intraday_config())
+                except Exception:
+                    scheduler_status = None
+                self._send_json(build_automation_control_status(self.server_root, scheduler_status=scheduler_status))
             except Exception as exc:
                 self._send_safe_error(exc, context="automation-control-status")
             return
@@ -1085,8 +1089,8 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return
         if parsed.path in {"/api/automation/generate-rebalance-proposal", "/api/automation/generate-rebalance-proposal/"}:
             try:
-                self._read_json_body()
-                result = generate_rebalance_proposal_control(self.server_root)
+                body = self._read_json_body()
+                result = generate_rebalance_proposal_control(self.server_root, force=bool(body.get("force")))
                 self._send_json(result, status=201 if result.get("ok") else 409)
             except (ValueError, json.JSONDecodeError) as exc:
                 self._send_json({"ok": False, "error": str(exc)}, status=400)

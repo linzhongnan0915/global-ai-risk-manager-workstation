@@ -99,14 +99,16 @@ def regime_schema() -> dict[str, Any]:
     }
 
 
-def scheduler_schema(daily_cycle: dict[str, Any]) -> dict[str, Any]:
+def scheduler_schema(daily_cycle: dict[str, Any], *, scheduler_status: dict[str, Any] | None = None) -> dict[str, Any]:
     cycle = daily_cycle.get("daily_cycle") if isinstance(daily_cycle.get("daily_cycle"), dict) else {}
+    scheduler = scheduler_status if isinstance(scheduler_status, dict) else {}
+    scheduler_last_run = scheduler.get("last_successful_refresh_at") or scheduler.get("last_run_at")
     return {
-        "enabled": False,
-        "external_scheduler_active": False,
-        "cadence": None,
-        "next_run_at": None,
-        "last_run_at": cycle.get("last_run_at") or _latest_generated_at(daily_cycle),
+        "enabled": bool(scheduler.get("enabled")),
+        "external_scheduler_active": bool(scheduler.get("external_scheduler_active")),
+        "cadence": scheduler.get("selected_cadence_minutes") or scheduler.get("cadence") or scheduler.get("refresh_interval_minutes"),
+        "next_run_at": scheduler.get("next_scheduled_refresh_at") or scheduler.get("next_run_at"),
+        "last_run_at": scheduler_last_run or cycle.get("last_run_at") or _latest_generated_at(daily_cycle),
     }
 
 
@@ -119,7 +121,7 @@ def normalize_daily_cycle(payload: dict[str, Any]) -> dict[str, Any]:
         "status": cycle.get("status") or payload.get("status") or "MISSING_ARTIFACT",
         "latest_generated_at": cycle.get("last_run_at") or _latest_generated_at(payload),
         "latest_artifact_path": payload.get("artifact_path"),
-        "row_count": len(steps) if steps else None,
+        "row_count": len(steps) if steps else 0,
         "current_date": cycle.get("as_of_date") or _current_date(payload),
         "stale": False if payload.get("ok") else True,
         "message": "; ".join(str(x) for x in (errors or warnings)) or payload.get("message"),
@@ -131,7 +133,7 @@ def normalize_daily_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
         "status": payload.get("status") or "MISSING_ARTIFACT",
         "latest_generated_at": _latest_generated_at(payload),
         "latest_artifact_path": payload.get("artifact_path"),
-        "row_count": _first_list_count(payload, ("recommendations", "rows", "allocation_rows")),
+        "row_count": _first_list_count(payload, ("recommendations", "rows", "allocation_rows")) or 0,
         "current_date": _current_date(payload),
     }
 
@@ -142,7 +144,7 @@ def normalize_rebalance_proposal(payload: dict[str, Any], *, proposal_type: str 
         "status": payload.get("status") or "MISSING_ARTIFACT",
         "latest_generated_at": _latest_generated_at(payload),
         "latest_artifact_path": payload.get("artifact_path"),
-        "row_count": _first_list_count(payload, ("proposal_rows", "rows", "allocation_rows", "recommendations")),
+        "row_count": _first_list_count(payload, ("proposal_rows", "rows", "allocation_rows", "recommendations")) or 0,
         "proposal_type": proposal_type or artifact.get("proposal_type") or payload.get("source"),
         "current_date": _current_date(payload),
     }
@@ -155,6 +157,7 @@ def build_automation_control_status(
     daily_recommendation_reader: Callable[[str | Path], dict[str, Any]] = read_latest_daily_allocation_recommendation,
     rebalance_reader: Callable[[str | Path], dict[str, Any]] = read_latest_biweekly_rebalance_proposal,
     fallback_rebalance_reader: Callable[[str | Path], dict[str, Any]] = read_latest_paper_allocation_proposal,
+    scheduler_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     daily_cycle = daily_cycle_reader(root)
     daily_recommendation = daily_recommendation_reader(root)
@@ -172,7 +175,7 @@ def build_automation_control_status(
         "daily_cycle": normalize_daily_cycle(daily_cycle),
         "daily_recommendation": normalize_daily_recommendation(daily_recommendation),
         "rebalance_proposal": normalize_rebalance_proposal(rebalance, proposal_type=proposal_type),
-        "scheduler": scheduler_schema(daily_cycle),
+        "scheduler": scheduler_schema(daily_cycle, scheduler_status=scheduler_status),
         "manual_review": manual_review_schema(),
         "regime": regime_schema(),
     }
@@ -219,6 +222,7 @@ def run_automation_daily_cycle_control(
 def generate_rebalance_proposal_control(
     root: str | Path,
     *,
+    force: bool = False,
     writer: Callable[..., dict[str, Any]] = write_biweekly_rebalance_proposal_artifact,
     fallback_writer: Callable[..., dict[str, Any]] = write_paper_allocation_proposal,
 ) -> dict[str, Any]:
@@ -239,6 +243,7 @@ def generate_rebalance_proposal_control(
             "source": "automation_control_layer_v0",
             "review_only": True,
             "proposal_type": proposal_type,
+            "force_requested": bool(force),
         },
         "paper_only": True,
         "requires_manual_approval": True,

@@ -57,6 +57,9 @@ def test_build_automation_control_status_missing_artifacts_full_schema(tmp_path:
     assert status["daily_cycle"]["status"] == "MISSING_ARTIFACT"
     assert status["daily_recommendation"]["status"] == "MISSING_ARTIFACT"
     assert status["rebalance_proposal"]["status"] == "MISSING_ARTIFACT"
+    assert status["daily_cycle"]["row_count"] == 0
+    assert status["daily_recommendation"]["row_count"] == 0
+    assert status["rebalance_proposal"]["row_count"] == 0
     assert set(status) >= {
         "generated_at",
         "scheduler",
@@ -74,6 +77,34 @@ def test_status_helper_is_read_only_and_creates_no_files(tmp_path: Path):
     before = _paths(tmp_path)
     control_layer.build_automation_control_status(tmp_path)
     assert _paths(tmp_path) == before
+
+
+def test_build_automation_control_status_uses_scheduler_status(tmp_path: Path):
+    scheduler_status = {
+        "enabled": True,
+        "external_scheduler_active": True,
+        "selected_cadence_minutes": 30,
+        "next_scheduled_refresh_at": "2099-01-02T09:30:00-05:00",
+        "last_successful_refresh_at": "2099-01-01T21:00:00+00:00",
+    }
+
+    def missing(root: str | Path):
+        return {"ok": False, "status": "MISSING_ARTIFACT", "artifact_path": None}
+
+    status = control_layer.build_automation_control_status(
+        tmp_path,
+        daily_cycle_reader=missing,
+        daily_recommendation_reader=missing,
+        rebalance_reader=missing,
+        fallback_rebalance_reader=missing,
+        scheduler_status=scheduler_status,
+    )
+
+    assert status["scheduler"]["enabled"] is True
+    assert status["scheduler"]["external_scheduler_active"] is True
+    assert status["scheduler"]["cadence"] == 30
+    assert status["scheduler"]["next_run_at"] == "2099-01-02T09:30:00-05:00"
+    assert status["scheduler"]["last_run_at"] == "2099-01-01T21:00:00+00:00"
 
 
 def test_run_automation_daily_cycle_control_never_auto_applies(tmp_path: Path):
@@ -163,10 +194,19 @@ def test_generate_rebalance_proposal_control_uses_paper_fallback(tmp_path: Path)
 
 
 def test_server_exposes_automation_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    scheduler_status = {
+        "enabled": True,
+        "external_scheduler_active": True,
+        "selected_cadence_minutes": 30,
+        "next_scheduled_refresh_at": "2099-01-02T09:30:00-05:00",
+        "last_successful_refresh_at": "2099-01-01T21:00:00+00:00",
+    }
     monkeypatch.setattr(
-        "scripts.run_workstation_server.build_automation_control_status",
-        lambda root: {"ok": True, "status": "PARTIAL", "manual_review": control_layer.manual_review_schema(), "regime": control_layer.regime_schema()},
+        "scripts.run_workstation_server.build_refresh_status_payload",
+        lambda config: scheduler_status,
     )
+    monkeypatch.setattr(WorkstationHandler, "_intraday_config", lambda self: {"enabled": True})
+    before = _paths(tmp_path)
     server, port = _start_server(tmp_path)
     try:
         status, payload = _request(port, "/api/automation/status")
@@ -177,6 +217,10 @@ def test_server_exposes_automation_status(tmp_path: Path, monkeypatch: pytest.Mo
     assert status == 200
     assert payload["ok"] is True
     assert payload["manual_review"]["silent_auto_apply"] is False
+    assert payload["scheduler"]["enabled"] is True
+    assert payload["scheduler"]["external_scheduler_active"] is True
+    assert payload["scheduler"]["cadence"] == 30
+    assert _paths(tmp_path) == before
 
 
 def test_server_exposes_run_daily_cycle_control(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -209,7 +253,7 @@ def test_server_exposes_run_daily_cycle_control(tmp_path: Path, monkeypatch: pyt
 def test_server_exposes_generate_rebalance_proposal_control(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         "scripts.run_workstation_server.generate_rebalance_proposal_control",
-        lambda root: {
+        lambda root, *, force=False: {
             "ok": True,
             "status": "GENERATED",
             "rebalance_proposal": {"status": "GENERATED"},

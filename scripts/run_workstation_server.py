@@ -22,6 +22,11 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
+from src.automation.control_layer import (
+    build_automation_control_status,
+    generate_rebalance_proposal_control,
+    run_automation_daily_cycle_control,
+)
 from src.automation import (
     build_automation_intelligence_manifest,
     build_blackbox_decomposition_manifest,
@@ -749,6 +754,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="strategy-intelligence")
             return
+        if parsed.path in {"/api/automation/status", "/api/automation/status/"}:
+            try:
+                self._send_json(build_automation_control_status(self.server_root))
+            except Exception as exc:
+                self._send_safe_error(exc, context="automation-control-status")
+            return
         if parsed.path in {"/api/automation-intelligence/manifest", "/api/automation-intelligence/manifest/"}:
             try:
                 self._send_json(build_automation_intelligence_manifest(self.server_root))
@@ -1062,6 +1073,26 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in {"/api/automation/run-daily-cycle", "/api/automation/run-daily-cycle/"}:
+            try:
+                body = self._read_json_body()
+                result = run_automation_daily_cycle_control(self.server_root, force=bool(body.get("force")))
+                self._send_json(result, status=201 if result.get("ok") else 500)
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="automation-control-run-daily-cycle")
+            return
+        if parsed.path in {"/api/automation/generate-rebalance-proposal", "/api/automation/generate-rebalance-proposal/"}:
+            try:
+                self._read_json_body()
+                result = generate_rebalance_proposal_control(self.server_root)
+                self._send_json(result, status=201 if result.get("ok") else 409)
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="automation-control-generate-rebalance-proposal")
+            return
         if parsed.path in {
             "/api/automation-intelligence/daily-recommendations/generate",
             "/api/automation-intelligence/daily-recommendations/generate/",

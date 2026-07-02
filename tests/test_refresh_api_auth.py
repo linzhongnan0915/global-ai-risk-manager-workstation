@@ -21,6 +21,7 @@ from scripts.run_workstation_server import WorkstationHandler, resolve_server_bi
 from src.market.refresh_auth import classify_refresh_request, parse_bearer_token
 from src.market.intraday_config import load_intraday_config
 from src.market.intraday_refresh_service import build_refresh_status_payload, refresh_lifecycle_status, run_intraday_refresh
+from src.market.market_hours import MarketSessionInfo
 from src.market.paper_portfolio_ledger import paper_portfolio_daily_path, paper_strategy_daily_path
 from src.market.snapshot_store import read_latest_pointer, read_latest_snapshot
 
@@ -255,6 +256,163 @@ def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cf
     result = run_intraday_refresh(force=False, artifact_path=artifact_path, config=intraday_cfg)
     assert result.get("ok") is True
     assert result.get("skipped") is True
+
+
+def test_market_closed_refresh_fills_paper_daily_from_valid_daily_close_history(
+    monkeypatch,
+    intraday_cfg,
+    minimal_artifact,
+    tmp_path: Path,
+):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch_open(tickers, **kwargs):
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": ticker,
+                    "observation_ts_et": "2026-06-17T15:55:00-04:00",
+                    "session_date": "2026-06-17",
+                    "open": 100.0,
+                    "high": 102.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+                for ticker in tickers
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": "2026-06-17T15:55:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-17T15:55:00-04:00",
+        }
+
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.market_session_status",
+        lambda *args, **kwargs: MarketSessionInfo("Open", "America/New_York", "2026-06-17", True, None),
+    )
+    first = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_open)
+    previous_pointer = read_latest_pointer(intraday_cfg)
+    assert first["snapshot_id"] == previous_pointer["snapshot_id"]
+
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.market_session_status",
+        lambda *args, **kwargs: MarketSessionInfo("Closed", "America/New_York", "2026-06-18", True, None),
+    )
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.fetch_daily_price_history",
+        lambda tickers, **kwargs: [
+            {"date": "2026-06-17", "ticker": "SPY", "close": 100.0},
+            {"date": "2026-06-17", "ticker": "TLT", "close": 200.0},
+            {"date": "2026-06-18", "ticker": "SPY", "close": 101.0},
+            {"date": "2026-06-18", "ticker": "TLT", "close": 202.0},
+        ],
+    )
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.fetch_intraday_bars",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("intraday fetch must not run")),
+    )
+    result = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+    )
+
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    strategy_ledger = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert result["ok"] is True
+    assert result["skipped_intraday"] is True
+    assert result["daily_close_catchup_attempted"] is True
+    assert result["daily_close_catchup_updated"] is True
+    assert result["paper_performance_update"]["reason"] == "market_closed_gap_filled_from_delayed_daily_close"
+    assert result["paper_performance_update"]["gap_fill_dates"] == ["2026-06-18"]
+    assert result["paper_performance_update"]["live_brokerage_execution"] is False
+    assert result["paper_performance_update"]["is_official_ledger"] is False
+    assert [row["date"] for row in ledger["rows"]] == ["2026-06-17", "2026-06-18"]
+    assert any(row["date"] == "2026-06-18" for row in strategy_ledger["rows"])
+    assert read_latest_pointer(intraday_cfg) == previous_pointer
+
+
+def test_market_closed_refresh_without_daily_close_history_creates_no_fake_row(
+    monkeypatch,
+    intraday_cfg,
+    minimal_artifact,
+    tmp_path: Path,
+):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch_open(tickers, **kwargs):
+        return {
+            "provider": "yfinance",
+            "bar_interval": "5m",
+            "requested_tickers": tickers,
+            "rows": [
+                {
+                    "source_ticker": ticker,
+                    "observation_ts_et": "2026-06-17T15:55:00-04:00",
+                    "session_date": "2026-06-17",
+                    "open": 100.0,
+                    "high": 102.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 1000.0,
+                    "bar_interval": "5m",
+                    "bar_completeness": "completed",
+                    "intraday_return_from_open": 0.01,
+                    "timezone": "America/New_York",
+                }
+                for ticker in tickers
+            ],
+            "missing_tickers": [],
+            "stale_tickers": [],
+            "ticker_count_requested": len(tickers),
+            "ticker_count_successful": len(tickers),
+            "latest_observation_ts_et": "2026-06-17T15:55:00-04:00",
+            "latest_completed_bar_ts_et": "2026-06-17T15:55:00-04:00",
+        }
+
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.market_session_status",
+        lambda *args, **kwargs: MarketSessionInfo("Open", "America/New_York", "2026-06-17", True, None),
+    )
+    run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_open)
+    previous_pointer = read_latest_pointer(intraday_cfg)
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.market_session_status",
+        lambda *args, **kwargs: MarketSessionInfo("Closed", "America/New_York", "2026-06-18", True, None),
+    )
+    monkeypatch.setattr("src.market.intraday_refresh_service.fetch_daily_price_history", lambda tickers, **kwargs: [])
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.fetch_intraday_bars",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("intraday fetch must not run")),
+    )
+    result = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+    )
+
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert result["ok"] is True
+    assert result["skipped_intraday"] is True
+    assert result["daily_close_catchup_attempted"] is True
+    assert result["daily_close_catchup_updated"] is False
+    assert result["paper_performance_update"]["reason"] == "daily_close_history_unavailable"
+    assert [row["date"] for row in ledger["rows"]] == ["2026-06-17"]
+    assert read_latest_pointer(intraday_cfg) == previous_pointer
 
 
 def test_refresh_failure_preserves_last_valid_snapshot(intraday_cfg, minimal_artifact, tmp_path: Path):

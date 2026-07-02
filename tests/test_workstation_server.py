@@ -1010,6 +1010,16 @@ def test_strategy_factory_frontend_has_no_hardcoded_strategy_count():
     assert "hardcoded" in factory_page
 
 
+def test_command_center_live_monitoring_labels_do_not_imply_brokerage_execution():
+    source = (ROOT / "dashboard/foundation-app.js").read_text(encoding="utf-8")
+    assert "Live Monitoring:" in source
+    assert "Broker Execution: OFF" in source
+    assert "Live Orders: DISABLED" in source
+    assert "Daily close catch-up:" in source
+    assert "Paper Daily latest:" in source
+    assert "Latest delayed refresh:" in source
+
+
 def test_strategy_factory_pdf_extraction_failure_is_not_false_derivation(tmp_path):
     root = _copy_canonical_root(tmp_path)
     alpha_root = _create_alpha_research_root(tmp_path)

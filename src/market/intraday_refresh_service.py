@@ -241,6 +241,169 @@ def _paper_gap_history_end_date(through_date: str) -> str:
     return (parsed + timedelta(days=1)).isoformat()
 
 
+def _paper_daily_latest_date(root: Path) -> str | None:
+    payload = paper_portfolio_snapshot_payload(root, limit=1)
+    metadata = payload.get("metadata") or {}
+    rows = payload.get("rows") or []
+    return metadata.get("latest_date") or (rows[-1].get("date") if rows else None)
+
+
+def _paper_daily_close_catchup(
+    *,
+    refresh_root: Path,
+    artifact: dict[str, Any],
+    cfg: dict[str, Any],
+    tickers: list[str],
+    through_date: str,
+    position_source: str,
+    warnings: list[str] | None = None,
+) -> dict[str, Any]:
+    warnings = warnings if warnings is not None else []
+    no_update = {
+        "portfolio_row_updated": False,
+        "strategy_rows_updated": 0,
+        "gap_rows_updated": 0,
+        "strategy_gap_rows_updated": 0,
+        "gap_fill_dates": [],
+        "gap_fill_missing_dates": [],
+        "gap_fill_unfilled_dates": [],
+        "reason": "daily_close_catchup_not_attempted",
+        "paper_only": True,
+        "delayed_market_data": True,
+        "not_live_market_data": True,
+        "live_brokerage_execution": False,
+        "is_official_ledger": False,
+    }
+    existing_paper_rows = paper_portfolio_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
+    missing_dates = missing_paper_portfolio_business_dates(
+        existing_paper_rows,
+        through_date=through_date,
+        holidays=cfg.get("market_holidays") or [],
+        include_through_date=True,
+    )
+    if not missing_dates:
+        return {
+            **no_update,
+            "reason": "paper_daily_current_or_no_existing_paper_window",
+            "trading_date": through_date,
+            "latest_paper_daily_date": _paper_daily_latest_date(refresh_root),
+        }
+
+    fetch_result: dict[str, Any] = {
+        "provider": cfg.get("provider") or "yfinance",
+        "market_session_date": through_date,
+        "session_date": through_date,
+        "rows": [],
+        "missing_tickers": [],
+        "stale_tickers": [],
+        "ticker_count_requested": len(tickers),
+        "ticker_count_successful": 0,
+    }
+    try:
+        fetch_result["daily_price_history"] = fetch_daily_price_history(
+            tickers,
+            start_date=_paper_gap_history_start_date(existing_paper_rows, missing_dates[0]),
+            end_date=_paper_gap_history_end_date(through_date),
+            timeout_seconds=int(cfg.get("request_timeout_seconds") or 20),
+            retry_attempts=int(cfg.get("retry_attempts") or 3),
+            backoff_seconds=list(cfg.get("backoff_seconds") or [5, 15, 30]),
+        )
+        fetch_result["daily_price_history_provider"] = cfg.get("provider") or "yfinance"
+    except Exception as exc:
+        warnings.append(
+            "daily close catch-up pending; delayed daily close history unavailable "
+            f"for {', '.join(missing_dates)}: {exc}"
+        )
+        return {
+            **no_update,
+            "reason": "daily_close_history_unavailable",
+            "trading_date": through_date,
+            "gap_fill_missing_dates": missing_dates,
+            "latest_paper_daily_date": _paper_daily_latest_date(refresh_root),
+        }
+    if not _fetch_result_has_daily_price_history(fetch_result):
+        warnings.append(
+            "daily close catch-up pending; delayed daily close history returned no usable rows "
+            f"for {', '.join(missing_dates)}"
+        )
+        return {
+            **no_update,
+            "reason": "daily_close_history_unavailable",
+            "trading_date": through_date,
+            "gap_fill_missing_dates": missing_dates,
+            "latest_paper_daily_date": _paper_daily_latest_date(refresh_root),
+        }
+
+    paper_rebalance = applied_paper_rebalance_for_date(refresh_root, through_date)
+    paper_gap_rows = build_paper_portfolio_gap_fill_rows(
+        artifact,
+        fetch_result,
+        existing_rows=existing_paper_rows,
+        through_date=through_date,
+        holidays=cfg.get("market_holidays") or [],
+        include_through_date=True,
+        position_source=position_source,
+        rebalance=paper_rebalance,
+    )
+    fill_dates = [row["date"] for row in paper_gap_rows]
+    unfilled_dates = [row_date for row_date in missing_dates if row_date not in set(fill_dates)]
+    if unfilled_dates:
+        warnings.append(
+            "daily close catch-up incomplete; paired delayed close history unavailable "
+            f"for {', '.join(unfilled_dates)}"
+        )
+    if not paper_gap_rows:
+        return {
+            **no_update,
+            "reason": "daily_close_history_unavailable",
+            "trading_date": through_date,
+            "gap_fill_missing_dates": missing_dates,
+            "gap_fill_unfilled_dates": unfilled_dates,
+            "latest_paper_daily_date": _paper_daily_latest_date(refresh_root),
+        }
+
+    existing_strategy_rows = paper_strategy_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
+    strategy_gap_rows = build_paper_strategy_gap_fill_rows(
+        artifact,
+        fetch_result,
+        existing_rows=existing_strategy_rows,
+        missing_dates=fill_dates,
+        through_date=through_date,
+        holidays=cfg.get("market_holidays") or [],
+        include_through_date=True,
+        position_source=position_source,
+        rebalance=paper_rebalance,
+    )
+    paper_payload = None
+    for row in paper_gap_rows:
+        paper_payload = upsert_paper_portfolio_daily(refresh_root, row)
+    strategy_payload = upsert_paper_strategy_daily(refresh_root, strategy_gap_rows) if strategy_gap_rows else {"rows": []}
+    latest_row = paper_gap_rows[-1]
+    return {
+        "portfolio_row_updated": True,
+        "strategy_rows_updated": len(strategy_gap_rows),
+        "gap_rows_updated": len(paper_gap_rows),
+        "strategy_gap_rows_updated": len(strategy_gap_rows),
+        "gap_fill_dates": fill_dates,
+        "gap_fill_missing_dates": missing_dates,
+        "gap_fill_unfilled_dates": unfilled_dates,
+        "trading_date": fill_dates[-1],
+        "nav": latest_row.get("ending_nav"),
+        "daily_pnl": latest_row.get("daily_pnl"),
+        "daily_return": latest_row.get("daily_return"),
+        "refresh_status": "market_closed_daily_close_gap_filled",
+        "row_count": len((paper_payload or {}).get("rows") or []),
+        "strategy_row_count": len((strategy_payload or {}).get("rows") or []),
+        "reason": "market_closed_gap_filled_from_delayed_daily_close",
+        "latest_paper_daily_date": fill_dates[-1],
+        "paper_only": True,
+        "delayed_market_data": True,
+        "not_live_market_data": True,
+        "live_brokerage_execution": False,
+        "is_official_ledger": False,
+    }
+
+
 def _snapshot_session_date(snapshot: dict[str, Any] | None) -> str | None:
     if not snapshot:
         return None
@@ -401,6 +564,12 @@ def _is_provider_rate_limit_error(exc: Exception) -> bool:
     return any(token in message for token in ("429", "too many requests", "rate limit", "rate-limited", "cooldown"))
 
 
+def _refresh_root_from_config(cfg: dict[str, Any]) -> Path:
+    status_path = Path(cfg.get("status_path") or "output/intraday_refresh_status.json")
+    parent = status_path.parent
+    return parent.parent if parent.name == "output" else parent
+
+
 @contextmanager
 def refresh_lock(lock_path: Path, *, stale_after_seconds: int | None = None):
     acquired = False
@@ -527,6 +696,11 @@ def build_refresh_status_payload(
         "refresh_needed": lifecycle["refresh_needed"],
         "refresh_lifecycle": lifecycle,
         "snapshot_id": snapshot_id,
+        "latest_snapshot_id": snapshot_id,
+        "paper_daily_latest_date": status.get("paper_daily_latest_date") or _paper_daily_latest_date(_refresh_root_from_config(cfg)),
+        "daily_close_catchup_status": status.get("daily_close_catchup_status") or "unavailable",
+        "daily_close_catchup_updated": bool(status.get("daily_close_catchup_updated")),
+        "daily_close_catchup_at": status.get("daily_close_catchup_at"),
         "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
         "refresh_state": state,
         "in_progress": in_progress,
@@ -598,23 +772,15 @@ def run_intraday_refresh(
         session.status == "After-hours"
         and not daily_shadow_return_exists(shadow_database, session.session_date)
     )
-    if not force and not should_run_scheduled_refresh(
+    scheduled_intraday_allowed = should_run_scheduled_refresh(
         None,
         timezone=cfg["timezone"],
         holidays=cfg.get("market_holidays") or [],
         regular_session_only=bool(cfg.get("regular_session_only", True)),
-    ) and not needs_close_finalization:
-        payload = build_refresh_status_payload(cfg, interval_minutes=interval)
-        payload.update(
-            {
-                "ok": True,
-                "skipped": True,
-                "reason": f"market_{session.status.lower().replace('-', '_')}",
-                "message": "Scheduled intraday refresh skipped outside regular session.",
-                "paper_performance_update": {**no_paper_update, "reason": "refresh_skipped"},
-            }
-        )
-        return payload
+    )
+    market_closed_catchup_only = (session.status != "Open" and fetch_fn is None) or (
+        not force and not scheduled_intraday_allowed and not needs_close_finalization
+    )
 
     lock_path = Path(cfg["lock_path"])
     stale_after_seconds = max(int(cfg.get("lock_stale_after_minutes") or 90), interval * 2) * 60
@@ -660,8 +826,109 @@ def run_intraday_refresh(
             if not tickers and bool(cfg.get("allow_artifact_position_fallback")):
                 tickers = collect_refresh_tickers(artifact)
                 position_source = "legacy_artifact_position_fallback" if tickers else "missing"
+            if market_closed_catchup_only and not tickers:
+                completed = datetime.now(timezone.utc)
+                paper_update = {
+                    **no_paper_update,
+                    "reason": "daily_close_catchup_unavailable_no_committed_shadow_holdings",
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "live_brokerage_execution": False,
+                    "is_official_ledger": False,
+                }
+                write_refresh_status(
+                    {
+                        "state": "idle",
+                        "in_progress": False,
+                        "last_success_at": completed.isoformat(),
+                        "last_snapshot_id": previous_snapshot_id,
+                        "selected_interval_minutes": interval,
+                        "data_freshness": "DailyCloseCatchupUnavailable",
+                        "last_error": None,
+                        "daily_close_catchup_status": "unavailable",
+                        "daily_close_catchup_updated": False,
+                        "daily_close_catchup_at": completed.isoformat(),
+                        "paper_daily_latest_date": _paper_daily_latest_date(refresh_root),
+                    },
+                    cfg,
+                )
+                payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+                payload.update(
+                    {
+                        "ok": True,
+                        "skipped": True,
+                        "skipped_intraday": True,
+                        "reason": f"market_{session.status.lower().replace('-', '_')}",
+                        "message": "Intraday refresh skipped outside regular session; paper daily close catch-up unavailable without committed shadow holdings.",
+                        "refresh_status": "daily_close_catchup_unavailable",
+                        "daily_close_catchup_attempted": True,
+                        "daily_close_catchup_updated": False,
+                        "paper_only": True,
+                        "live_brokerage_execution": False,
+                        "delayed_market_data": True,
+                        "not_live_market_data": True,
+                        "is_official_ledger": False,
+                        "last_successful_refresh_at": completed.isoformat(),
+                        "warnings": ["Daily close catch-up unavailable: no committed shadow holdings."],
+                        "paper_performance_update": paper_update,
+                    }
+                )
+                return payload
             if not tickers:
                 raise ValueError("no committed SHADOW holdings available for Refresh Scheme B")
+            if market_closed_catchup_only:
+                refresh_warnings: list[str] = []
+                paper_update = _paper_daily_close_catchup(
+                    refresh_root=refresh_root,
+                    artifact=artifact,
+                    cfg=cfg,
+                    tickers=tickers,
+                    through_date=session.session_date,
+                    position_source=position_source,
+                    warnings=refresh_warnings,
+                )
+                completed = datetime.now(timezone.utc)
+                write_refresh_status(
+                    {
+                        "state": "idle",
+                        "in_progress": False,
+                        "last_success_at": completed.isoformat(),
+                        "last_snapshot_id": previous_snapshot_id,
+                        "selected_interval_minutes": interval,
+                        "data_freshness": "DailyCloseCatchup",
+                        "last_error": None,
+                        "daily_close_catchup_status": (
+                            "updated" if paper_update.get("portfolio_row_updated") else "pending"
+                        ),
+                        "daily_close_catchup_updated": bool(paper_update.get("portfolio_row_updated")),
+                        "daily_close_catchup_at": completed.isoformat(),
+                        "paper_daily_latest_date": paper_update.get("latest_paper_daily_date"),
+                    },
+                    cfg,
+                )
+                payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+                payload.update(
+                    {
+                        "ok": True,
+                        "skipped": True,
+                        "skipped_intraday": True,
+                        "reason": f"market_{session.status.lower().replace('-', '_')}",
+                        "message": "Intraday refresh skipped outside regular session; paper daily close catch-up attempted.",
+                        "refresh_status": "daily_close_catchup",
+                        "daily_close_catchup_attempted": True,
+                        "daily_close_catchup_updated": bool(paper_update.get("portfolio_row_updated")),
+                        "paper_only": True,
+                        "live_brokerage_execution": False,
+                        "delayed_market_data": True,
+                        "not_live_market_data": True,
+                        "is_official_ledger": False,
+                        "last_successful_refresh_at": completed.isoformat(),
+                        "warnings": refresh_warnings,
+                        "paper_performance_update": paper_update,
+                    }
+                )
+                return payload
             bar_interval = bar_interval_for_refresh(cfg, interval)
             fetcher = fetch_fn or fetch_intraday_bars
             fetch_result = fetcher(

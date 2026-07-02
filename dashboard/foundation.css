@@ -532,6 +532,37 @@ body{font-size:12px}.global-fact strong,.workflow-tabs button,.section-header st
 .strategy-monitor-page.list-first .compact-monitor-table{max-height:126px}
 @media(max-width:1550px){.command-board{grid-template-rows:220px 205px 150px 135px}.command-board .allocation-body{height:162px}.command-board .dual-tables,.command-board .chart-body{height:189px}.rebalance-center .work-table-wrap{height:165px}.strategy-monitor-status-summary em{width:100%;margin-left:0}.strategy-monitor-page.list-first .strategy-monitor-panel{height:calc(100vh - var(--head) - var(--tabs) - 120px);min-height:500px}}
 
+/* Command Center micro visual fix: keep the existing grid, but make the chart and paper-review controls demo-readable. */
+.command-board{grid-template-rows:300px 225px 165px 150px}
+.command-board .cmd-chart .chart-panel{grid-template-rows:34px 25px minmax(200px,1fr) 38px}
+.command-board .cmd-chart .chart-body{height:auto;min-height:200px}
+.command-board .cmd-chart .chart-control-row{min-height:25px;padding:0 7px;gap:6px}
+.command-board .cmd-chart .chart-status-chips span{height:15px;padding:0 4px;font-size:6px}
+.command-board .cmd-chart .chart-legend{gap:6px;font-size:7px}
+.command-board .cmd-chart .chart-detail-strip{min-height:38px}
+.command-board .contributors-panel .dual-tables{height:268px}
+.command-board .contributors-panel .dual-tables table{table-layout:fixed}
+.command-board .contributors-panel .dual-tables td{height:32px;padding:6px 3px;font-size:8px}
+.command-board .contributors-panel .dual-tables td:first-child{width:40%;max-width:none}
+.command-board .contributors-panel .dual-tables td:nth-child(2),.command-board .contributors-panel .dual-tables td:nth-child(3){width:48px;overflow:visible;text-overflow:clip}
+.command-board .contributors-panel .dual-tables td:last-child{width:46px}
+.command-board .contributors-panel .usage-bar{width:42px}
+.command-board .rebalance-center .rebalance-subgrid{align-items:start}
+.command-board .rebalance-center .action-tiles{align-items:start;align-content:start}
+.command-board .rebalance-center .action-tiles button{height:34px;min-height:34px;padding:4px 5px;border-width:1px;background:#061315;color:#c8dcdf;font-size:7px;font-weight:800;box-shadow:none;filter:none}
+.command-board .rebalance-center .approve-tile{border-color:#2d7650;color:#a8f0bf}
+.command-board .rebalance-center .reject-tile{border-color:#73423d;color:#ffb8b8}
+.command-board .rebalance-center .modify-tile{border-color:#2d5f78;color:#a9dfff}
+.command-board .rebalance-center .action-tiles button:hover{filter:brightness(1.08);transform:none}
+.command-board .rebalance-center .action-tiles span{margin-top:2px;color:#9fb4b7;font-size:6px;font-weight:700}
+@media(max-width:1550px){
+  .command-board{grid-template-rows:292px 205px 150px 135px}
+  .command-board .cmd-chart .chart-panel{grid-template-rows:32px 24px minmax(198px,1fr) 36px}
+  .command-board .cmd-chart .chart-body{min-height:198px}
+  .command-board .contributors-panel .dual-tables{height:258px}
+  .command-board .rebalance-center .action-tiles button{height:32px;min-height:32px}
+}
+
 /* Strategy Detail drawer formatting: numeric KPIs stay large; status fields stay compact. */
 .strategy-detail-kpis.drawer-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line)}
 .strategy-detail-kpis .drawer-kpi{min-width:0;padding:9px 10px;border-right:1px solid var(--soft);border-bottom:1px solid var(--soft)}

@@ -28,9 +28,11 @@ from src.market.paper_portfolio_ledger import (
     applied_paper_rebalance_for_date,
     build_paper_portfolio_daily_row,
     build_paper_portfolio_gap_fill_rows,
+    build_paper_strategy_gap_fill_rows,
     build_paper_strategy_daily_rows,
     missing_paper_portfolio_business_dates,
     paper_portfolio_snapshot_payload,
+    paper_strategy_snapshot_payload,
     rebase_paper_portfolio_daily_row,
     upsert_paper_portfolio_daily,
     upsert_paper_strategy_daily,
@@ -764,14 +766,23 @@ def run_intraday_refresh(
             if paper_prices_stale:
                 refresh_warnings.append(
                     "paper daily ledger not updated because delayed quote freshness is stale; "
-                    "latest good paper row is preserved"
+                    "latest good paper row is preserved unless valid delayed daily close history can fill missing days"
                 )
-            if paper_row and not paper_prices_stale:
+            paper_payload = None
+            strategy_payload = {"rows": []}
+            paper_gap_rows: list[dict[str, Any]] = []
+            strategy_gap_rows: list[dict[str, Any]] = []
+            paper_gap_fill_dates: list[str] = []
+            paper_gap_missing_dates: list[str] = []
+            paper_gap_unfilled_dates: list[str] = []
+            if paper_row:
                 existing_paper_rows = paper_portfolio_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
+                paper_through_date = str(paper_row.get("date") or "")
                 paper_gap_missing_dates = missing_paper_portfolio_business_dates(
                     existing_paper_rows,
-                    through_date=str(paper_row.get("date") or ""),
+                    through_date=paper_through_date,
                     holidays=cfg.get("market_holidays") or [],
+                    include_through_date=paper_prices_stale,
                 )
                 if paper_gap_missing_dates and not _fetch_result_has_daily_price_history(fetch_result):
                     if fetch_fn is None:
@@ -779,7 +790,7 @@ def run_intraday_refresh(
                             fetch_result["daily_price_history"] = fetch_daily_price_history(
                                 tickers,
                                 start_date=_paper_gap_history_start_date(existing_paper_rows, paper_gap_missing_dates[0]),
-                                end_date=_paper_gap_history_end_date(str(paper_row.get("date") or "")),
+                                end_date=_paper_gap_history_end_date(paper_through_date),
                                 timeout_seconds=int(cfg.get("request_timeout_seconds") or 20),
                                 retry_attempts=int(cfg.get("retry_attempts") or 3),
                                 backoff_seconds=list(cfg.get("backoff_seconds") or [5, 15, 30]),
@@ -799,8 +810,9 @@ def run_intraday_refresh(
                     artifact,
                     fetch_result,
                     existing_rows=existing_paper_rows,
-                    through_date=str(paper_row.get("date") or ""),
+                    through_date=paper_through_date,
                     holidays=cfg.get("market_holidays") or [],
+                    include_through_date=paper_prices_stale,
                     position_source=position_source,
                     rebalance=paper_rebalance,
                 )
@@ -814,6 +826,19 @@ def run_intraday_refresh(
                         "paper daily gap fill incomplete; paired delayed close history unavailable "
                         f"for {', '.join(paper_gap_unfilled_dates)}"
                     )
+                existing_strategy_rows = paper_strategy_snapshot_payload(refresh_root, limit=10_000).get("rows") or []
+                strategy_gap_rows = build_paper_strategy_gap_fill_rows(
+                    artifact,
+                    fetch_result,
+                    existing_rows=existing_strategy_rows,
+                    missing_dates=paper_gap_fill_dates,
+                    through_date=paper_through_date,
+                    holidays=cfg.get("market_holidays") or [],
+                    include_through_date=paper_prices_stale,
+                    position_source=position_source,
+                    rebalance=paper_rebalance,
+                )
+            if paper_row and not paper_prices_stale:
                 prior_paper_rows = [
                     row for row in [*existing_paper_rows, *paper_gap_rows]
                     if str(row.get("date") or "") < str(paper_row.get("date") or "")
@@ -823,18 +848,17 @@ def run_intraday_refresh(
                     latest_prior = sorted(prior_paper_rows, key=lambda row: str(row.get("date") or ""))[-1]
                     prior_paper_nav = _to_float(latest_prior.get("ending_nav") or latest_prior.get("nav"))
                 paper_row = rebase_paper_portfolio_daily_row(paper_row, prior_paper_nav)
-                paper_payload = None
                 for gap_row in paper_gap_rows:
                     paper_payload = upsert_paper_portfolio_daily(refresh_root, gap_row)
                 paper_payload = upsert_paper_portfolio_daily(refresh_root, paper_row)
-                strategy_payload = (
-                    upsert_paper_strategy_daily(refresh_root, strategy_paper_rows)
-                    if strategy_paper_rows else {"rows": []}
-                )
+                strategy_rows_to_upsert = [*strategy_gap_rows, *strategy_paper_rows]
+                if strategy_rows_to_upsert:
+                    strategy_payload = upsert_paper_strategy_daily(refresh_root, strategy_rows_to_upsert)
                 paper_update = {
                     "portfolio_row_updated": True,
                     "strategy_rows_updated": len(strategy_paper_rows),
                     "gap_rows_updated": len(paper_gap_rows),
+                    "strategy_gap_rows_updated": len(strategy_gap_rows),
                     "gap_fill_dates": paper_gap_fill_dates,
                     "gap_fill_missing_dates": paper_gap_missing_dates,
                     "gap_fill_unfilled_dates": paper_gap_unfilled_dates,
@@ -847,6 +871,33 @@ def run_intraday_refresh(
                     "strategy_row_count": len(strategy_payload.get("rows") or []),
                     "paper_transaction_cost": paper_row.get("paper_transaction_cost"),
                     "applied_paper_rebalance_plan_id": paper_rebalance.get("applied_plan_id"),
+                    "paper_only": True,
+                    "delayed_market_data": True,
+                    "not_live_market_data": True,
+                    "is_official_ledger": False,
+                }
+            elif paper_prices_stale and paper_gap_rows:
+                for gap_row in paper_gap_rows:
+                    paper_payload = upsert_paper_portfolio_daily(refresh_root, gap_row)
+                if strategy_gap_rows:
+                    strategy_payload = upsert_paper_strategy_daily(refresh_root, strategy_gap_rows)
+                paper_update = {
+                    **no_paper_update,
+                    "portfolio_row_updated": True,
+                    "strategy_rows_updated": len(strategy_gap_rows),
+                    "gap_rows_updated": len(paper_gap_rows),
+                    "strategy_gap_rows_updated": len(strategy_gap_rows),
+                    "gap_fill_dates": paper_gap_fill_dates,
+                    "gap_fill_missing_dates": paper_gap_missing_dates,
+                    "gap_fill_unfilled_dates": paper_gap_unfilled_dates,
+                    "trading_date": paper_gap_fill_dates[-1],
+                    "nav": (paper_gap_rows[-1] if paper_gap_rows else {}).get("ending_nav"),
+                    "daily_pnl": (paper_gap_rows[-1] if paper_gap_rows else {}).get("daily_pnl"),
+                    "daily_return": (paper_gap_rows[-1] if paper_gap_rows else {}).get("daily_return"),
+                    "refresh_status": "stale_intraday_daily_close_gap_filled",
+                    "row_count": len((paper_payload or {}).get("rows") or []),
+                    "strategy_row_count": len((strategy_payload or {}).get("rows") or []),
+                    "reason": "stale_intraday_quotes_gap_filled_from_delayed_daily_close",
                     "paper_only": True,
                     "delayed_market_data": True,
                     "not_live_market_data": True,

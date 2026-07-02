@@ -809,6 +809,88 @@ def test_refresh_gap_fills_missing_paper_business_days_before_current_day(intrad
     assert current_row["paper_nav_rebased_to_previous_paper_close"] is True
 
 
+def test_stale_intraday_quotes_can_fill_paper_daily_from_valid_daily_close_history(
+    intraday_cfg,
+    minimal_artifact,
+    tmp_path: Path,
+):
+    _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+
+    def _mock_fetch(rate: float, trading_date: str, ts: str, *, stale: bool = False, history: list[dict] | None = None):
+        def _fetch(tickers, **kwargs):
+            return {
+                "provider": "yfinance",
+                "bar_interval": "5m",
+                "requested_tickers": tickers,
+                "rows": [
+                    {
+                        "source_ticker": ticker,
+                        "observation_ts_et": ts,
+                        "session_date": trading_date,
+                        "open": 100.0,
+                        "high": 103.0,
+                        "low": 99.0,
+                        "close": 100.0 * (1.0 + rate),
+                        "volume": 1000.0,
+                        "bar_interval": "5m",
+                        "bar_completeness": "completed",
+                        "intraday_return_from_open": rate,
+                        "timezone": "America/New_York",
+                    }
+                    for ticker in tickers
+                ],
+                "daily_price_history": history or [],
+                "daily_price_history_provider": "yfinance" if history else None,
+                "missing_tickers": [],
+                "stale_tickers": tickers if stale else [],
+                "ticker_count_requested": len(tickers),
+                "ticker_count_successful": len(tickers),
+                "latest_observation_ts_et": ts,
+                "latest_completed_bar_ts_et": ts,
+            }
+        return _fetch
+
+    run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch(0.01, "2026-06-17", "2026-06-17T15:55:00-04:00"),
+    )
+    history = [
+        {"date": "2026-06-17", "ticker": "SPY", "close": 100.0},
+        {"date": "2026-06-17", "ticker": "TLT", "close": 200.0},
+        {"date": "2026-06-18", "ticker": "SPY", "close": 101.0},
+        {"date": "2026-06-18", "ticker": "TLT", "close": 202.0},
+    ]
+    filled = run_intraday_refresh(
+        force=True,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch(0.02, "2026-06-18", "2026-06-18T15:55:00-04:00", stale=True, history=history),
+    )
+
+    ledger = json.loads(paper_portfolio_daily_path(tmp_path).read_text(encoding="utf-8"))
+    strategy_ledger = json.loads(paper_strategy_daily_path(tmp_path).read_text(encoding="utf-8"))
+    assert [row["date"] for row in ledger["rows"]] == ["2026-06-17", "2026-06-18"]
+    assert filled["paper_performance_update"]["reason"] == "stale_intraday_quotes_gap_filled_from_delayed_daily_close"
+    assert filled["paper_performance_update"]["gap_fill_dates"] == ["2026-06-18"]
+    assert filled["paper_performance_update"]["gap_rows_updated"] == 1
+    assert filled["paper_performance_update"]["strategy_rows_updated"] == 2
+    assert filled["paper_performance_update"]["is_official_ledger"] is False
+    gap_row = ledger["rows"][-1]
+    assert gap_row["source"] == "Paper Portfolio Daily Gap Fill"
+    assert gap_row["refresh_status"] == "gap_filled_from_delayed_daily_close"
+    assert gap_row["paper_only"] is True
+    assert gap_row["is_official_ledger"] is False
+    assert sorted(row["date"] for row in strategy_ledger["rows"] if row["date"] == "2026-06-18") == [
+        "2026-06-18",
+        "2026-06-18",
+    ]
+    assert all(row["source"] == "Paper Strategy Daily Gap Fill" for row in strategy_ledger["rows"] if row["date"] == "2026-06-18")
+
+
 def test_refresh_includes_applied_paper_rebalance_costs_in_paper_only_rows(intraday_cfg, minimal_artifact, tmp_path: Path):
     _write_canonical_holdings(tmp_path, ["SPY", "TLT"])
     artifact_path = tmp_path / "artifact.json"
